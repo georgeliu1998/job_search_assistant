@@ -1,0 +1,53 @@
+Software Engineer
+TechInnovate Inc.
+San Francisco, CA (Hybrid)
+
+About Us:
+TechInnovate Inc. is a leading technology company specializing in cloud-based solutions for enterprise clients. Our mission is to transform how businesses operate through innovative software products.
+
+Job Description:
+We are seeking a talented Software Engineer to join our engineering team. In this role, you will design, develop, and maintain high-quality software solutions that meet our clients' needs. You will collaborate with cross-functional teams to build robust and scalable applications.
+
+Responsibilities:
+- Develop high-quality, well-tested code for our core products
+- Collaborate with product managers, designers, and other engineers
+- Participate in code reviews and help maintain code quality
+- Debug production issues and implement fixes
+- Design and implement new features and functionality
+- Write technical documentation
+- Continuously improve our development processes
+- Stay up-to-date with emerging trends and technologies
+
+Requirements:
+- Bachelor's degree in Computer Science, Engineering, or related field
+- 3+ years of experience in software development
+- Strong proficiency in Python and JavaScript
+- Experience with web frameworks (Django, Flask, or similar)
+- Familiarity with front-end technologies (React, Vue, or Angular)
+- Knowledge of database systems (SQL and NoSQL)
+- Experience with version control systems (Git)
+- Strong problem-solving skills and attention to detail
+- Excellent communication and teamwork abilities
+
+Preferred Qualifications:
+- Experience with AWS or other cloud platforms
+- Knowledge of Docker and Kubernetes
+- Familiarity with CI/CD pipelines
+- Experience with microservices architecture
+- Knowledge of machine learning concepts
+
+Benefits:
+- Competitive salary: $130,000 - $170,000 based on experience
+- Comprehensive health, dental, and vision insurance
+- 401(k) with company match
+- Flexible work arrangements (hybrid model, 2-3 days in office)
+- Unlimited PTO policy
+- Professional development budget
+- Employee stock options
+- Catered lunches and snacks
+- Gym membership reimbursement
+- Team building events and activities
+
+TechInnovate Inc. is an equal opportunity employer and values diversity at our company. We do not discriminate on the basis of race, religion, color, national origin, gender, sexual orientation, age, marital status, veteran status, or disability status.
+
+To apply, please submit your resume and a cover letter explaining why you're interested in joining our team. 

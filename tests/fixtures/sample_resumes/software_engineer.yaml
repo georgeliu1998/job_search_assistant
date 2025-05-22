@@ -1,0 +1,95 @@
+personal_info:
+  name: Alex Johnson
+  email: alex.johnson@example.com
+  phone: (555) 987-6543
+  location: San Francisco, CA
+  linkedin: linkedin.com/in/alexjohnson
+  github: github.com/alexjohnson
+
+summary: >
+  Software Engineer with 4 years of experience developing web applications 
+  using Python, JavaScript, and cloud technologies. Passionate about creating 
+  efficient, scalable solutions and contributing to team success through 
+  collaboration and knowledge sharing.
+
+education:
+  - institution: University of Washington
+    degree: Bachelor of Science
+    field_of_study: Computer Science
+    start_date: 2015-09-01
+    end_date: 2019-06-15
+    gpa: 3.75
+    description: >
+      Coursework in Algorithms, Data Structures, Software Engineering, 
+      Database Systems, Machine Learning, and Web Development.
+
+experience:
+  - company: CloudTech Solutions
+    title: Software Engineer
+    start_date: 2021-03-01
+    end_date: present
+    location: San Francisco, CA
+    highlights:
+      - Developed and maintained RESTful APIs using Python and Flask, improving API response time by 40%
+      - Implemented automated testing using pytest, increasing test coverage from 65% to 90%
+      - Collaborated with cross-functional teams to design and implement new features
+      - Optimized database queries, reducing load times by 30%
+      - Mentored junior developers and conducted code reviews
+
+  - company: WebDev Innovations
+    title: Junior Software Developer
+    start_date: 2019-07-01
+    end_date: 2021-02-28
+    location: Seattle, WA
+    highlights:
+      - Built responsive web applications using React and Django
+      - Implemented CI/CD pipelines using GitHub Actions
+      - Participated in agile development processes and sprint planning
+      - Resolved bugs and implemented feature enhancements
+      - Contributed to documentation and technical specifications
+
+skills:
+  - Python
+  - JavaScript
+  - HTML/CSS
+  - React
+  - Django
+  - Flask
+  - SQL (PostgreSQL, MySQL)
+  - Git
+  - Docker
+  - AWS (S3, EC2, Lambda)
+  - REST APIs
+  - Test-Driven Development
+  - Agile Methodologies
+
+certifications:
+  - name: AWS Certified Developer - Associate
+    issuer: Amazon Web Services
+    date: 2022-05-10
+    
+  - name: Certified Scrum Developer
+    issuer: Scrum Alliance
+    date: 2020-11-15
+
+projects:
+  - name: Inventory Management System
+    description: >
+      Developed a full-stack inventory management application using Django, 
+      React, and PostgreSQL. Implemented features including real-time updates, 
+      barcode scanning, and automated reporting.
+    url: github.com/alexjohnson/inventory-system
+    
+  - name: Weather Data Analyzer
+    description: >
+      Created a Python application that collects and analyzes weather data 
+      from multiple APIs. Implemented data visualization tools and predictive 
+      algorithms to forecast weather patterns.
+    url: github.com/alexjohnson/weather-analyzer
+
+languages:
+  - language: English
+    proficiency: Native
+    
+  - language: French
+    proficiency: Intermediate 
