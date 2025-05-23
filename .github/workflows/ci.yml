@@ -1,16 +1,19 @@
 name: CI
 
 on:
-  push:
-    branches: [ main ]
+  # Only trigger on pull requests to main (since main branch is protected)
   pull_request:
     branches: [ main ]
+  # Optional: Trigger on pushes to feature branches for early feedback
+  push:
+    branches: [ "**", "!main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        # Test against current version (3.11) and next version (3.12) for forward compatibility
         python-version: ["3.11", "3.12"]
 
     steps:
