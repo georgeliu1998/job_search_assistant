@@ -34,7 +34,7 @@ build-backend = "hatchling.build"
 
 # Configure hatchling to include all packages from src directory
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["find:"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
