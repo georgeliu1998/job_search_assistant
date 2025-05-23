@@ -22,6 +22,36 @@ The Job Search Assistant is built with:
 - LangChain and LangGraph for AI agent orchestration
 - Anthropic and other LLM providers for intelligent processing
 
+## Configuration Files
+
+The project uses two types of configuration files for clarity and ease of use:
+
+- **TOML**: Used for developer-facing and internal configuration, such as project metadata and core settings. Example: `pyproject.toml` contains dependency and tool configuration for Python tooling.
+- **YAML**: Used for user-facing and editable configuration, such as job preferences and resume templates. Example: `examples/job_preferences.yaml` allows you to specify your preferred job titles, locations, and salary expectations.
+
+### Example: User Preferences (YAML)
+```yaml
+preferred_titles:
+  - Data Scientist
+  - Machine Learning Engineer
+locations:
+  - Remote
+  - San Francisco, CA
+salary_expectation:
+  min: 120000
+  max: 180000
+```
+
+### Example: Project Settings (TOML)
+```toml
+[tool.job_search_assistant]
+llm_provider = "anthropic"
+log_level = "INFO"
+```
+
+- **Developers** should edit TOML files for project setup and internal settings.
+- **End-users** can safely edit YAML files to customize their experience.
+
 ## Getting Started
 
 ### Prerequisites
