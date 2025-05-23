@@ -1,6 +1,7 @@
 """
 Global settings for the Job Search Assistant application.
 """
+
 from pathlib import Path
 
 # Base directory
@@ -19,4 +20,4 @@ TEMPLATE_DIR = BASE_DIR / "src" / "core" / "resume" / "templates"
 
 # Application settings
 DEFAULT_TEMPERATURE = 0.7
-MAX_TOKENS = 4000 
+MAX_TOKENS = 4000

@@ -1,8 +1,10 @@
 """
 Pytest configuration file for the Job Search Assistant tests.
 """
+
 import os
 from pathlib import Path
+
 import pytest
 import yaml
 
@@ -46,4 +48,4 @@ def sample_resume(sample_resumes_dir):
 def sample_job_preferences(project_root):
     preferences_file = project_root / "examples" / "job_preferences.yaml"
     with open(preferences_file, "r") as f:
-        return yaml.safe_load(f) 
+        return yaml.safe_load(f)

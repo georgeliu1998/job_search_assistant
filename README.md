@@ -1,6 +1,6 @@
 # Job Search Assistant
 
-An AI-powered job search assistant using LangGraph agents for resume optimization and job matching.
+An AI-powered job search assistant who does the work and get the job for you.
 
 ## Features
 
@@ -178,15 +178,36 @@ pytest
 
 Install development dependencies:
 ```bash
-# Install dev dependencies (linting, formatting, type checking)
-uv add --dev black isort mypy pytest-cov
+# Install dev dependencies (already included in project)
+uv sync --extra dev
+```
 
-# Format code
-uv run black .
-uv run isort .
+#### Code Formatting and Quality (Automated)
 
-# Type checking
-uv run mypy src/
+This project uses **pre-commit hooks** to automatically format and check code quality. After setting up your environment, install the hooks:
+
+```bash
+uv run pre-commit install
+```
+
+Now, every time you commit, the code will be automatically:
+- Formatted with **Black**
+- Import-sorted with **isort**
+- Type-checked with **mypy**
+- Checked for basic issues (trailing whitespace, large files, etc.)
+
+#### Manual Formatting (Optional)
+
+You can also run formatting manually:
+
+```bash
+# Quick format script
+./scripts/format.sh
+
+# Or run individual tools
+uv run black src tests ui
+uv run isort src tests ui
+uv run mypy src
 
 # Run tests with coverage
 uv run pytest --cov=src
@@ -203,9 +224,12 @@ uv run pytest --cov=src
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and ensure tests pass: `uv run pytest`
-4. Format your code: `uv run black . && uv run isort .`
-5. Submit a pull request
+3. Set up pre-commit hooks: `uv run pre-commit install`
+4. Make your changes and ensure tests pass: `uv run pytest`
+5. Commit your changes (pre-commit will automatically format and check your code)
+6. Submit a pull request
+
+**Note**: Pre-commit hooks will automatically format your code with Black and isort, so you don't need to run them manually!
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.

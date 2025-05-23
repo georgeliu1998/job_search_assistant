@@ -1,48 +1,67 @@
 name: CI
 
 on:
-  push:
-    branches: [ main ]
+  # Only trigger on pull requests to main (since main branch is protected)
   pull_request:
     branches: [ main ]
+  # Optional: Trigger on pushes to feature branches for early feedback
+  push:
+    branches: [ "**", "!main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       matrix:
+        # Test against current version (3.11) and next version (3.12) for forward compatibility
         python-version: ["3.11", "3.12"]
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-    
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
-    
+      timeout-minutes: 3
+
     - name: Install dependencies
-      run: uv sync --all-extras
-    
+      run: |
+        uv sync --extra dev --frozen
+      timeout-minutes: 8
+
     - name: Lint with black
       run: uv run black --check src tests ui
-    
+      timeout-minutes: 3
+      if: matrix.python-version == '3.11'  # Only run linting on one version
+
     - name: Check imports with isort
       run: uv run isort --check-only --profile black src tests ui
-    
+      timeout-minutes: 3
+      if: matrix.python-version == '3.11'  # Only run import checking on one version
+
     - name: Type check with mypy
       run: uv run mypy src
-    
+      timeout-minutes: 5
+      if: matrix.python-version == '3.11'  # Only run mypy on one version to save time
+
     - name: Test with pytest
       run: uv run pytest tests/ --cov=src --cov-report=xml --cov-report=term-missing
-    
+      timeout-minutes: 5
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
-        fail_ci_if_error: false 
+        fail_ci_if_error: false
+      timeout-minutes: 3
+      if: matrix.python-version == '3.11'  # Only upload coverage once

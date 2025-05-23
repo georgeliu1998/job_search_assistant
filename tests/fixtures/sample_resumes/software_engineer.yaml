@@ -7,9 +7,9 @@ personal_info:
   github: github.com/alexjohnson
 
 summary: >
-  Software Engineer with 4 years of experience developing web applications 
-  using Python, JavaScript, and cloud technologies. Passionate about creating 
-  efficient, scalable solutions and contributing to team success through 
+  Software Engineer with 4 years of experience developing web applications
+  using Python, JavaScript, and cloud technologies. Passionate about creating
+  efficient, scalable solutions and contributing to team success through
   collaboration and knowledge sharing.
 
 education:
@@ -20,7 +20,7 @@ education:
     end_date: 2019-06-15
     gpa: 3.75
     description: >
-      Coursework in Algorithms, Data Structures, Software Engineering, 
+      Coursework in Algorithms, Data Structures, Software Engineering,
       Database Systems, Machine Learning, and Web Development.
 
 experience:
@@ -67,7 +67,7 @@ certifications:
   - name: AWS Certified Developer - Associate
     issuer: Amazon Web Services
     date: 2022-05-10
-    
+
   - name: Certified Scrum Developer
     issuer: Scrum Alliance
     date: 2020-11-15
@@ -75,21 +75,21 @@ certifications:
 projects:
   - name: Inventory Management System
     description: >
-      Developed a full-stack inventory management application using Django, 
-      React, and PostgreSQL. Implemented features including real-time updates, 
+      Developed a full-stack inventory management application using Django,
+      React, and PostgreSQL. Implemented features including real-time updates,
       barcode scanning, and automated reporting.
     url: github.com/alexjohnson/inventory-system
-    
+
   - name: Weather Data Analyzer
     description: >
-      Created a Python application that collects and analyzes weather data 
-      from multiple APIs. Implemented data visualization tools and predictive 
+      Created a Python application that collects and analyzes weather data
+      from multiple APIs. Implemented data visualization tools and predictive
       algorithms to forecast weather patterns.
     url: github.com/alexjohnson/weather-analyzer
 
 languages:
   - language: English
     proficiency: Native
-    
+
   - language: French
-    proficiency: Intermediate 
+    proficiency: Intermediate

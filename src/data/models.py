@@ -1,14 +1,16 @@
 """
 Data models for the Job Search Assistant
 """
+
 from datetime import datetime
 from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
 class Education(BaseModel):
     """Education entry in a resume"""
-    
+
     institution: str
     degree: str
     field_of_study: str
@@ -20,7 +22,7 @@ class Education(BaseModel):
 
 class Experience(BaseModel):
     """Work experience entry in a resume"""
-    
+
     company: str
     title: str
     start_date: Optional[datetime] = None
@@ -32,7 +34,7 @@ class Experience(BaseModel):
 
 class Resume(BaseModel):
     """User resume data"""
-    
+
     personal_info: Dict[str, str]
     summary: Optional[str] = None
     education: List[Education] = Field(default_factory=list)
@@ -46,7 +48,7 @@ class Resume(BaseModel):
 
 class JobDescription(BaseModel):
     """Job description data"""
-    
+
     title: str
     company: str
     location: Optional[str] = None
@@ -63,11 +65,11 @@ class JobDescription(BaseModel):
 
 class EvaluationResult(BaseModel):
     """Job evaluation result"""
-    
+
     job: JobDescription
     is_good_fit: bool
     score: float = Field(ge=0.0, le=1.0)
     reasoning: str
     matching_skills: List[str] = Field(default_factory=list)
     missing_skills: List[str] = Field(default_factory=list)
-    recommendations: List[str] = Field(default_factory=list) 
+    recommendations: List[str] = Field(default_factory=list)

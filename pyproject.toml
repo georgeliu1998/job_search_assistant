@@ -25,11 +25,16 @@ dev = [
     "black>=24.0.0",
     "isort>=5.13.0",
     "mypy>=1.8.0",
+    "pre-commit>=3.0.0",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# Configure hatchling to include all packages from src directory
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

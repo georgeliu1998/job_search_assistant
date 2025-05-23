@@ -8,7 +8,7 @@ personal_info:
 
 summary: >
   Experienced software engineer with a strong background in Python development,
-  machine learning, and cloud infrastructure. Passionate about creating 
+  machine learning, and cloud infrastructure. Passionate about creating
   user-friendly applications that solve real-world problems.
 
 education:
@@ -18,7 +18,7 @@ education:
     start_date: 2018-08-15
     end_date: 2020-05-20
     gpa: 3.8
-  
+
   - institution: Stanford University
     degree: Bachelor of Science
     field_of_study: Computer Engineering
@@ -67,7 +67,7 @@ certifications:
   - name: AWS Certified Solutions Architect
     issuer: Amazon Web Services
     date: 2021-03-15
-    
+
   - name: Professional Scrum Master
     issuer: Scrum.org
     date: 2020-01-10
@@ -75,24 +75,24 @@ certifications:
 projects:
   - name: Personal Finance Tracker
     description: >
-      Developed a web application to track personal finances using Python, 
-      Django, and React. Implemented machine learning models to predict 
+      Developed a web application to track personal finances using Python,
+      Django, and React. Implemented machine learning models to predict
       future expenses and provide insights.
     url: github.com/janedoe/finance-tracker
-    
+
   - name: Smart Home Assistant
     description: >
-      Created an open-source home automation system using Python and 
-      Raspberry Pi. Integrated with various smart home devices and 
+      Created an open-source home automation system using Python and
+      Raspberry Pi. Integrated with various smart home devices and
       provided a unified control interface.
     url: github.com/janedoe/smart-home
 
 languages:
   - language: English
     proficiency: Native
-    
+
   - language: Spanish
     proficiency: Fluent
-    
+
   - language: Mandarin Chinese
-    proficiency: Conversational 
+    proficiency: Conversational
