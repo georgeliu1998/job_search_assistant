@@ -125,5 +125,5 @@ dmypy.json
 Thumbs.db
 
 # Project specific
-# Add any project specific files to ignore here 
+# Add any project specific files to ignore here
 job_search_assistant.txt

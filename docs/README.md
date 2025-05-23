@@ -31,4 +31,4 @@ We welcome contributions! Please see the [Development Guide](development.md) for
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file in the root directory for details. 
+This project is licensed under the MIT License - see the LICENSE file in the root directory for details.
