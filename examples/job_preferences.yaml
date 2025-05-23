@@ -1,0 +1,46 @@
+# Job Search Preferences
+
+desired_roles:
+  - Software Engineer
+  - Machine Learning Engineer
+  - Data Engineer
+  - Backend Developer
+  - Full Stack Developer
+
+required_skills:
+  - Python
+  - Git
+  - SQL
+
+preferred_skills:
+  - Machine Learning
+  - AWS
+  - Docker
+  - Kubernetes
+  - Django
+  - Flask
+  - FastAPI
+  - React
+  - GraphQL
+  - CI/CD
+
+min_years_experience: 2
+max_years_experience: 7
+
+desired_salary_range: [120000, 180000]
+
+preferred_locations:
+  - San Francisco, CA
+  - Seattle, WA
+  - Remote
+
+remote_preference: hybrid  # Options: remote, hybrid, onsite
+
+other_criteria:
+  - Good work-life balance
+  - Professional growth opportunities
+  - Collaborative team environment
+  - Company with a clear mission
+  - Flexible working hours
+  - Learning and development budget
+  - Diverse and inclusive workplace 
