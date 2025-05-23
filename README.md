@@ -1,6 +1,6 @@
 # Job Search Assistant
 
-An AI-powered job search assistant using LangGraph agents for resume optimization and job matching.
+An AI-powered job search assistant who does the work and get the job for you.
 
 ## Features
 
