@@ -220,6 +220,18 @@ uv run pytest --cov=src
 - **Dependencies**: Locked in `uv.lock` for reproducible builds
 - **Configuration**: `pyproject.toml` with project metadata and tool settings
 
+## How to Run the App
+
+> **Note:** The main application entry point and UI are under development. This section will be updated with detailed instructions once the app is runnable.
+
+For now, you can run tests and check code quality as described above. When the app is ready, you will be able to start it with a command like:
+
+```bash
+uv run python -m src  # or a specific entrypoint script
+```
+
+Stay tuned for updates!
+
 ## Contributing
 
 1. Fork the repository
