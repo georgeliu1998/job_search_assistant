@@ -1,6 +1,6 @@
 # Job Search Assistant
 
-A powerful open-source tool designed to streamline the job application process using AI-powered analysis and customization.
+An AI-powered job search assistant using LangGraph agents for resume optimization and job matching.
 
 ## Features
 
@@ -16,11 +16,81 @@ A powerful open-source tool designed to streamline the job application process u
 
 ## Architecture
 
-The Job Search Assistant is built with:
-- Python backend with modular components
-- Streamlit UI for easy interaction
-- LangChain and LangGraph for AI agent orchestration
-- Anthropic and other LLM providers for intelligent processing
+The Job Search Assistant follows a **modular, agent-based architecture** designed for scalability and maintainability:
+
+### Core Architecture Principles
+- **Agent-Based Design**: Uses LangGraph agents for orchestrating AI-driven workflows
+- **Separation of Concerns**: Clean separation between UI, business logic, and data layers
+- **Provider Abstraction**: Pluggable LLM providers for flexibility and future extensibility
+- **Configuration-Driven**: TOML for developer settings, YAML for user preferences
+
+### System Components
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Streamlit UI  │    │   LangGraph     │    │   LLM Provider  │
+│                 │    │    Agents       │    │   (Anthropic)   │
+│  ┌─────────────┐│    │                 │    │                 │
+│  │   Pages     ││    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│  │ Components  ││───▶│ │ Job Agent   │ │───▶│ │   AI APIs   │ │
+│  └─────────────┘│    │ │ Resume Agent│ │    │ │  (Future:   │ │
+└─────────────────┘    │ └─────────────┘ │    │ │ Fireworks)  │ │
+                       └─────────────────┘    │ └─────────────┘ │
+                                              └─────────────────┘
+          │                       │                       │
+          ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Core Business  │    │   Data Layer    │    │   Observability │
+│     Logic       │    │                 │    │                 │
+│                 │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ ┌─────────────┐ │    │ │   Models    │ │    │ │  Langfuse   │ │
+│ │Job Evaluation│ │    │ │  Storage    │ │    │ │ Monitoring  │ │
+│ │Resume Custom │ │───▶│ │ Persistence │ │    │ └─────────────┘ │
+│ └─────────────┘ │    │ └─────────────┘ │    └─────────────────┘
+└─────────────────┘    └─────────────────┘
+```
+
+### Data Flow
+1. **User Input** → Streamlit UI captures job descriptions and user preferences
+2. **Agent Orchestration** → LangGraph agents process requests using defined workflows
+3. **AI Processing** → LLM providers analyze and generate customized content
+4. **Core Logic** → Business rules for job evaluation and resume customization
+5. **Results** → Processed output returned to user through UI
+
+## Tech Stack
+
+### **Core Language & Runtime**
+- **Python 3.11+** - Primary language with modern features
+- **uv** - Ultra-fast package and environment management
+
+### **AI & Machine Learning**
+- **LangChain** - LLM orchestration and prompt management
+- **LangGraph** - Agent workflows and state management
+- **Anthropic API** - Primary LLM provider (Claude models)
+- **Langfuse** - LLM observability and performance monitoring
+- *Future: Fireworks AI for open-source models*
+
+### **Data & Validation**
+- **Pydantic** - Data validation, serialization, and configuration management
+- **TOML** - Developer-facing configuration (pyproject.toml, settings)
+- **YAML** - User-facing configuration (preferences, templates)
+
+### **User Interface**
+- **Streamlit** - Interactive web UI with real-time updates
+- Component-based architecture for reusability
+
+### **Development & Testing**
+- **pytest** - Testing framework with fixtures and coverage
+- **Black** - Code formatting
+- **isort** - Import sorting
+- **mypy** - Static type checking
+- **GitHub Actions** - CI/CD pipeline
+
+### **Architecture Patterns**
+- **Modular Design** - Separate packages for core, agents, UI, and utilities
+- **Provider Pattern** - Abstracted LLM and data storage interfaces
+- **Agent Pattern** - LangGraph-based workflow orchestration
+- **Configuration Management** - Environment-specific settings
 
 ## Configuration Files
 
@@ -55,34 +125,87 @@ log_level = "INFO"
 ## Getting Started
 
 ### Prerequisites
-- Python 3.11
+- **Python 3.11+** (automatically managed by uv)
+- **uv** package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
 - Git
 
 ### Installation
+
+1. **Clone the repository**
 ```bash
-# Clone the repository
 git clone https://github.com/georgeliu1998/job_search_assistant.git
 cd job_search_assistant
+```
 
-# Create a virtual environment with uv
-uv venv
-
-# Activate the virtual environment
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-uv pip install -e .
+2. **Set up Python environment** (uv handles everything automatically)
+```bash
+# uv will automatically:
+# - Install Python 3.11 if needed
+# - Create virtual environment
+# - Install all dependencies
+uv sync
 ```
 
 ### Usage
+
+**Option 1: Using uv commands (recommended)**
 ```bash
+# Run Python scripts
+uv run python your_script.py
+
 # Start the Streamlit UI
-cd ui
-streamlit run app.py
+uv run streamlit run ui/app.py
+
+# Run tests
+uv run pytest
+
+# Run with specific Python version
+uv run --python 3.11 python your_script.py
 ```
 
+**Option 2: Traditional virtual environment activation**
+```bash
+# Activate virtual environment manually
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Then run commands normally
+python your_script.py
+streamlit run ui/app.py
+pytest
+```
+
+### Development Setup
+
+Install development dependencies:
+```bash
+# Install dev dependencies (linting, formatting, type checking)
+uv add --dev black isort mypy pytest-cov
+
+# Format code
+uv run black .
+uv run isort .
+
+# Type checking
+uv run mypy src/
+
+# Run tests with coverage
+uv run pytest --cov=src
+```
+
+### Environment Information
+
+- **Python Version**: 3.11.12 (pinned in `.python-version`)
+- **Virtual Environment**: `.venv/` (automatically created by uv)
+- **Dependencies**: Locked in `uv.lock` for reproducible builds
+- **Configuration**: `pyproject.toml` with project metadata and tool settings
+
 ## Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes and ensure tests pass: `uv run pytest`
+4. Format your code: `uv run black . && uv run isort .`
+5. Submit a pull request
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details. 
