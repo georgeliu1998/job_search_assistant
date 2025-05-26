@@ -559,8 +559,8 @@ name = "job-search-assistant"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic" },
     { name = "langchain" },
+    { name = "langchain-anthropic" },
     { name = "langfuse" },
     { name = "langgraph" },
     { name = "pydantic" },
@@ -581,10 +581,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.52.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
     { name = "langchain", specifier = ">=0.3.25" },
+    { name = "langchain-anthropic", specifier = ">=0.3.13" },
     { name = "langfuse", specifier = ">=2.60.5" },
     { name = "langgraph", specifier = ">=0.4.5" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
@@ -662,6 +662,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fc/f9/a256609096a9fc7a1b3a6300a97000091efabdf21555a97988f93d4d9258/langchain-0.3.25.tar.gz", hash = "sha256:a1d72aa39546a23db08492d7228464af35c9ee83379945535ceef877340d2a3a", size = 10225045, upload-time = "2025-05-02T18:39:04.353Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ed/5c/5c0be747261e1f8129b875fa3bfea736bc5fe17652f9d5e15ca118571b6f/langchain-0.3.25-py3-none-any.whl", hash = "sha256:931f7d2d1eaf182f9f41c5e3272859cfe7f94fc1f7cef6b3e5a46024b4884c21", size = 1011008, upload-time = "2025-05-02T18:39:02.21Z" },
+]
+
+[[package]]
+name = "langchain-anthropic"
+version = "0.3.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anthropic" },
+    { name = "langchain-core" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/46/f26b8b21f528d7011ba6d614f12f83cf94503ad9eaf036daaea2309c72da/langchain_anthropic-0.3.13.tar.gz", hash = "sha256:12f10fc23fe324fa05bfd608ae96b80e6df3525e79f9f24da93863356a88a5a2", size = 45730, upload-time = "2025-05-08T13:34:09.075Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/7d/39864c33a7c3c0fb9a05eb17c05214f60a4223568b7a1f15055702335afb/langchain_anthropic-0.3.13-py3-none-any.whl", hash = "sha256:2a3041ed530c7e3d3f486ce48d926c5e8173376e2b6a00da03ef83a3f8e7ba7f", size = 26131, upload-time = "2025-05-08T13:34:07.75Z" },
 ]
 
 [[package]]
