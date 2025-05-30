@@ -15,6 +15,8 @@ from langchain_core.messages import HumanMessage
 from langfuse.callback import CallbackHandler
 from langgraph.graph import END, START, StateGraph
 
+from src.core.job_evaluation.criteria import EVALUATION_CRITERIA
+
 
 class JobEvaluationState(TypedDict):
     """State for job evaluation workflow"""
@@ -32,19 +34,6 @@ class JobEvaluationState(TypedDict):
 
     # Tracking
     messages: List[Dict[str, Any]]  # LLM conversation tracking
-
-
-# Hardcoded criteria for prototype
-EVALUATION_CRITERIA = {
-    "min_salary": 160000,
-    "remote_required": True,
-    "ic_title_requirements": [
-        "lead",
-        "staff",
-        "principal",
-        "senior staff",
-    ],  # For IC roles
-}
 
 
 def get_anthropic_client():
