@@ -1,7 +1,8 @@
 """
 Job Evaluation Agent using LangGraph
 
-This agent evaluates job postings against user criteria using a structured approach:
+This agent evaluates job postings against user criteria using a structured
+approach:
 1. Extract key information from job posting
 2. Evaluate against specific criteria
 3. Generate recommendation with reasoning
@@ -58,14 +59,16 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     job_text = state["job_posting_text"]
 
     prompt = f"""
-    Extract the following information from this job posting. Be precise and conservative in your extraction.
+    Extract the following information from this job posting. Be precise and
+    conservative in your extraction.
 
     Job Posting:
     {job_text}
 
     Please extract:
     1. Job Title (exact title as written)
-    2. Salary Range (if mentioned, extract min and max as numbers, if only one number mentioned, use it as max)
+    2. Salary Range (if mentioned, extract min and max as numbers, if only one
+       number mentioned, use it as max)
     3. Location/Remote Policy (remote, hybrid, onsite, or unclear)
     4. Role Type (IC - Individual Contributor, Manager, or unclear)
     5. Company Name (if mentioned)
@@ -152,14 +155,22 @@ def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:
     if salary_max is None:
         results["salary"] = {"pass": False, "reason": "Salary not specified"}
     elif salary_max < EVALUATION_CRITERIA["min_salary"]:
+        min_salary = EVALUATION_CRITERIA["min_salary"]
         results["salary"] = {
             "pass": False,
-            "reason": f"Highest salary (${salary_max:,}) is lower than required salary (${EVALUATION_CRITERIA['min_salary']:,})",
+            "reason": (
+                f"Highest salary (${salary_max:,}) is lower than required "
+                f"salary (${min_salary:,})"
+            ),
         }
     else:
+        min_salary = EVALUATION_CRITERIA["min_salary"]
         results["salary"] = {
             "pass": True,
-            "reason": f"Salary (${salary_max:,}) meets minimum requirement (${EVALUATION_CRITERIA['min_salary']:,})",
+            "reason": (
+                f"Salary (${salary_max:,}) meets minimum requirement "
+                f"(${min_salary:,})"
+            ),
         }
 
     # 2. Remote policy check
@@ -178,18 +189,20 @@ def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:
 
     if "ic" in role_type or "individual contributor" in role_type:
         # Check if title contains required seniority level
-        has_required_level = any(
-            level in title for level in EVALUATION_CRITERIA["ic_title_requirements"]
-        )
+        ic_requirements = EVALUATION_CRITERIA["ic_title_requirements"]
+        has_required_level = any(level in title for level in ic_requirements)
         if has_required_level:
             results["title_level"] = {
                 "pass": True,
                 "reason": "IC role has appropriate seniority level",
             }
         else:
+            required_levels = ", ".join(ic_requirements)
             results["title_level"] = {
                 "pass": False,
-                "reason": f"IC role lacks required seniority (needs: {', '.join(EVALUATION_CRITERIA['ic_title_requirements'])})",
+                "reason": (
+                    f"IC role lacks required seniority (needs: {required_levels})"
+                ),
             }
     else:
         # Not an IC role, so title level requirement doesn't apply
@@ -207,7 +220,7 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
     if not results:
         return {
             "recommendation": "DO_NOT_APPLY",
-            "reasoning": "Unable to evaluate job posting due to extraction errors",
+            "reasoning": ("Unable to evaluate job posting due to extraction errors"),
         }
 
     # Check if all criteria pass
@@ -301,9 +314,8 @@ def evaluate_job_posting(
         config=config,
     )
 
-    logger.info(
-        f"Job evaluation completed with recommendation: {result['recommendation']}"
-    )
+    recommendation = result["recommendation"]
+    logger.info(f"Job evaluation completed with recommendation: {recommendation}")
     return {
         "recommendation": result["recommendation"],
         "reasoning": result["reasoning"],
