@@ -10,12 +10,13 @@ This agent evaluates job postings against user criteria using a structured appro
 import os
 from typing import Any, Dict, List, Optional, TypedDict
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langfuse.callback import CallbackHandler
 from langgraph.graph import END, START, StateGraph
 
+from src.config.llm import get_anthropic_config
 from src.core.job_evaluation.criteria import EVALUATION_CRITERIA
+from src.llm.anthropic import AnthropicClient
 
 
 class JobEvaluationState(TypedDict):
@@ -37,15 +38,9 @@ class JobEvaluationState(TypedDict):
 
 
 def get_anthropic_client():
-    """Initialize Anthropic client with API key"""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        import getpass
-
-        api_key = getpass.getpass("ANTHROPIC_API_KEY: ")
-        os.environ["ANTHROPIC_API_KEY"] = api_key
-
-    return ChatAnthropic(model="claude-3-5-haiku-latest", temperature=0)
+    """Initialize Anthropic client using the new LLM client architecture"""
+    config = get_anthropic_config()
+    return AnthropicClient(config)
 
 
 def get_langfuse_handler():
