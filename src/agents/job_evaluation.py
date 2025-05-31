@@ -7,16 +7,18 @@ This agent evaluates job postings against user criteria using a structured appro
 3. Generate recommendation with reasoning
 """
 
-import os
 from typing import Any, Dict, List, Optional, TypedDict
 
 from langchain_core.messages import HumanMessage
-from langfuse.callback import CallbackHandler
 from langgraph.graph import END, START, StateGraph
 
 from src.config.llm import get_anthropic_config
 from src.core.job_evaluation.criteria import EVALUATION_CRITERIA
 from src.llm.anthropic import AnthropicClient
+from src.llm.langfuse_handler import get_langfuse_handler
+from src.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class JobEvaluationState(TypedDict):
@@ -41,40 +43,6 @@ def get_anthropic_client():
     """Initialize Anthropic client using the new LLM client architecture"""
     config = get_anthropic_config()
     return AnthropicClient(config)
-
-
-def get_langfuse_handler():
-    """Initialize Langfuse callback handler with API keys"""
-    # Check if tracing is explicitly disabled
-    langfuse_enabled = os.environ.get("LANGFUSE_ENABLED", "false").lower() == "true"
-
-    if not langfuse_enabled:
-        print("⚠️  Langfuse tracing disabled via LANGFUSE_ENABLED environment variable")
-        print("    To enable: set LANGFUSE_ENABLED=true")
-        print(
-            "    Note: Currently disabled due to compatibility issues with Anthropic SDK"
-        )
-        print("    See: https://github.com/langfuse/langfuse/issues/6882")
-        return None
-
-    # Check if Langfuse keys are available
-    public_key = os.environ.get("LANGFUSE_PUBLIC_KEY")
-    secret_key = os.environ.get("LANGFUSE_SECRET_KEY")
-    host = os.environ.get("LANGFUSE_HOST", "https://cloud.langfuse.com")
-
-    if not public_key or not secret_key:
-        print("⚠️  Langfuse keys not found. Tracing will be disabled.")
-        print("To enable tracing, set these environment variables:")
-        print("- LANGFUSE_PUBLIC_KEY")
-        print("- LANGFUSE_SECRET_KEY")
-        print("- LANGFUSE_HOST (optional, defaults to https://cloud.langfuse.com)")
-        return None
-
-    try:
-        return CallbackHandler(public_key=public_key, secret_key=secret_key, host=host)
-    except Exception as e:
-        print(f"⚠️  Failed to initialize Langfuse: {e}")
-        return None
 
 
 # LLM client will be initialized when needed
@@ -303,6 +271,9 @@ def evaluate_job_posting(
     Returns:
         Dict containing recommendation and reasoning
     """
+    logger.info("Starting job posting evaluation")
+    logger.debug(f"Tracing enabled: {enable_tracing}")
+
     # Create the graph
     graph = create_job_evaluation_graph()
 
@@ -312,9 +283,12 @@ def evaluate_job_posting(
         langfuse_handler = get_langfuse_handler()
         if langfuse_handler:
             config = {"callbacks": [langfuse_handler]}
-            print("🔌 Langfuse tracing enabled")
+            logger.info("Langfuse tracing enabled for this evaluation")
+        else:
+            logger.debug("Langfuse handler not available, continuing without tracing")
 
     # Run the evaluation with optional tracing
+    logger.debug("Executing job evaluation graph")
     result = graph.invoke(
         {
             "job_posting_text": job_posting_text,
@@ -327,6 +301,9 @@ def evaluate_job_posting(
         config=config,
     )
 
+    logger.info(
+        f"Job evaluation completed with recommendation: {result['recommendation']}"
+    )
     return {
         "recommendation": result["recommendation"],
         "reasoning": result["reasoning"],
