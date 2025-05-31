@@ -333,39 +333,3 @@ def evaluate_job_posting(
         "extracted_info": result["extracted_info"],
         "evaluation_results": result["evaluation_results"],
     }
-
-
-# Example usage
-if __name__ == "__main__":
-    # Test with a sample job posting
-    sample_job = """
-    Senior Machine Learning Engineer - Remote
-
-    TechCorp is looking for a Senior Machine Learning Engineer to join our AI team.
-
-    Responsibilities:
-    - Design and implement ML models
-    - Work with large datasets
-    - Collaborate with cross-functional teams
-
-    Requirements:
-    - 5+ years of ML experience
-    - Python, SQL, TensorFlow
-    - Strong analytical skills
-
-    Compensation: $140,000 - $170,000
-    Location: Fully Remote
-    """
-
-    print("🚀 Job Evaluation Agent with Langfuse Observability")
-    print("📋 Set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY for tracing")
-
-    result = evaluate_job_posting(sample_job, enable_tracing=True)
-    print(f"\n📊 Results:")
-    print(f"Recommendation: {result['recommendation']}")
-    print(f"Reasoning: {result['reasoning']}")
-
-    if result["extracted_info"]:
-        print(f"\n🔍 Extracted Information:")
-        for key, value in result["extracted_info"].items():
-            print(f"  {key}: {value}")
