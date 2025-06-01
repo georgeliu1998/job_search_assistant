@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from src.data.models import (
+from src.models.models import (
     Education,
     EvaluationResult,
     Experience,
