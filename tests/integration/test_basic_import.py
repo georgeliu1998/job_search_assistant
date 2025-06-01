@@ -41,6 +41,6 @@ def test_core_submodules_import():
     """Test that core submodules can be imported."""
     try:
         import src.core.job_evaluation
-        import src.core.resume
+        import src.core.resume_customization
     except ImportError as e:
         pytest.fail(f"Failed to import core submodule: {e}")

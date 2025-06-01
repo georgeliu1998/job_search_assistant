@@ -16,7 +16,7 @@ DEFAULT_API_KEY = ""
 # Paths
 CONFIG_DIR = BASE_DIR / "src" / "config"
 DATA_DIR = BASE_DIR / "src" / "data"
-TEMPLATE_DIR = BASE_DIR / "src" / "core" / "resume" / "templates"
+TEMPLATE_DIR = BASE_DIR / "src" / "core" / "resume_customization" / "templates"
 
 # Application settings
 DEFAULT_TEMPERATURE = 0.7
