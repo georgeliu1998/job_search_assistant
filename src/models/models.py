@@ -33,19 +33,13 @@ class UserPreferences(BaseModel):
 
 class JobDescription(BaseModel):
     # Fields from original test_models.py for JobDescription
-    title: Optional[str] = Field(None, description="Job title.")  # Added based on tests
-    company: Optional[str] = Field(
-        None, description="Company name."
-    )  # Added based on tests
-    description: Optional[str] = Field(
-        None, description="Full job description text."
-    )  # Added based on tests
-    is_remote: Optional[bool] = Field(
-        False, description="Is the job remote?"
-    )  # Added based on tests
+    title: Optional[str] = Field(None, description="Job title.")
+    company: Optional[str] = Field(None, description="Company name.")
+    description: Optional[str] = Field(None, description="Full job description text.")
+    is_remote: Optional[bool] = Field(False, description="Is the job remote?")
     requirements: List[str] = Field(
         default_factory=list, description="Job requirements."
-    )  # Added based on tests
+    )
 
     raw_text: str = Field(..., description="Raw text of the job description.")
     # extracted_info: Optional[Dict[str, Any]] = Field(
@@ -86,7 +80,7 @@ class JobDescription(BaseModel):
 
     model_config = ConfigDict(
         use_enum_values=True,
-        # anystr_strip_whitespace = True # TODO: Decide if desired
+        # anystr_strip_whitespace = True  # TODO: Decide if desired
     )
 
 
