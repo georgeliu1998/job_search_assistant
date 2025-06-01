@@ -1,19 +1,25 @@
 """
 Job Evaluation Agent using LangGraph
 
-This agent evaluates job postings against user criteria using a structured approach:
+This agent evaluates job postings against user criteria using a structured
+approach:
 1. Extract key information from job posting
 2. Evaluate against specific criteria
 3. Generate recommendation with reasoning
 """
 
-import os
 from typing import Any, Dict, List, Optional, TypedDict
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
-from langfuse.callback import CallbackHandler
 from langgraph.graph import END, START, StateGraph
+
+from src.config.llm import get_anthropic_config
+from src.core.job_evaluation.criteria import EVALUATION_CRITERIA
+from src.llm.anthropic import AnthropicClient
+from src.llm.langfuse_handler import get_langfuse_handler
+from src.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class JobEvaluationState(TypedDict):
@@ -34,63 +40,10 @@ class JobEvaluationState(TypedDict):
     messages: List[Dict[str, Any]]  # LLM conversation tracking
 
 
-# Hardcoded criteria for prototype
-EVALUATION_CRITERIA = {
-    "min_salary": 160000,
-    "remote_required": True,
-    "ic_title_requirements": [
-        "lead",
-        "staff",
-        "principal",
-        "senior staff",
-    ],  # For IC roles
-}
-
-
 def get_anthropic_client():
-    """Initialize Anthropic client with API key"""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        import getpass
-
-        api_key = getpass.getpass("ANTHROPIC_API_KEY: ")
-        os.environ["ANTHROPIC_API_KEY"] = api_key
-
-    return ChatAnthropic(model="claude-3-5-haiku-latest", temperature=0)
-
-
-def get_langfuse_handler():
-    """Initialize Langfuse callback handler with API keys"""
-    # Check if tracing is explicitly disabled
-    langfuse_enabled = os.environ.get("LANGFUSE_ENABLED", "false").lower() == "true"
-
-    if not langfuse_enabled:
-        print("⚠️  Langfuse tracing disabled via LANGFUSE_ENABLED environment variable")
-        print("    To enable: set LANGFUSE_ENABLED=true")
-        print(
-            "    Note: Currently disabled due to compatibility issues with Anthropic SDK"
-        )
-        print("    See: https://github.com/langfuse/langfuse/issues/6882")
-        return None
-
-    # Check if Langfuse keys are available
-    public_key = os.environ.get("LANGFUSE_PUBLIC_KEY")
-    secret_key = os.environ.get("LANGFUSE_SECRET_KEY")
-    host = os.environ.get("LANGFUSE_HOST", "https://cloud.langfuse.com")
-
-    if not public_key or not secret_key:
-        print("⚠️  Langfuse keys not found. Tracing will be disabled.")
-        print("To enable tracing, set these environment variables:")
-        print("- LANGFUSE_PUBLIC_KEY")
-        print("- LANGFUSE_SECRET_KEY")
-        print("- LANGFUSE_HOST (optional, defaults to https://cloud.langfuse.com)")
-        return None
-
-    try:
-        return CallbackHandler(public_key=public_key, secret_key=secret_key, host=host)
-    except Exception as e:
-        print(f"⚠️  Failed to initialize Langfuse: {e}")
-        return None
+    """Initialize Anthropic client using the new LLM client architecture"""
+    config = get_anthropic_config()
+    return AnthropicClient(config)
 
 
 # LLM client will be initialized when needed
@@ -106,14 +59,16 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     job_text = state["job_posting_text"]
 
     prompt = f"""
-    Extract the following information from this job posting. Be precise and conservative in your extraction.
+    Extract the following information from this job posting. Be precise and
+    conservative in your extraction.
 
     Job Posting:
     {job_text}
 
     Please extract:
     1. Job Title (exact title as written)
-    2. Salary Range (if mentioned, extract min and max as numbers, if only one number mentioned, use it as max)
+    2. Salary Range (if mentioned, extract min and max as numbers, if only one
+       number mentioned, use it as max)
     3. Location/Remote Policy (remote, hybrid, onsite, or unclear)
     4. Role Type (IC - Individual Contributor, Manager, or unclear)
     5. Company Name (if mentioned)
@@ -200,14 +155,22 @@ def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:
     if salary_max is None:
         results["salary"] = {"pass": False, "reason": "Salary not specified"}
     elif salary_max < EVALUATION_CRITERIA["min_salary"]:
+        min_salary = EVALUATION_CRITERIA["min_salary"]
         results["salary"] = {
             "pass": False,
-            "reason": f"Highest salary (${salary_max:,}) is lower than required salary (${EVALUATION_CRITERIA['min_salary']:,})",
+            "reason": (
+                f"Highest salary (${salary_max:,}) is lower than required "
+                f"salary (${min_salary:,})"
+            ),
         }
     else:
+        min_salary = EVALUATION_CRITERIA["min_salary"]
         results["salary"] = {
             "pass": True,
-            "reason": f"Salary (${salary_max:,}) meets minimum requirement (${EVALUATION_CRITERIA['min_salary']:,})",
+            "reason": (
+                f"Salary (${salary_max:,}) meets minimum requirement "
+                f"(${min_salary:,})"
+            ),
         }
 
     # 2. Remote policy check
@@ -226,18 +189,20 @@ def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:
 
     if "ic" in role_type or "individual contributor" in role_type:
         # Check if title contains required seniority level
-        has_required_level = any(
-            level in title for level in EVALUATION_CRITERIA["ic_title_requirements"]
-        )
+        ic_requirements = EVALUATION_CRITERIA["ic_title_requirements"]
+        has_required_level = any(level in title for level in ic_requirements)
         if has_required_level:
             results["title_level"] = {
                 "pass": True,
                 "reason": "IC role has appropriate seniority level",
             }
         else:
+            required_levels = ", ".join(ic_requirements)
             results["title_level"] = {
                 "pass": False,
-                "reason": f"IC role lacks required seniority (needs: {', '.join(EVALUATION_CRITERIA['ic_title_requirements'])})",
+                "reason": (
+                    f"IC role lacks required seniority (needs: {required_levels})"
+                ),
             }
     else:
         # Not an IC role, so title level requirement doesn't apply
@@ -255,7 +220,7 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
     if not results:
         return {
             "recommendation": "DO_NOT_APPLY",
-            "reasoning": "Unable to evaluate job posting due to extraction errors",
+            "reasoning": ("Unable to evaluate job posting due to extraction errors"),
         }
 
     # Check if all criteria pass
@@ -319,6 +284,9 @@ def evaluate_job_posting(
     Returns:
         Dict containing recommendation and reasoning
     """
+    logger.info("Starting job posting evaluation")
+    logger.debug(f"Tracing enabled: {enable_tracing}")
+
     # Create the graph
     graph = create_job_evaluation_graph()
 
@@ -328,9 +296,12 @@ def evaluate_job_posting(
         langfuse_handler = get_langfuse_handler()
         if langfuse_handler:
             config = {"callbacks": [langfuse_handler]}
-            print("🔌 Langfuse tracing enabled")
+            logger.info("Langfuse tracing enabled for this evaluation")
+        else:
+            logger.debug("Langfuse handler not available, continuing without tracing")
 
     # Run the evaluation with optional tracing
+    logger.debug("Executing job evaluation graph")
     result = graph.invoke(
         {
             "job_posting_text": job_posting_text,
@@ -343,45 +314,11 @@ def evaluate_job_posting(
         config=config,
     )
 
+    recommendation = result["recommendation"]
+    logger.info(f"Job evaluation completed with recommendation: {recommendation}")
     return {
         "recommendation": result["recommendation"],
         "reasoning": result["reasoning"],
         "extracted_info": result["extracted_info"],
         "evaluation_results": result["evaluation_results"],
     }
-
-
-# Example usage
-if __name__ == "__main__":
-    # Test with a sample job posting
-    sample_job = """
-    Senior Machine Learning Engineer - Remote
-
-    TechCorp is looking for a Senior Machine Learning Engineer to join our AI team.
-
-    Responsibilities:
-    - Design and implement ML models
-    - Work with large datasets
-    - Collaborate with cross-functional teams
-
-    Requirements:
-    - 5+ years of ML experience
-    - Python, SQL, TensorFlow
-    - Strong analytical skills
-
-    Compensation: $140,000 - $170,000
-    Location: Fully Remote
-    """
-
-    print("🚀 Job Evaluation Agent with Langfuse Observability")
-    print("📋 Set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY for tracing")
-
-    result = evaluate_job_posting(sample_job, enable_tracing=True)
-    print(f"\n📊 Results:")
-    print(f"Recommendation: {result['recommendation']}")
-    print(f"Reasoning: {result['reasoning']}")
-
-    if result["extracted_info"]:
-        print(f"\n🔍 Extracted Information:")
-        for key, value in result["extracted_info"].items():
-            print(f"  {key}: {value}")

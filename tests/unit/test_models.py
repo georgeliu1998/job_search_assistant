@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from src.data.models import (
+from src.models.models import (
     Education,
     EvaluationResult,
     Experience,
@@ -48,6 +48,7 @@ def test_resume_creation():
 def test_job_description_creation():
     """Test JobDescription model creation."""
     job = JobDescription(
+        raw_text="Sample raw text for job description.",
         title="Python Developer",
         company="Tech Corp",
         description="Develop Python applications",
@@ -62,6 +63,7 @@ def test_job_description_creation():
 def test_evaluation_result_creation():
     """Test EvaluationResult model creation."""
     job = JobDescription(
+        raw_text="Sample raw text for job description.",
         title="Python Developer",
         company="Tech Corp",
         description="Develop Python applications",
@@ -80,6 +82,7 @@ def test_evaluation_result_creation():
 def test_evaluation_result_score_validation():
     """Test that EvaluationResult validates score range."""
     job = JobDescription(
+        raw_text="Sample raw text for job description.",
         title="Python Developer",
         company="Tech Corp",
         description="Develop Python applications",

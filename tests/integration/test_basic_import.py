@@ -15,7 +15,7 @@ def test_config_imports():
 
 def test_data_imports():
     """Test that data modules can be imported."""
-    from src.data.models import EvaluationResult, JobDescription, Resume
+    from src.models.models import EvaluationResult, JobDescription, Resume
 
     assert Resume is not None
     assert JobDescription is not None
@@ -30,8 +30,8 @@ def test_all_main_modules_import():
         import src.api
         import src.config
         import src.core
-        import src.data
         import src.llm
+        import src.models
         import src.utils
     except ImportError as e:
         pytest.fail(f"Failed to import module: {e}")
