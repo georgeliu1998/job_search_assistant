@@ -8,6 +8,15 @@ import os
 from typing import Optional
 from urllib.parse import urlparse
 
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    # python-dotenv not available, skip loading .env file
+    pass
+
 
 class LangfuseConfig:
     """Configuration for Langfuse tracing setup."""
@@ -25,13 +34,13 @@ class LangfuseConfig:
         Args:
             public_key: Langfuse public key (defaults to env var)
             secret_key: Langfuse secret key (defaults to env var)
-            host: Langfuse host URL (defaults to env var or cloud.langfuse.com)
+            host: Langfuse host URL (defaults to env var or us.cloud.langfuse.com)
             enabled: Whether tracing is enabled (defaults to env var)
         """
         self.public_key = public_key or os.environ.get("LANGFUSE_PUBLIC_KEY")
         self.secret_key = secret_key or os.environ.get("LANGFUSE_SECRET_KEY")
         self.host = host or os.environ.get(
-            "LANGFUSE_HOST", "https://cloud.langfuse.com"
+            "LANGFUSE_HOST", "https://us.cloud.langfuse.com"
         )
 
         # Parse enabled flag with proper boolean conversion
