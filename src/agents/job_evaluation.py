@@ -51,7 +51,7 @@ llm = None
 
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
-    """Extract structured information from job posting text"""
+    """Extract key information from job posting using LLM"""
     global llm
     if llm is None:
         llm = get_anthropic_client()
@@ -59,87 +59,86 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     job_text = state["job_posting_text"]
 
     prompt = f"""
-    Extract the following information from this job posting. Be precise and
-    conservative in your extraction.
+You are tasked with extracting specific job information from a given job posting and presenting it in a structured JSON format. Here's the job posting you need to analyze:
 
-    Job Posting:
-    {job_text}
+<job_posting>
+{job_text}
+</job_posting>
 
-    Please extract:
-    1. Job Title (exact title as written)
-    2. Salary Range (if mentioned, extract min and max as numbers, if only one
-       number mentioned, use it as max)
-    3. Location/Remote Policy (remote, hybrid, onsite, or unclear)
-    4. Role Type (IC - Individual Contributor, Manager, or unclear)
-    5. Company Name (if mentioned)
+Please extract the following information from the job posting:
 
-    Format your response as:
-    Job Title: [exact title]
-    Salary Min: [number or "not specified"]
-    Salary Max: [number or "not specified"]
-    Location Policy: [remote/hybrid/onsite/unclear]
-    Role Type: [IC/Manager/unclear]
-    Company: [name or "not specified"]
+1. Job Title: Extract the exact job title as written in the posting.
+
+2. Company Name: Extract the company name if mentioned in the posting.
+
+3. Salary Range: If mentioned, extract the minimum and maximum salary as numbers. If only one number is mentioned, use it as the maximum. If no salary information is provided, use null values.
+
+4. Location/Remote Policy: Determine if the job is remote, hybrid, onsite, or if the policy is unclear based on the information provided.
+
+5. Role Type: Identify if the role is for an Individual Contributor (IC), Manager, or if it's unclear based on the job description.
+
+After analyzing the job posting, present the extracted information in the following JSON format:
+
+{{
+  "title": "Exact title as written",
+  "company": "Company name or null if not provided",
+  "salary_min": minimum salary (number or null if not provided),
+  "salary_max": maximum salary (number or null if not provided),
+  "location_policy": "remote/hybrid/onsite/unclear",
+  "role_type": "ic/manager/unclear"
+}}
+
+Important guidelines:
+- Base your extraction solely on the information provided in the job posting.
+- If any information is not explicitly mentioned or is ambiguous, use "unclear" or null values as appropriate.
+- For salary values, use null if not provided. If only one number is mentioned, use it as the maximum and set the minimum to null.
+- For location_policy and role_type, use lowercase values: "remote", "hybrid", "onsite", "unclear", "ic", "manager"
+- Be precise in your extraction, avoiding any assumptions or inferences not directly supported by the text.
+
+Please provide your final output in the specified JSON format without any explanations.
     """
 
     messages = [HumanMessage(content=prompt)]
-    response = llm.invoke(messages)
 
-    # Parse the LLM response into structured data
-    extracted_info = parse_extraction_response(response.content)
+    try:
+        response = llm.invoke(messages)
+        response_text = response.content
+        extracted_info = parse_extraction_response(response_text)
 
-    # Update tracking
-    new_messages = state.get("messages", []) + [
-        {"role": "user", "content": prompt},
-        {"role": "assistant", "content": response.content},
-    ]
-
-    return {"extracted_info": extracted_info, "messages": new_messages}
+        return {"extracted_info": extracted_info}
+    except Exception as e:
+        logger.error(f"Error extracting job info: {e}")
+        return {"extracted_info": {}}
 
 
 def parse_extraction_response(response_text: str) -> Dict[str, Any]:
-    """Parse LLM extraction response into structured data"""
-    lines = response_text.strip().split("\n")
-    extracted = {}
+    """Parse LLM extraction response from JSON format into structured data"""
+    import json
 
-    for line in lines:
-        if ":" in line:
-            key, value = line.split(":", 1)
-            key = key.strip().lower().replace(" ", "_")
-            value = value.strip()
+    # Clean and extract JSON from response
+    response_text = response_text.strip()
 
-            if key == "job_title":
-                extracted["title"] = value
-            elif key == "salary_min":
-                extracted["salary_min"] = parse_salary(value)
-            elif key == "salary_max":
-                extracted["salary_max"] = parse_salary(value)
-            elif key == "location_policy":
-                extracted["location_policy"] = value.lower()
-            elif key == "role_type":
-                extracted["role_type"] = value.lower()
-            elif key == "company":
-                extracted["company"] = value
+    # Handle case where response might have extra text around JSON
+    # Look for JSON object boundaries
+    start_idx = response_text.find("{")
+    end_idx = response_text.rfind("}")
 
-    return extracted
+    if start_idx == -1 or end_idx == -1:
+        logger.error("No JSON object found in LLM response")
+        return {}
 
+    try:
+        json_str = response_text[start_idx : end_idx + 1]
+        json_data = json.loads(json_str)
 
-def parse_salary(salary_str: str) -> Optional[int]:
-    """Extract numeric salary from string"""
-    if "not specified" in salary_str.lower():
-        return None
+        # Since the prompt now returns the exact internal format,
+        # we can return it directly after validation
+        return json_data
 
-    # Remove common salary formatting
-    import re
-
-    numbers = re.findall(r"\d+", salary_str.replace(",", ""))
-    if numbers:
-        # If it's a number like "150" assume it's in thousands
-        num = int(numbers[0])
-        if num < 1000:
-            return num * 1000
-        return num
-    return None
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        logger.error(f"Failed to parse JSON response: {e}")
+        logger.debug(f"Raw response: {response_text}")
+        return {}
 
 
 def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:

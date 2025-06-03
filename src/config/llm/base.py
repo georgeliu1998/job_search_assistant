@@ -19,4 +19,4 @@ class BaseLLMConfig(BaseModel):
     """Base configuration for all LLM providers."""
 
     temperature: float = Field(default=0.0, ge=0.0, le=1.0)
-    max_tokens: int = Field(default=1024, gt=0)
+    max_tokens: int = Field(default=512, gt=0)
