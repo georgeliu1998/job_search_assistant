@@ -32,4 +32,4 @@ class FireworksConfig(BaseLLMConfig):
     )
     # Optimized settings for structured tasks
     temperature: float = Field(default=0.1, ge=0.0, le=1.0)
-    max_tokens: int = Field(default=1024, gt=0)
+    max_tokens: int = Field(default=512, gt=0)

@@ -46,7 +46,7 @@ def test_llm_config_creation():
     assert config.provider == "anthropic"
     assert config.model == "claude-3-opus-20240229"
     assert config.temperature == 0.7
-    assert config.max_tokens == 4000
+    assert config.max_tokens == 512
 
 
 def test_llm_config_custom():

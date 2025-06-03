@@ -63,7 +63,7 @@ class LLMConfig(BaseModel):
     temperature: float = Field(default=0.7, description="Temperature for generation")
 
     max_tokens: int = Field(
-        default=4000, description="Maximum number of tokens to generate"
+        default=512, description="Maximum number of tokens to generate"
     )
 
     api_key: Optional[str] = Field(
