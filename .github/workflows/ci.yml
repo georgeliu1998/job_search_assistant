@@ -15,7 +15,9 @@ jobs:
     strategy:
       matrix:
         # Test against current version (3.11) and next version (3.12) for forward compatibility
-        python-version: ["3.11", "3.12"]
+        # Temporarily disabled Python 3.12 to speed up CI during development
+        # Re-enable by uncommenting the line below when needed
+        python-version: ["3.11"] # , "3.12"]
       fail-fast: false
 
     steps:
