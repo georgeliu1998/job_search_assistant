@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
 
 from src.config.llm import get_anthropic_config
-from src.core.job_evaluation.criteria import EVALUATION_CRITERIA
+from src.core.job_evaluation import evaluate_job_against_criteria
 from src.llm.anthropic import AnthropicClient
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.llm.prompts.job_evaluation.extraction import JOB_INFO_EXTRACTION_PROMPT
@@ -105,75 +105,15 @@ def parse_extraction_response(response_text: str) -> Dict[str, Any]:
 
 
 def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:
-    """Evaluate extracted job info against criteria"""
+    """
+    LangGraph node function that evaluates job criteria.
+
+    This is a thin wrapper around the core evaluation logic that adapts
+    the LangGraph state to the core function interface.
+    """
     extracted = state["extracted_info"]
-    if not extracted:
-        return {"evaluation_results": {"error": "No extracted information available"}}
-
-    results = {}
-
-    # 1. Salary check
-    salary_max = extracted.get("salary_max")
-    if salary_max is None:
-        results["salary"] = {"pass": False, "reason": "Salary not specified"}
-    elif salary_max < EVALUATION_CRITERIA["min_salary"]:
-        min_salary = EVALUATION_CRITERIA["min_salary"]
-        results["salary"] = {
-            "pass": False,
-            "reason": (
-                f"Highest salary (${salary_max:,}) is lower than required "
-                f"salary (${min_salary:,})"
-            ),
-        }
-    else:
-        min_salary = EVALUATION_CRITERIA["min_salary"]
-        results["salary"] = {
-            "pass": True,
-            "reason": (
-                f"Salary (${salary_max:,}) meets minimum requirement "
-                f"(${min_salary:,})"
-            ),
-        }
-
-    # 2. Remote policy check
-    location_policy = extracted.get("location_policy", "").lower()
-    if "remote" in location_policy:
-        results["remote"] = {"pass": True, "reason": "Position is remote"}
-    else:
-        results["remote"] = {
-            "pass": False,
-            "reason": f"Position is not remote (location policy: {location_policy})",
-        }
-
-    # 3. IC title level check (only for IC roles)
-    role_type = extracted.get("role_type", "").lower()
-    title = extracted.get("title", "").lower()
-
-    if "ic" in role_type or "individual contributor" in role_type:
-        # Check if title contains required seniority level
-        ic_requirements = EVALUATION_CRITERIA["ic_title_requirements"]
-        has_required_level = any(level in title for level in ic_requirements)
-        if has_required_level:
-            results["title_level"] = {
-                "pass": True,
-                "reason": "IC role has appropriate seniority level",
-            }
-        else:
-            required_levels = ", ".join(ic_requirements)
-            results["title_level"] = {
-                "pass": False,
-                "reason": (
-                    f"IC role lacks required seniority (needs: {required_levels})"
-                ),
-            }
-    else:
-        # Not an IC role, so title level requirement doesn't apply
-        results["title_level"] = {
-            "pass": True,
-            "reason": "Title level requirement not applicable (not IC role)",
-        }
-
-    return {"evaluation_results": results}
+    evaluation_results = evaluate_job_against_criteria(extracted)
+    return {"evaluation_results": evaluation_results}
 
 
 def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
