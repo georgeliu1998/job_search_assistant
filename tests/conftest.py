@@ -2,7 +2,6 @@
 Pytest configuration file for the Job Search Assistant tests.
 """
 
-import os
 from pathlib import Path
 
 import pytest
