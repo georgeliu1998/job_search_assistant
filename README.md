@@ -97,7 +97,7 @@ The Job Search Assistant follows a **modular, agent-based architecture** designe
 The project uses two types of configuration files for clarity and ease of use:
 
 - **TOML**: Used for developer-facing and internal configuration, such as project metadata and core settings. Example: `pyproject.toml` contains dependency and tool configuration for Python tooling.
-- **YAML**: Used for user-facing and editable configuration, such as job preferences and resume templates. Example: `examples/job_preferences.yaml` allows you to specify your preferred job titles, locations, and salary expectations.
+- **YAML**: Used for user-facing and editable configuration, such as job preferences and resume templates. You can create YAML configuration files to specify your preferred job titles, locations, and salary expectations.
 
 ### Example: User Preferences (YAML)
 ```yaml

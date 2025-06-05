@@ -41,11 +41,3 @@ def sample_resume(sample_resumes_dir):
     resume_file = sample_resumes_dir / "software_engineer.yaml"
     with open(resume_file, "r") as f:
         return yaml.safe_load(f)
-
-
-# Fixture for job preferences
-@pytest.fixture
-def sample_job_preferences(project_root):
-    preferences_file = project_root / "examples" / "job_preferences.yaml"
-    with open(preferences_file, "r") as f:
-        return yaml.safe_load(f)
