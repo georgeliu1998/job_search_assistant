@@ -222,15 +222,81 @@ uv run pytest --cov=src
 
 ## How to Run the App
 
-> **Note:** The main application entry point and UI are under development. This section will be updated with detailed instructions once the app is runnable.
+### 🚀 Quick Start (Recommended)
 
-For now, you can run tests and check code quality as described above. When the app is ready, you will be able to start it with a command like:
-
+1. **Set up your environment:**
 ```bash
-uv run python -m src  # or a specific entrypoint script
+# Copy the environment template
+cp env.example .env
+
+# Edit .env and add your Anthropic API key
+# ANTHROPIC_API_KEY=your_actual_api_key_here
 ```
 
-Stay tuned for updates!
+2. **Run the app:**
+```bash
+# Easy way - using the provided script
+uv run python run_app.py
+
+# Or manually
+uv run streamlit run ui/app.py
+```
+
+3. **Open your browser** to `http://localhost:8501` and start evaluating jobs!
+
+### 📋 Environment Setup
+
+The app requires an Anthropic API key to function. Here's how to set it up:
+
+1. **Get an Anthropic API key:**
+   - Visit [Anthropic Console](https://console.anthropic.com/)
+   - Create an account and generate an API key
+
+2. **Configure your environment:**
+```bash
+# Copy the example file
+cp env.example .env
+
+# Edit .env with your actual keys
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Optional: Add Langfuse for observability
+LANGFUSE_PUBLIC_KEY=your_key
+LANGFUSE_SECRET_KEY=your_secret
+LANGFUSE_ENABLED=true
+```
+
+### 🎯 Current Features
+
+- **Job Evaluation**: Paste a job description and get AI-powered analysis
+  - Salary range analysis ($160,000+ preferred)
+  - Remote work compatibility
+  - Experience level matching
+  - Skills alignment assessment
+
+- **Coming Soon**: Resume customization and user preferences
+
+### 🛠️ Alternative Running Methods
+
+**Using uv (recommended):**
+```bash
+uv run streamlit run ui/app.py
+```
+
+**Using traditional Python:**
+```bash
+# Activate virtual environment
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Run the app
+streamlit run ui/app.py
+```
+
+**For development:**
+```bash
+# Run with automatic reloading
+uv run streamlit run ui/app.py --server.runOnSave true
+```
 
 ## Contributing
 
