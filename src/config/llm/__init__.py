@@ -1,7 +1,7 @@
 """
 LLM provider configurations with type safety and validation.
 
-Supports Anthropic, OpenAI, and Fireworks providers with model-specific
+Supports Anthropic and Fireworks providers with model-specific
 settings.
 """
 
@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 from src.config.llm.anthropic import AnthropicConfig, AnthropicModel
 from src.config.llm.base import BaseLLMConfig, LLMProvider
 from src.config.llm.fireworks import FireworksConfig, FireworksModel
-from src.config.llm.openai import OpenAIConfig, OpenAIModel
 
 
 class LLMConfig(BaseModel):
@@ -23,7 +22,6 @@ class LLMConfig(BaseModel):
 
     # Provider configurations
     anthropic: AnthropicConfig = Field(default_factory=AnthropicConfig)
-    openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     fireworks: FireworksConfig = Field(default_factory=FireworksConfig)
 
     def get_provider_config(
@@ -34,8 +32,6 @@ class LLMConfig(BaseModel):
 
         if provider == LLMProvider.ANTHROPIC:
             return self.anthropic
-        elif provider == LLMProvider.OPENAI:
-            return self.openai
         elif provider == LLMProvider.FIREWORKS:
             return self.fireworks
 
@@ -55,11 +51,6 @@ def get_anthropic_config() -> AnthropicConfig:
     return llm_config.anthropic
 
 
-def get_openai_config() -> OpenAIConfig:
-    """Get OpenAI configuration."""
-    return llm_config.openai
-
-
 def get_fireworks_config() -> FireworksConfig:
     """Get Fireworks configuration."""
     return llm_config.fireworks
@@ -73,16 +64,13 @@ __all__ = [
     "BaseLLMConfig",
     # Provider configs
     "AnthropicConfig",
-    "OpenAIConfig",
     "FireworksConfig",
     # Model enums
     "AnthropicModel",
-    "OpenAIModel",
     "FireworksModel",
     # Convenience functions
     "get_default_config",
     "get_anthropic_config",
-    "get_openai_config",
     "get_fireworks_config",
     # Global instance
     "llm_config",
