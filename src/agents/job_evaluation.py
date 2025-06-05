@@ -15,7 +15,7 @@ from langgraph.graph import END, START, StateGraph
 
 from src.config.llm import get_anthropic_config
 from src.core.job_evaluation import evaluate_job_against_criteria
-from src.llm.anthropic import AnthropicClient
+from src.llm.clients.anthropic import AnthropicClient
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.llm.prompts.job_evaluation.extraction import JOB_INFO_EXTRACTION_PROMPT
 from src.utils.logging import get_logger

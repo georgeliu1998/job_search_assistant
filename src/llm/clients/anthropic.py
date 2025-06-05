@@ -9,7 +9,7 @@ from langchain_anthropic import ChatAnthropic
 
 from src.config.llm.anthropic import AnthropicConfig
 from src.exceptions.llm import LLMProviderError, LLMResponseError
-from src.llm.base import BaseLLMClient
+from src.llm.clients.base import BaseLLMClient
 
 
 class AnthropicClient(BaseLLMClient):
