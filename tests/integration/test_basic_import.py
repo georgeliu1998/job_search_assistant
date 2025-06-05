@@ -13,7 +13,7 @@ def test_config_imports():
 
 def test_data_imports():
     """Test that data modules can be imported."""
-    from src.models.models import EvaluationResult, JobDescription, Resume
+    from src.models import EvaluationResult, JobDescription, Resume
 
     assert Resume is not None
     assert JobDescription is not None

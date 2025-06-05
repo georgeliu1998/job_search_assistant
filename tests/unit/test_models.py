@@ -4,13 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from src.models.models import (
-    Education,
-    EvaluationResult,
-    Experience,
-    JobDescription,
-    Resume,
-)
+from src.models import Education, EvaluationResult, Experience, JobDescription, Resume
 
 
 def test_education_creation():
