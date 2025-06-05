@@ -4,9 +4,9 @@ on:
   # Only trigger on pull requests to main (since main branch is protected)
   pull_request:
     branches: [ main ]
-  # Optional: Trigger on pushes to feature branches for early feedback
+  # Trigger on pushes to main branch (for post-merge verification)
   push:
-    branches: [ "**", "!main" ]
+    branches: [ main ]
 
 jobs:
   test:

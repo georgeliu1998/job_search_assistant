@@ -1,23 +1,24 @@
 """Data models for the job search assistant."""
 
-from .models import JobSource  # Also export Enums if they are used externally
-from .models import (
-    Education,
-    EvaluationResult,
-    Experience,
-    JobDescription,
-    JobStatus,
-    Resume,
-    UserPreferences,
-)
+# Import all models from the new separated files
+from src.models.enums import JobSource, JobStatus
+from src.models.evaluation import EvaluationResult
+from src.models.job import JobDescription
+from src.models.resume import Education, Experience, Resume
+from src.models.user import UserPreferences
 
 __all__ = [
+    # Enums
+    "JobSource",
+    "JobStatus",
+    # Job models
     "JobDescription",
-    "UserPreferences",
+    # Resume models
     "Education",
     "Experience",
     "Resume",
+    # User models
+    "UserPreferences",
+    # Evaluation models
     "EvaluationResult",
-    "JobSource",
-    "JobStatus",
 ]

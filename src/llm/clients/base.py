@@ -64,7 +64,7 @@ class BaseLLMClient(ABC):
         Get or create the underlying LLM client instance.
 
         This method should implement lazy initialization of the provider-specific
-        client (e.g., ChatAnthropic, ChatOpenAI). Different providers may need
+        client (e.g., ChatAnthropic). Different providers may need
         different initialization parameters or patterns.
 
         Returns:
