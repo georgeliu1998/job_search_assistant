@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, field_validator
 
-from .base import BaseJobSearchModel
-from .enums import JobSource, JobStatus
+from src.models.base import BaseJobSearchModel
+from src.models.enums import JobSource, JobStatus
 
 
 class JobDescription(BaseJobSearchModel):

@@ -4,7 +4,7 @@ from typing import List
 
 from pydantic import Field
 
-from .base import BaseJobSearchModel
+from src.models.base import BaseJobSearchModel
 
 
 class UserPreferences(BaseJobSearchModel):

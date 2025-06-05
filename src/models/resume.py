@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from .base import BaseJobSearchModel
+from src.models.base import BaseJobSearchModel
 
 
 class Education(BaseJobSearchModel):

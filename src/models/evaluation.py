@@ -4,8 +4,8 @@ from typing import List
 
 from pydantic import Field, field_validator
 
-from .base import BaseJobSearchModel
-from .job import JobDescription
+from src.models.base import BaseJobSearchModel
+from src.models.job import JobDescription
 
 
 class EvaluationResult(BaseJobSearchModel):
