@@ -51,9 +51,10 @@ class TestLangfuseConfig:
         )
         assert config.is_valid() is True
 
-        # Missing keys
-        config = LangfuseConfig(enabled=True)
-        assert config.is_valid() is False
+        # Missing keys - clear environment variables to ensure clean test
+        with patch.dict(os.environ, {}, clear=True):
+            config = LangfuseConfig(enabled=True)
+            assert config.is_valid() is False
 
         # Disabled
         config = LangfuseConfig(
