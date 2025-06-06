@@ -46,7 +46,7 @@ class BaseLLMClient(ABC):
         Raises:
             LLMProviderError: If there's an error communicating with the LLM
         """
-        pass
+        raise NotImplementedError("Subclasses must implement invoke()")
 
     @abstractmethod
     def get_model_name(self) -> str:
@@ -56,7 +56,7 @@ class BaseLLMClient(ABC):
         Returns:
             String identifier for the model being used
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_model_name()")
 
     @abstractmethod
     def _get_client(self) -> Any:
@@ -64,8 +64,8 @@ class BaseLLMClient(ABC):
         Get or create the underlying LLM client instance.
 
         This method should implement lazy initialization of the provider-specific
-        client (e.g., ChatAnthropic). Different providers may need
-        different initialization parameters or patterns.
+        client (e.g., ChatAnthropic). Different providers may need different
+        initialization parameters or patterns.
 
         Returns:
             The provider-specific client instance
@@ -73,7 +73,7 @@ class BaseLLMClient(ABC):
         Raises:
             LLMProviderError: If client initialization fails
         """
-        pass
+        raise NotImplementedError("Subclasses must implement _get_client()")
 
     def _ensure_api_key(self, env_var_name: str, prompt_text: str = None) -> str:
         """
