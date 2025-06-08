@@ -14,6 +14,7 @@ parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
 from src.agents.job_evaluation import evaluate_job_posting
+from ui.interview_preparation import show_interview_preparation_page
 
 # Load environment variables
 load_dotenv()
@@ -99,41 +100,24 @@ def check_environment_setup() -> tuple[bool, str]:
 if "current_page" not in st.session_state:
     st.session_state.current_page = "🏠 Home"
 
-# App header
-st.title("🔍 Job Search Assistant")
-st.markdown(
-    """
-A powerful AI-powered tool to streamline your job search process with
-intelligent analysis.
-"""
-)
-
 # Check environment setup
 env_ok, env_message = check_environment_setup()
-if not env_ok:
-    st.error(f"⚠️ **Setup Required:** {env_message}")
-    st.info(
-        """
-    **Setup Instructions:**
-    1. Create a `.env` file in the root directory
-    2. Add your Anthropic API key: `ANTHROPIC_API_KEY=your_key_here`
-    3. Restart the Streamlit app
-
-    Optional: Add Langfuse keys for observability:
-    - `LANGFUSE_PUBLIC_KEY=your_public_key`
-    - `LANGFUSE_SECRET_KEY=your_secret_key`
-    - `LANGFUSE_ENABLED=true`
-    """
-    )
 
 # Sidebar
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
     "Select a feature",
-    ["🏠 Home", "🎯 Job Evaluation", "📝 Resume Customization", "⚙️ Settings"],
+    [
+        "🏠 Home",
+        "🎯 Job Evaluation",
+        "🎤 Interview Prep",
+        "📝 Resume Customization",
+        "⚙️ Settings",
+    ],
     index=[
         "🏠 Home",
         "🎯 Job Evaluation",
+        "🎤 Interview Prep",
         "📝 Resume Customization",
         "⚙️ Settings",
     ].index(st.session_state.current_page),
@@ -145,15 +129,42 @@ if page != st.session_state.current_page:
 
 # Main content based on selected page
 if st.session_state.current_page == "🏠 Home":
+    # App header only on home page
+    st.title("🔍 Job Search Assistant")
+    st.markdown(
+        """
+    A powerful AI-powered tool to streamline your job search process with
+    intelligent analysis.
+    """
+    )
+
+    # Environment setup check
+    if not env_ok:
+        st.error(f"⚠️ **Setup Required:** {env_message}")
+        st.info(
+            """
+        **Setup Instructions:**
+        1. Create a `.env` file in the root directory
+        2. Add your Anthropic API key: `ANTHROPIC_API_KEY=your_key_here`
+        3. Restart the Streamlit app
+
+        Optional: Add Langfuse keys for observability:
+        - `LANGFUSE_PUBLIC_KEY=your_public_key`
+        - `LANGFUSE_SECRET_KEY=your_secret_key`
+        - `LANGFUSE_ENABLED=true`
+        """
+        )
+
     st.header("Welcome to Job Search Assistant")
     st.markdown(
         """
     ### 🚀 How to use this tool:
     1. **🎯 Job Evaluation** - Analyze job descriptions to determine if
        they're a good fit
-    2. **📝 Resume Customization** - Tailor your resume for specific
+    2. **🎤 Interview Prep** - Get personalized interview preparation guides
+    3. **📝 Resume Customization** - Tailor your resume for specific
        opportunities *(Coming Soon)*
-    3. **⚙️ Settings** - Configure your preferences and upload your
+    4. **⚙️ Settings** - Configure your preferences and upload your
        resume *(Coming Soon)*
     """
     )
@@ -181,6 +192,26 @@ if st.session_state.current_page == "🏠 Home":
             st.rerun()
 
     with col2:
+        st.success(
+            """
+        ### 🎤 Interview Preparation
+        **New Feature!**
+
+        Get personalized interview guides with:
+        - Likely interview questions
+        - Suggested answers
+        - Company insights
+        - Interview strategy
+        """
+        )
+        if st.button("Try Interview Prep", key="interview_prep_btn", type="primary"):
+            st.session_state.current_page = "🎤 Interview Prep"
+            st.rerun()
+
+    # Additional feature cards
+    col3, col4 = st.columns(2)
+
+    with col3:
         st.warning(
             """
         ### 📝 Resume Customization
@@ -209,6 +240,19 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
     """
     )
 
+    # Environment setup check
+    if not env_ok:
+        st.error(f"⚠️ **Setup Required:** {env_message}")
+        st.info(
+            """
+        **Setup Instructions:**
+        1. Create a `.env` file in the root directory
+        2. Add your Anthropic API key: `ANTHROPIC_API_KEY=your_key_here`
+        3. Restart the Streamlit app
+        """
+        )
+        st.stop()
+
     # Job description input
     job_description = st.text_area(
         "Job Description",
@@ -230,10 +274,6 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
     if evaluate_btn:
         if not job_description.strip():
             st.error("⚠️ Please enter a job description before evaluating.")
-        elif not env_ok:
-            st.error(
-                "⚠️ Please configure your API keys first " "(see instructions above)."
-            )
         else:
             # Show loading state
             with st.spinner("🔍 Analyzing job posting... This may take 10-30 seconds."):
@@ -262,6 +302,9 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
                     # Show error details in expander for debugging
                     with st.expander("🔧 Technical Details"):
                         st.code(str(e))
+
+elif st.session_state.current_page == "🎤 Interview Prep":
+    show_interview_preparation_page()
 
 elif st.session_state.current_page == "📝 Resume Customization":
     st.header("📝 Resume Customization")

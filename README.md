@@ -6,13 +6,13 @@ An AI-powered job search assistant who does the work and get the job for you.
 
 ### Core Features
 - **Job Evaluation**: Analyze job descriptions to determine fit based on your preferences and qualifications
+- **Interview Preparation**: Generate personalized interview guides with questions, answers, and strategy
 - **Resume Customization**: Automatically tailor your resume for specific job applications
 
 ### Planned Features
 - Integration with LinkedIn and other job search platforms
 - Automated job application submission
 - Application tracking and management
-- Interview preparation assistance
 
 ## Architecture
 
@@ -67,6 +67,7 @@ The Job Search Assistant follows a **modular, agent-based architecture** designe
 - **LangChain** - LLM orchestration and prompt management
 - **LangGraph** - Agent workflows and state management
 - **Anthropic API** - Primary LLM provider (Claude models)
+- **Google Gemini API** - Cost-effective LLM provider for interview preparation
 - **Langfuse** - LLM observability and performance monitoring
 - *Future: Fireworks AI for open-source models*
 
