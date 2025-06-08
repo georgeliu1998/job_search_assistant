@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from src.config.llm.anthropic import AnthropicConfig, AnthropicModel
 from src.config.llm.base import BaseLLMConfig, LLMProvider
 from src.config.llm.fireworks import FireworksConfig, FireworksModel
+from src.config.llm.gemini import GeminiConfig, GeminiModel
 
 
 class LLMConfig(BaseModel):
@@ -23,6 +24,7 @@ class LLMConfig(BaseModel):
     # Provider configurations
     anthropic: AnthropicConfig = Field(default_factory=AnthropicConfig)
     fireworks: FireworksConfig = Field(default_factory=FireworksConfig)
+    gemini: GeminiConfig = Field(default_factory=GeminiConfig)
 
     def get_provider_config(
         self, provider: Optional[LLMProvider] = None
@@ -34,6 +36,8 @@ class LLMConfig(BaseModel):
             return self.anthropic
         elif provider == LLMProvider.FIREWORKS:
             return self.fireworks
+        elif provider == LLMProvider.GEMINI:
+            return self.gemini
 
 
 # Global configuration instance
@@ -56,6 +60,11 @@ def get_fireworks_config() -> FireworksConfig:
     return llm_config.fireworks
 
 
+def get_gemini_config() -> GeminiConfig:
+    """Get Gemini configuration."""
+    return llm_config.gemini
+
+
 # Export all public classes and functions
 __all__ = [
     # Main classes
@@ -65,13 +74,16 @@ __all__ = [
     # Provider configs
     "AnthropicConfig",
     "FireworksConfig",
+    "GeminiConfig",
     # Model enums
     "AnthropicModel",
     "FireworksModel",
+    "GeminiModel",
     # Convenience functions
     "get_default_config",
     "get_anthropic_config",
     "get_fireworks_config",
+    "get_gemini_config",
     # Global instance
     "llm_config",
 ]
