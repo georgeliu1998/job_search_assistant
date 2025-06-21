@@ -1,0 +1,12 @@
+# Development environment overrides
+# Only define settings that differ from base.toml
+
+[app]
+debug = true
+
+[logging]
+level = "DEBUG"
+
+# Enable observability for development tracing
+[observability.langfuse]
+enabled = true 

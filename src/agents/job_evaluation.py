@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
 
-from src.config.llm import get_anthropic_config
+from src.config.settings import settings
 from src.core.job_evaluation import evaluate_job_against_criteria
 from src.llm.clients.anthropic import AnthropicClient
 from src.llm.langfuse_handler import get_langfuse_handler
@@ -41,21 +41,54 @@ class JobEvaluationState(TypedDict):
     messages: List[Dict[str, Any]]  # LLM conversation tracking
 
 
-def get_anthropic_client():
-    """Initialize Anthropic client using the new LLM client architecture"""
-    config = get_anthropic_config()
-    return AnthropicClient(config)
+def get_extraction_client():
+    """Initialize LLM client for job information extraction using centralized settings"""
+    profile_name = settings.agents.job_evaluation_extraction
+    profile = settings.get_llm_profile(profile_name)
+    
+    if profile.provider == "anthropic":
+        # Convert to legacy format for compatibility with existing client
+        from src.config.llm.anthropic import AnthropicConfig, AnthropicModel
+        legacy_config = AnthropicConfig()
+        legacy_config.model = AnthropicModel(profile.model)
+        legacy_config.temperature = profile.temperature
+        legacy_config.max_tokens = profile.max_tokens
+        if profile.api_key:
+            legacy_config.api_key = profile.api_key
+        return AnthropicClient(legacy_config)
+    else:
+        raise ValueError(f"Unsupported provider for extraction: {profile.provider}")
 
 
-# LLM client will be initialized when needed
-llm = None
+def get_reasoning_client():
+    """Initialize LLM client for job evaluation reasoning using centralized settings"""
+    profile_name = settings.agents.job_evaluation_reasoning
+    profile = settings.get_llm_profile(profile_name)
+    
+    if profile.provider == "anthropic":
+        # Convert to legacy format for compatibility with existing client
+        from src.config.llm.anthropic import AnthropicConfig, AnthropicModel
+        legacy_config = AnthropicConfig()
+        legacy_config.model = AnthropicModel(profile.model)
+        legacy_config.temperature = profile.temperature
+        legacy_config.max_tokens = profile.max_tokens
+        if profile.api_key:
+            legacy_config.api_key = profile.api_key
+        return AnthropicClient(legacy_config)
+    else:
+        raise ValueError(f"Unsupported provider for reasoning: {profile.provider}")
+
+
+# LLM clients will be initialized when needed
+extraction_llm = None
+reasoning_llm = None
 
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract key information from job posting using LLM"""
-    global llm
-    if llm is None:
-        llm = get_anthropic_client()
+    global extraction_llm
+    if extraction_llm is None:
+        extraction_llm = get_extraction_client()
 
     job_text = state["job_posting_text"]
 
@@ -64,7 +97,7 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     messages = [HumanMessage(content=prompt_content)]
 
     try:
-        response = llm.invoke(messages)
+        response = extraction_llm.invoke(messages)
         response_text = response.content
         extracted_info = parse_extraction_response(response_text)
 

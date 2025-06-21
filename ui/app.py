@@ -2,21 +2,23 @@
 Main Streamlit application for Job Search Assistant
 """
 
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict
 
 import streamlit as st
-from dotenv import load_dotenv
 
 # Add the parent directory to the path so we can import the src package
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
-from src.agents.job_evaluation import evaluate_job_posting
+# Set APP_ENV for the application
+if "APP_ENV" not in os.environ:
+    os.environ["APP_ENV"] = "dev"
 
-# Load environment variables
-load_dotenv()
+from src.agents.job_evaluation import evaluate_job_posting
+from src.config.settings import settings
 
 # Set up the page
 st.set_page_config(
@@ -86,13 +88,23 @@ def display_job_evaluation_results(results: Dict[str, Any]) -> None:
 
 def check_environment_setup() -> tuple[bool, str]:
     """Check if the environment is properly configured"""
-    import os
-
-    # Check for required API key
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        return False, "ANTHROPIC_API_KEY not found in environment variables"
-
-    return True, "Environment is properly configured"
+    try:
+        # Check if settings can be loaded
+        from src.config.settings import settings
+        
+        # Check if at least one LLM profile has an API key
+        has_valid_profile = False
+        for profile_name, profile in settings.llm_profiles.items():
+            if profile.api_key:
+                has_valid_profile = True
+                break
+        
+        if not has_valid_profile:
+            return False, "No LLM profiles have valid API keys configured"
+        
+        return True, "Environment is properly configured"
+    except Exception as e:
+        return False, f"Configuration error: {str(e)}"
 
 
 # Initialize session state for page navigation

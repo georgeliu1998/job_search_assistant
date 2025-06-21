@@ -6,10 +6,11 @@ tracing capabilities, with proper error handling and logging.
 """
 
 from typing import Optional
+from urllib.parse import urlparse
 
 from langfuse.callback import CallbackHandler
 
-from src.config.langfuse import get_langfuse_config
+from src.config.settings import settings
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -17,6 +18,15 @@ logger = get_logger(__name__)
 # Global handler instance - initialized once and reused
 _langfuse_handler: Optional[CallbackHandler] = None
 _handler_initialized: bool = False
+
+
+def _validate_host(host: str) -> bool:
+    """Validate that the host URL is properly formatted."""
+    try:
+        parsed = urlparse(host)
+        return bool(parsed.scheme and parsed.netloc)
+    except Exception:
+        return False
 
 
 def _initialize_langfuse_handler(
@@ -31,26 +41,26 @@ def _initialize_langfuse_handler(
     This should only be called once per application lifecycle.
 
     Args:
-        public_key: Langfuse public key (optional, uses env var if not provided)
-        secret_key: Langfuse secret key (optional, uses env var if not provided)
-        host: Langfuse host URL (optional, uses env var or default if not provided)
-        enabled: Whether to enable tracing (optional, uses env var if not provided)
+        public_key: Langfuse public key (optional, uses settings if not provided)
+        secret_key: Langfuse secret key (optional, uses settings if not provided)
+        host: Langfuse host URL (optional, uses settings if not provided)
+        enabled: Whether to enable tracing (optional, uses settings if not provided)
 
     Returns:
         CallbackHandler instance if successful, None if disabled or failed
     """
-    # Get configuration
-    config = get_langfuse_config(
-        public_key=public_key,
-        secret_key=secret_key,
-        host=host,
-        enabled=enabled,
-    )
+    # Get configuration from centralized settings with optional overrides
+    config = settings.observability.langfuse
+    
+    final_enabled = enabled if enabled is not None else config.enabled
+    final_public_key = public_key if public_key is not None else config.public_key
+    final_secret_key = secret_key if secret_key is not None else config.secret_key
+    final_host = host if host is not None else config.host
 
     # Check if tracing is explicitly disabled
-    if not config.enabled:
+    if not final_enabled:
         logger.info("Langfuse tracing disabled via configuration")
-        logger.debug("To enable tracing, set LANGFUSE_ENABLED=true")
+        logger.debug("To enable tracing, set observability.langfuse.enabled=true in config or LANGFUSE_ENABLED=true")
         logger.debug(
             "Note: Currently disabled due to compatibility issues with Anthropic SDK"
         )
@@ -58,33 +68,33 @@ def _initialize_langfuse_handler(
         return None
 
     # Validate configuration
-    if not config.is_valid():
+    if not final_public_key or not final_secret_key:
         logger.warning("Langfuse configuration incomplete - tracing will be disabled")
-        if not config.public_key:
+        if not final_public_key:
             logger.debug("Missing LANGFUSE_PUBLIC_KEY environment variable")
-        if not config.secret_key:
+        if not final_secret_key:
             logger.debug("Missing LANGFUSE_SECRET_KEY environment variable")
         logger.info("To enable tracing, set these environment variables:")
         logger.info("- LANGFUSE_PUBLIC_KEY")
         logger.info("- LANGFUSE_SECRET_KEY")
         logger.info(
-            "- LANGFUSE_HOST (optional, defaults to https://cloud.langfuse.com)"
+            "- LANGFUSE_HOST (optional, defaults to https://us.cloud.langfuse.com)"
         )
-        logger.info("- LANGFUSE_ENABLED=true")
+        logger.info("- LANGFUSE_ENABLED=true (or enable via config file)")
         return None
 
     # Validate host URL
-    if not config.validate_host():
-        logger.error(f"Invalid Langfuse host URL: {config.host}")
+    if not _validate_host(final_host):
+        logger.error(f"Invalid Langfuse host URL: {final_host}")
         return None
 
     # Attempt to create handler
     try:
-        logger.info(f"Initializing Langfuse handler with host: {config.host}")
+        logger.info(f"Initializing Langfuse handler with host: {final_host}")
         handler = CallbackHandler(
-            public_key=config.public_key,
-            secret_key=config.secret_key,
-            host=config.host,
+            public_key=final_public_key,
+            secret_key=final_secret_key,
+            host=final_host,
         )
 
         logger.info("Langfuse handler initialized successfully")
@@ -112,10 +122,10 @@ def get_langfuse_handler(
     This avoids the overhead of reinitializing the handler for every LLM call.
 
     Args:
-        public_key: Langfuse public key (optional, uses env var if not provided)
-        secret_key: Langfuse secret key (optional, uses env var if not provided)
-        host: Langfuse host URL (optional, uses env var or default if not provided)
-        enabled: Whether to enable tracing (optional, uses env var if not provided)
+        public_key: Langfuse public key (optional, uses settings if not provided)
+        secret_key: Langfuse secret key (optional, uses settings if not provided)
+        host: Langfuse host URL (optional, uses settings if not provided)
+        enabled: Whether to enable tracing (optional, uses settings if not provided)
 
     Returns:
         CallbackHandler instance if successful, None if disabled or failed
@@ -174,5 +184,5 @@ def reset_langfuse_handler() -> None:
 
 def is_langfuse_enabled() -> bool:
     """Check if Langfuse tracing is enabled based on current configuration."""
-    config = get_langfuse_config()
+    config = settings.observability.langfuse
     return config.enabled and config.is_valid()

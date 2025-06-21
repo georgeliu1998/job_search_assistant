@@ -9,37 +9,45 @@ import sys
 from pathlib import Path
 
 
-def check_env_file():
-    """Check if .env file exists and guide user if not"""
-    env_file = Path(".env")
-    env_example = Path("env.example")
-
-    if not env_file.exists():
-        print("⚠️  No .env file found!")
+def check_env_setup():
+    """Check if environment is properly configured using centralized settings"""
+    # Set APP_ENV if not already set
+    if "APP_ENV" not in os.environ:
+        os.environ["APP_ENV"] = "dev"
+    
+    try:
+        # Try to load settings to validate configuration
+        from src.config.settings import settings
+        
+        # Check if at least one LLM profile has an API key
+        has_valid_profile = False
+        for profile_name, profile in settings.llm_profiles.items():
+            if profile.api_key:
+                has_valid_profile = True
+                break
+        
+        if not has_valid_profile:
+            print("⚠️  No LLM profiles have valid API keys configured!")
+            print("\n🔧 Setup Instructions:")
+            print("1. Set APP_ENV environment variable (dev, test, or prod)")
+            print("2. Add your API keys to environment variables:")
+            print("   - ANTHROPIC_API_KEY=your_anthropic_key")
+            print("   - FIREWORKS_API_KEY=your_fireworks_key (optional)")
+            print("3. Run this script again")
+            return False
+            
+        print("✅ Configuration loaded successfully!")
+        print(f"📋 Active environment: {os.getenv('APP_ENV', 'dev')}")
+        print(f"🤖 Available LLM profiles: {', '.join(settings.llm_profiles.keys())}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Configuration error: {e}")
         print("\n🔧 Setup Instructions:")
-        print("1. Copy the example file:")
-        print("   cp env.example .env")
-        print("2. Edit .env and add your Anthropic API key")
-        print("3. Run this script again")
-
-        if env_example.exists():
-            print(f"\n📄 Example file location: {env_example.absolute()}")
-
+        print("1. Set APP_ENV environment variable: export APP_ENV=dev")
+        print("2. Ensure configuration files exist in configs/ directory")
+        print("3. Add your API keys to environment variables")
         return False
-
-    # Check if API key is configured
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key or api_key == "your_anthropic_api_key_here":
-        print("⚠️  Please configure your ANTHROPIC_API_KEY in the .env file")
-        print(f"📄 Edit: {env_file.absolute()}")
-        return False
-
-    print("✅ Environment configuration looks good!")
-    return True
 
 
 def main():
@@ -47,7 +55,7 @@ def main():
     print("🚀 Starting Job Search Assistant...")
 
     # Check environment setup
-    if not check_env_file():
+    if not check_env_setup():
         sys.exit(1)
 
     # Run the Streamlit app

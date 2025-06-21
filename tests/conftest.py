@@ -2,16 +2,46 @@
 Pytest configuration file for the Job Search Assistant tests.
 """
 
+import os
 from pathlib import Path
 
 import pytest
 import yaml
+
+# Set test environment before any imports
+os.environ["APP_ENV"] = "test"
 
 
 # Define project root directory
 @pytest.fixture
 def project_root():
     return Path(__file__).parent.parent
+
+
+# Configuration fixtures
+@pytest.fixture
+def test_settings():
+    """Provide test settings instance"""
+    from src.config.settings import settings
+    return settings
+
+
+@pytest.fixture
+def mock_api_keys(monkeypatch):
+    """Mock API keys for testing"""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "test-fireworks-key")
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "test-langfuse-public")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "test-langfuse-secret")
+
+
+@pytest.fixture
+def reload_settings():
+    """Utility to reload settings during tests"""
+    def _reload():
+        from src.config.settings import reload_settings
+        return reload_settings()
+    return _reload
 
 
 # Fixture for sample job descriptions

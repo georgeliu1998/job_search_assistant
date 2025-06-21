@@ -1,0 +1,21 @@
+# Production environment overrides
+# Only define settings that differ from base.toml
+
+[app]
+debug = false
+
+[logging]
+level = "INFO"
+
+# Disable observability in production by default (can be enabled via env vars)
+[observability.langfuse]
+enabled = false
+
+# Use more powerful models for production reasoning
+[agents]
+job_evaluation_reasoning = "anthropic_reasoning"
+
+# Production-optimized LLM settings
+[llm_profiles.anthropic_reasoning]
+temperature = 0.0  # More deterministic for production
+max_tokens = 1024 
