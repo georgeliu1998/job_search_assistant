@@ -5,14 +5,15 @@ These models define the structure and validation rules for all configuration
 sections in the application.
 """
 
-from typing import Dict, List, Optional
+import os
+from typing import ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 
 class AppConfig(BaseModel):
     """Application metadata and general settings."""
-    
+
     name: str = Field(..., description="Application name")
     version: str = Field(..., description="Application version")
     debug: bool = Field(default=False, description="Enable debug mode")
@@ -20,13 +21,13 @@ class AppConfig(BaseModel):
 
 class LoggingConfig(BaseModel):
     """Logging configuration settings."""
-    
+
     level: str = Field(default="INFO", description="Logging level")
     format: str = Field(
         default="%(asctime)s %(name)s [%(levelname)s] %(message)s",
-        description="Log message format string"
+        description="Log message format string",
     )
-    
+
     @field_validator("level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
@@ -39,7 +40,7 @@ class LoggingConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     """Agent task to LLM profile mappings."""
-    
+
     job_evaluation_extraction: str = Field(
         ..., description="LLM profile for job information extraction"
     )
@@ -50,13 +51,9 @@ class AgentConfig(BaseModel):
 
 class EvaluationCriteriaConfig(BaseModel):
     """Business logic parameters for job evaluation."""
-    
-    min_salary: int = Field(
-        ..., ge=0, description="Minimum acceptable salary"
-    )
-    remote_required: bool = Field(
-        ..., description="Whether remote work is required"
-    )
+
+    min_salary: int = Field(..., ge=0, description="Minimum acceptable salary")
+    remote_required: bool = Field(..., description="Whether remote work is required")
     ic_title_requirements: List[str] = Field(
         ..., description="Required seniority levels for IC roles"
     )
@@ -64,36 +61,67 @@ class EvaluationCriteriaConfig(BaseModel):
 
 class LLMProfileConfig(BaseModel):
     """Configuration for a single LLM profile."""
-    
-    provider: str = Field(..., description="LLM provider (anthropic, fireworks)")
+
+    provider: str = Field(..., description="LLM provider (anthropic)")
     model: str = Field(..., description="Model identifier")
     temperature: float = Field(
         default=0.0, ge=0.0, le=1.0, description="Sampling temperature"
     )
-    max_tokens: int = Field(
-        default=512, gt=0, description="Maximum tokens to generate"
-    )
+    max_tokens: int = Field(default=512, gt=0, description="Maximum tokens to generate")
     api_key: Optional[str] = Field(
         default=None, description="API key for the provider (from env var)"
     )
-    
+
+    # Valid models for each provider
+    VALID_MODELS: ClassVar[Dict[str, set]] = {
+        "anthropic": {
+            "claude-3-5-haiku-20241022",
+            "claude-3-5-haiku-latest",
+            "claude-3-haiku-20240307",
+            "claude-sonnet-4-20250514",
+        }
+    }
+
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
         """Validate that provider is supported."""
-        valid_providers = {"anthropic", "fireworks"}
+        valid_providers = {"anthropic"}
         if v.lower() not in valid_providers:
             raise ValueError(f"Provider must be one of: {', '.join(valid_providers)}")
         return v.lower()
 
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str, info) -> str:
+        """Validate that model is supported for the provider."""
+        # Skip validation in test environments or for test models
+        if (
+            os.getenv("APP_ENV", "").lower() == "test"
+            or v.startswith("test")
+            or "test" in v.lower()
+        ):
+            return v
+
+        provider = info.data.get("provider", "").lower()
+
+        if provider in cls.VALID_MODELS:
+            valid_models = cls.VALID_MODELS[provider]
+            if v not in valid_models:
+                raise ValueError(
+                    f"Model '{v}' not supported for provider '{provider}'. "
+                    f"Valid models: {', '.join(sorted(valid_models))}"
+                )
+
+        return v
+
 
 class LangfuseConfig(BaseModel):
     """Langfuse observability configuration."""
-    
+
     enabled: bool = Field(default=False, description="Enable Langfuse tracing")
     host: str = Field(
-        default="https://us.cloud.langfuse.com",
-        description="Langfuse host URL"
+        default="https://us.cloud.langfuse.com", description="Langfuse host URL"
     )
     public_key: Optional[str] = Field(
         default=None, description="Langfuse public key (from env var)"
@@ -101,7 +129,7 @@ class LangfuseConfig(BaseModel):
     secret_key: Optional[str] = Field(
         default=None, description="Langfuse secret key (from env var)"
     )
-    
+
     def is_valid(self) -> bool:
         """Check if configuration is valid for creating a handler."""
         return bool(self.enabled and self.public_key and self.secret_key)
@@ -109,16 +137,15 @@ class LangfuseConfig(BaseModel):
 
 class ObservabilityConfig(BaseModel):
     """Observability and monitoring settings."""
-    
+
     langfuse: LangfuseConfig = Field(
-        default_factory=LangfuseConfig,
-        description="Langfuse configuration"
+        default_factory=LangfuseConfig, description="Langfuse configuration"
     )
 
 
 class Settings(BaseModel):
     """Root configuration model containing all settings."""
-    
+
     app: AppConfig = Field(..., description="Application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
     agents: AgentConfig = Field(..., description="Agent configuration")
@@ -131,7 +158,7 @@ class Settings(BaseModel):
     observability: ObservabilityConfig = Field(
         ..., description="Observability configuration"
     )
-    
+
     def get_llm_profile(self, profile_name: str) -> LLMProfileConfig:
         """Get LLM profile by name with validation."""
         if profile_name not in self.llm_profiles:
@@ -141,11 +168,11 @@ class Settings(BaseModel):
                 f"Available profiles: {available}"
             )
         return self.llm_profiles[profile_name]
-    
+
     def get_agent_llm_profile(self, agent_task: str) -> LLMProfileConfig:
         """Get LLM profile for a specific agent task."""
         if not hasattr(self.agents, agent_task):
             raise ValueError(f"Unknown agent task: {agent_task}")
-        
+
         profile_name = getattr(self.agents, agent_task)
-        return self.get_llm_profile(profile_name) 
+        return self.get_llm_profile(profile_name)

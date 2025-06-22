@@ -91,17 +91,17 @@ def check_environment_setup() -> tuple[bool, str]:
     try:
         # Check if settings can be loaded
         from src.config.settings import settings
-        
+
         # Check if at least one LLM profile has an API key
         has_valid_profile = False
         for profile_name, profile in settings.llm_profiles.items():
             if profile.api_key:
                 has_valid_profile = True
                 break
-        
+
         if not has_valid_profile:
             return False, "No LLM profiles have valid API keys configured"
-        
+
         return True, "Environment is properly configured"
     except Exception as e:
         return False, f"Configuration error: {str(e)}"
@@ -251,9 +251,7 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
             with st.spinner("🔍 Analyzing job posting... This may take 10-30 seconds."):
                 try:
                     # Call the job evaluation agent
-                    results = evaluate_job_posting(
-                        job_posting_text=job_description, enable_tracing=True
-                    )
+                    results = evaluate_job_posting(job_description)
 
                     # Display results
                     st.divider()

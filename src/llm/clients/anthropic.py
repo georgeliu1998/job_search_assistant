@@ -7,7 +7,7 @@ from typing import Any, List
 
 from langchain_anthropic import ChatAnthropic
 
-from src.config.llm.anthropic import AnthropicConfig
+from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError, LLMResponseError
 from src.llm.clients.base import BaseLLMClient
 
@@ -20,19 +20,26 @@ class AnthropicClient(BaseLLMClient):
     the standardized interface defined by BaseLLMClient.
     """
 
-    def __init__(self, config: AnthropicConfig):
+    def __init__(self, config: LLMProfileConfig):
         """
         Initialize the Anthropic client.
 
         Args:
-            config: Anthropic-specific configuration
+            config: LLM profile configuration
 
         Raises:
             LLMProviderError: If API key is missing or invalid
         """
         super().__init__(config)
-        self.config: AnthropicConfig = config
+        self.config: LLMProfileConfig = config
         self._client = None
+
+        # Validate that this is an Anthropic config
+        if config.provider != "anthropic":
+            raise LLMProviderError(
+                f"Expected anthropic provider, got: {config.provider}"
+            )
+
         # Use the generic API key management from base class
         self._ensure_api_key("ANTHROPIC_API_KEY", "Enter your Anthropic API key: ")
 
@@ -49,65 +56,52 @@ class AnthropicClient(BaseLLMClient):
         if self._client is None:
             try:
                 self._client = ChatAnthropic(
-                    model=self.config.model.value,
+                    model=self.config.model,  # Now just a string, not an enum
                     temperature=self.config.temperature,
                     max_tokens=self.config.max_tokens,
                     api_key=self.config.api_key,
                 )
                 self.logger.debug(
-                    f"Initialized Anthropic client with model: "
-                    f"{self.config.model.value}"
+                    f"Initialized Anthropic client with model: {self.config.model}"
                 )
             except Exception as e:
                 raise LLMProviderError(f"Failed to initialize Anthropic client: {e}")
         return self._client
 
+    def get_model_name(self) -> str:
+        """Get the model identifier for this client."""
+        return self.config.model
+
     def invoke(self, messages: List[Any]) -> Any:
         """
-        Send messages to Anthropic and get a response.
+        Send messages to the LLM and get a response.
 
         Args:
             messages: List of messages to send to the LLM
 
         Returns:
-            The response from Anthropic
+            The response from the LLM
 
         Raises:
-            LLMProviderError: If there's an error communicating with Anthropic
-            LLMResponseError: If the response is invalid
+            LLMProviderError: If there's an error communicating with the LLM
+            LLMResponseError: If the response format is invalid
         """
         start_time = time.time()
 
         try:
             client = self._get_client()
             response = client.invoke(messages)
+
             duration = time.time() - start_time
-
-            # Validate response
-            if not response or not hasattr(response, "content"):
-                raise LLMResponseError(
-                    "Received empty or invalid response from Anthropic"
-                )
-
             self._log_llm_call(messages, response, duration)
+
             return response
 
-        except LLMProviderError:
-            # Re-raise provider errors as-is
-            raise
-        except LLMResponseError:
-            # Re-raise response errors as-is
-            raise
         except Exception as e:
             self._log_error(e, messages)
-            # Convert any other errors to provider errors
-            raise LLMProviderError(f"Anthropic API call failed: {e}")
-
-    def get_model_name(self) -> str:
-        """
-        Get the Anthropic model identifier.
-
-        Returns:
-            String identifier for the Anthropic model
-        """
-        return self.config.model.value
+            if "rate limit" in str(e).lower():
+                raise LLMProviderError(f"Rate limit exceeded: {e}")
+            elif "api key" in str(e).lower():
+                raise LLMProviderError(f"API key error: {e}")
+            else:
+                raise LLMProviderError(f"Anthropic API error: {e}")
