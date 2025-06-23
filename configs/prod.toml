@@ -1,7 +1,7 @@
 # Production environment overrides
 # Only define settings that differ from base.toml
 
-[app]
+[general]
 debug = false
 
 [logging]

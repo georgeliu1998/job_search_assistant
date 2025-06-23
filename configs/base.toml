@@ -2,7 +2,7 @@
 # This file contains all default values and the complete configuration structure
 # Environment-specific files (dev.toml, test.toml) override these defaults
 
-[app]
+[general]
 name = "job-search-assistant"
 version = "0.1.0"
 debug = false

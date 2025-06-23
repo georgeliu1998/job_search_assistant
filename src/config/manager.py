@@ -12,7 +12,7 @@ from typing import Optional
 from pydantic import ValidationError
 
 from src.config.loader import ConfigLoader
-from src.config.models import ApplicationConfig
+from src.config.models import AppConfig
 from src.exceptions.config import ConfigError, ConfigValidationError
 from src.utils.singleton import singleton
 
@@ -23,7 +23,7 @@ class ConfigManager:
     High-level configuration manager with singleton pattern.
 
     This class orchestrates the configuration loading process and provides
-    a validated ApplicationConfig object for use throughout the application.
+    a validated AppConfig object for use throughout the application.
     """
 
     def __init__(self, config_dir: Optional[Path] = None):
@@ -34,7 +34,7 @@ class ConfigManager:
             config_dir: Optional override for configuration directory
         """
         self.config_dir = config_dir
-        self._config: Optional[ApplicationConfig] = None
+        self._config: Optional[AppConfig] = None
         self._loader: Optional[ConfigLoader] = None
 
     def _get_loader(self) -> ConfigLoader:
@@ -43,12 +43,12 @@ class ConfigManager:
             self._loader = ConfigLoader(config_dir=self.config_dir)
         return self._loader
 
-    def load(self) -> ApplicationConfig:
+    def load(self) -> AppConfig:
         """
         Load and validate configuration.
 
         Returns:
-            Validated ApplicationConfig object
+            Validated AppConfig object
 
         Raises:
             ConfigError: If loading fails
@@ -61,7 +61,7 @@ class ConfigManager:
                 raw_config = loader.load_raw_config()
 
                 # Validate with Pydantic
-                self._config = ApplicationConfig(**raw_config)
+                self._config = AppConfig(**raw_config)
 
             except ValidationError as e:
                 raise ConfigValidationError(f"Configuration validation failed: {e}")
@@ -72,16 +72,16 @@ class ConfigManager:
 
         return self._config
 
-    def get_config(self) -> ApplicationConfig:
+    def get_config(self) -> AppConfig:
         """
         Get validated configuration (alias for load).
 
         Returns:
-            Validated ApplicationConfig object
+            Validated AppConfig object
         """
         return self.load()
 
-    def reload(self, config_dir: Optional[Path] = None) -> ApplicationConfig:
+    def reload(self, config_dir: Optional[Path] = None) -> AppConfig:
         """
         Reload configuration with optional directory override.
 
@@ -89,7 +89,7 @@ class ConfigManager:
             config_dir: Optional override for configuration directory
 
         Returns:
-            Newly loaded ApplicationConfig object
+            Newly loaded AppConfig object
         """
         # Update config directory if provided
         if config_dir is not None:
@@ -136,7 +136,7 @@ class LazyConfigProxy:
         config = manager.load()
         return getattr(config, name)
 
-    def reload(self, config_dir: Optional[Path] = None) -> ApplicationConfig:
+    def reload(self, config_dir: Optional[Path] = None) -> AppConfig:
         """
         Reload configuration through the proxy.
 
@@ -144,7 +144,7 @@ class LazyConfigProxy:
             config_dir: Optional override for configuration directory
 
         Returns:
-            Newly loaded ApplicationConfig object
+            Newly loaded AppConfig object
         """
         if config_dir is not None:
             # Update the tracked config_dir and create/get manager for it

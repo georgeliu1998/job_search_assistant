@@ -16,12 +16,12 @@ Main exports:
 
 from src.config.loader import ConfigLoader
 from src.config.manager import ConfigManager, configs
-from src.config.models import ApplicationConfig
+from src.config.models import AppConfig
 
 # Primary interface - use this throughout the application
 __all__ = [
     "configs",  # Main configuration instance
     "ConfigManager",  # For testing and advanced usage
     "ConfigLoader",  # For low-level operations
-    "ApplicationConfig",  # Pydantic model for type hints
+    "AppConfig",  # Pydantic model for type hints
 ]

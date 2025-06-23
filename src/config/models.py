@@ -11,7 +11,7 @@ from typing import ClassVar, Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-class AppConfig(BaseModel):
+class GeneralConfig(BaseModel):
     """Application metadata and general settings."""
 
     name: str = Field(..., description="Application name")
@@ -143,10 +143,10 @@ class ObservabilityConfig(BaseModel):
     )
 
 
-class ApplicationConfig(BaseModel):
+class AppConfig(BaseModel):
     """Root configuration model containing all application configuration."""
 
-    app: AppConfig = Field(..., description="Application configuration")
+    general: GeneralConfig = Field(..., description="General application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
     agents: AgentConfig = Field(..., description="Agent configuration")
     evaluation_criteria: EvaluationCriteriaConfig = Field(

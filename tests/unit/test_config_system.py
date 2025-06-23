@@ -13,7 +13,7 @@ from unittest.mock import patch
 import pytest
 
 from src.config import ConfigLoader, ConfigManager, configs
-from src.config.models import ApplicationConfig
+from src.config.models import AppConfig
 from src.exceptions.config import (
     ConfigError,
     ConfigFileError,
@@ -31,7 +31,7 @@ class TestConfigLoader:
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "test-app"
 version = "1.0.0"
 debug = false
@@ -62,7 +62,7 @@ enabled = false
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text(
             """
-[app]
+[general]
 debug = true
 
 [logging]
@@ -74,14 +74,14 @@ level = "DEBUG"
             loader = ConfigLoader(config_dir=tmp_path)
             raw_config = loader.load_raw_config()
 
-            assert raw_config["app"]["name"] == "test-app"
-            assert raw_config["app"]["debug"] is True  # Overridden by dev.toml
+            assert raw_config["general"]["name"] == "test-app"
+            assert raw_config["general"]["debug"] is True  # Overridden by dev.toml
             assert raw_config["logging"]["level"] == "DEBUG"  # Overridden by dev.toml
 
     def test_environment_detection(self, tmp_path):
         """Test environment detection and normalization."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""[app]\nname = "test" """)
+        base_config.write_text("""[general]\nname = "test" """)
 
         loader = ConfigLoader(config_dir=tmp_path)
 
@@ -97,7 +97,7 @@ level = "DEBUG"
     def test_missing_app_env_raises_error(self, tmp_path):
         """Test that missing APP_ENV raises appropriate error."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""[app]\nname = "test" """)
+        base_config.write_text("""[general]\nname = "test" """)
 
         with patch.dict(os.environ, {}, clear=True):
             loader = ConfigLoader(config_dir=tmp_path)
@@ -109,7 +109,7 @@ level = "DEBUG"
     def test_invalid_app_env_raises_error(self, tmp_path):
         """Test that invalid APP_ENV raises appropriate error."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""[app]\nname = "test" """)
+        base_config.write_text("""[general]\nname = "test" """)
 
         with patch.dict(os.environ, {"APP_ENV": "invalid"}):
             loader = ConfigLoader(config_dir=tmp_path)
@@ -124,7 +124,7 @@ level = "DEBUG"
     def test_missing_env_config_raises_error(self, tmp_path):
         """Test that missing environment config raises appropriate error."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""[app]\nname = "test" """)
+        base_config.write_text("""[general]\nname = "test" """)
 
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             loader = ConfigLoader(config_dir=tmp_path)
@@ -138,7 +138,7 @@ level = "DEBUG"
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "test"
 version = "1.0.0"
 
@@ -196,7 +196,7 @@ enabled = true
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "test-app"
 debug = false
 
@@ -213,7 +213,7 @@ value2 = "base"
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text(
             """
-[app]
+[general]
 debug = true
 
 [nested.section]
@@ -227,8 +227,8 @@ value3 = "new"
             raw_config = loader.load_raw_config()
 
             # Check overrides
-            assert raw_config["app"]["debug"] is True
-            assert raw_config["app"]["name"] == "test-app"  # Preserved from base
+            assert raw_config["general"]["debug"] is True
+            assert raw_config["general"]["name"] == "test-app"  # Preserved from base
 
             # Check nested merging
             assert raw_config["nested"]["section"]["value1"] == "override"
@@ -245,7 +245,7 @@ class TestConfigManager:
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "test-app"
 version = "1.0.0"
 
@@ -277,15 +277,15 @@ enabled = false
             manager = ConfigManager(config_dir=tmp_path)
             settings = manager.load()
 
-            assert isinstance(settings, ApplicationConfig)
-            assert settings.app.name == "test-app"
+            assert isinstance(settings, AppConfig)
+            assert settings.general.name == "test-app"
 
     def test_singleton_behavior(self, tmp_path):
         """Test that ConfigManager follows singleton pattern."""
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "test-app"
 version = "1.0.0"
 
@@ -332,7 +332,7 @@ enabled = false
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "initial-app"
 version = "1.0.0"
 
@@ -363,12 +363,12 @@ enabled = false
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             manager = ConfigManager(config_dir=tmp_path)
             initial_settings = manager.load()
-            assert initial_settings.app.name == "initial-app"
+            assert initial_settings.general.name == "initial-app"
 
             # Update config file
             base_config.write_text(
                 """
-[app]
+[general]
 name = "updated-app"
 version = "1.0.0"
 
@@ -395,7 +395,7 @@ enabled = false
 
             # Reload and verify update
             updated_settings = manager.reload()
-            assert updated_settings.app.name == "updated-app"
+            assert updated_settings.general.name == "updated-app"
 
     def test_validation_error_handling(self, tmp_path):
         """Test that validation errors are properly handled."""
@@ -403,7 +403,7 @@ enabled = false
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "test-app"
 # Missing required fields
 """
@@ -427,7 +427,7 @@ class TestLazyConfigProxy:
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "proxy-test"
 version = "1.0.0"
 
@@ -465,7 +465,7 @@ enabled = false
             test_proxy.reload(config_dir=tmp_path)
 
             # Access through proxy should work
-            assert test_proxy.app.name == "proxy-test"
+            assert test_proxy.general.name == "proxy-test"
             assert test_proxy.logging.level == "INFO"
 
     def test_proxy_reload(self, tmp_path):
@@ -474,7 +474,7 @@ enabled = false
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "proxy-initial"
 version = "1.0.0"
 
@@ -505,12 +505,12 @@ enabled = false
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             # Initial load
             configs.reload(config_dir=tmp_path)
-            assert configs.app.name == "proxy-initial"
+            assert configs.general.name == "proxy-initial"
 
             # Update config
             base_config.write_text(
                 """
-[app]
+[general]
 name = "proxy-updated"
 version = "1.0.0"
 
@@ -537,7 +537,7 @@ enabled = false
 
             # Reload and verify
             configs.reload(config_dir=tmp_path)
-            assert configs.app.name == "proxy-updated"
+            assert configs.general.name == "proxy-updated"
 
 
 class TestConfigIntegration:
@@ -549,7 +549,7 @@ class TestConfigIntegration:
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
-[app]
+[general]
 name = "integration-test"
 version = "1.0.0"
 debug = false
@@ -582,7 +582,7 @@ host = "https://us.cloud.langfuse.com"
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text(
             """
-[app]
+[general]
 debug = true
 
 [logging]
@@ -607,8 +607,8 @@ temperature = 0.0
             settings = manager.load()
 
             # Verify all sections loaded correctly
-            assert settings.app.name == "integration-test"
-            assert settings.app.debug is True  # Overridden by dev.toml
+            assert settings.general.name == "integration-test"
+            assert settings.general.debug is True  # Overridden by dev.toml
             assert settings.logging.level == "DEBUG"  # Overridden by dev.toml
             assert settings.evaluation_criteria.min_salary == 150000
             assert (
