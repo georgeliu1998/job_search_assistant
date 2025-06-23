@@ -207,6 +207,41 @@ def create_job_evaluation_agent():
     return app
 
 
+def generate_recommendation_from_results(
+    evaluation_results: Dict[str, Any],
+) -> tuple[str, str]:
+    """Generate final recommendation and reasoning from evaluation results"""
+    if not evaluation_results or "error" in evaluation_results:
+        return "DO_NOT_APPLY", "Unable to evaluate job posting due to extraction errors"
+
+    # Check if all criteria pass
+    all_pass = all(
+        result.get("pass", False)
+        for result in evaluation_results.values()
+        if isinstance(result, dict)
+    )
+
+    if all_pass:
+        recommendation = "APPLY"
+        reasoning = "All criteria met: " + "; ".join(
+            [
+                result["reason"]
+                for result in evaluation_results.values()
+                if isinstance(result, dict) and result.get("pass")
+            ]
+        )
+    else:
+        recommendation = "DO_NOT_APPLY"
+        failed_reasons = [
+            result["reason"]
+            for result in evaluation_results.values()
+            if isinstance(result, dict) and not result.get("pass")
+        ]
+        reasoning = "Failed criteria: " + "; ".join(failed_reasons)
+
+    return recommendation, reasoning
+
+
 def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
     """
     Evaluate a job posting using the agent workflow.
@@ -215,7 +250,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
         job_posting_text: The raw job posting text to evaluate
 
     Returns:
-        Dictionary with evaluation results
+        Dictionary with evaluation results in the format expected by UI
     """
     logger.info("Starting job evaluation")
 
@@ -238,15 +273,31 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
         result = final_state["evaluation_result"]
         if result is None:
             logger.error("Agent workflow completed but no result was generated")
-            return {"error": "Agent workflow failed to generate result"}
+            return {
+                "recommendation": "DO_NOT_APPLY",
+                "reasoning": "Agent workflow failed to generate result",
+                "extracted_info": final_state.get("extracted_info", {}),
+                "evaluation_results": {},
+            }
 
-        logger.info(f"Job evaluation completed successfully")
+        # Generate recommendation and reasoning from evaluation results
+        recommendation, reasoning = generate_recommendation_from_results(result)
+
+        logger.info(
+            f"Job evaluation completed successfully with recommendation: {recommendation}"
+        )
         return {
-            "evaluation_result": result,
+            "recommendation": recommendation,
+            "reasoning": reasoning,
             "extracted_info": final_state["extracted_info"],
-            "messages": final_state["messages"],
+            "evaluation_results": result,
         }
 
     except Exception as e:
         logger.error(f"Agent workflow failed: {e}")
-        return {"error": f"Agent workflow error: {str(e)}"}
+        return {
+            "recommendation": "DO_NOT_APPLY",
+            "reasoning": f"Agent workflow error: {str(e)}",
+            "extracted_info": {},
+            "evaluation_results": {},
+        }

@@ -9,6 +9,13 @@ from typing import Any, Dict
 
 import streamlit as st
 
+from src.config import config
+from src.utils.logging import get_app_logger, setup_logging
+
+# Initialize logging for the Streamlit app
+setup_logging(level=config.logging.level, format_string=config.logging.format)
+logger = get_app_logger()
+
 # Add the parent directory to the path so we can import the src package
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
