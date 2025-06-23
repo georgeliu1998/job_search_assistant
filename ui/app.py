@@ -19,6 +19,11 @@ if "APP_ENV" not in os.environ:
 
 from src.agents.job_evaluation import evaluate_job_posting
 from src.config import config
+from src.utils.logging import get_app_logger, setup_logging
+
+# Initialize logging for the Streamlit app
+setup_logging(level=config.logging.level, format_string=config.logging.format)
+logger = get_app_logger()
 
 # Set up the page
 st.set_page_config(
@@ -31,17 +36,71 @@ st.set_page_config(
 
 def display_job_evaluation_results(results: Dict[str, Any]) -> None:
     """Display job evaluation results in a formatted way"""
-    recommendation = results.get("recommendation", "Unknown")
-    reasoning = results.get("reasoning", "No reasoning provided")
+    # Handle errors
+    if "error" in results:
+        st.error(f"❌ **Error:** {results['error']}")
+        return
+
+    evaluation_result = results.get("evaluation_result", {})
     extracted_info = results.get("extracted_info", {})
+
+    # Handle evaluation errors
+    if "error" in evaluation_result:
+        st.error(f"❌ **Evaluation Error:** {evaluation_result['error']}")
+        return
+
+    # Calculate overall recommendation
+    if not evaluation_result:
+        st.error("❌ **Recommendation: Unknown**")
+        st.error("**Reasoning:** No evaluation results available")
+        return
+
+    # Count passed criteria
+    passed_criteria = []
+    failed_criteria = []
+
+    for criterion, result in evaluation_result.items():
+        if isinstance(result, dict) and "pass" in result:
+            if result["pass"]:
+                passed_criteria.append(criterion)
+            else:
+                failed_criteria.append(criterion)
+
+    total_criteria = len(passed_criteria) + len(failed_criteria)
+    passed_count = len(passed_criteria)
+
+    # Generate recommendation based on results
+    if passed_count == total_criteria:
+        recommendation = "APPLY"
+        reasoning = f"All {total_criteria} criteria met!"
+    elif passed_count >= total_criteria * 0.6:  # 60% threshold for consideration
+        recommendation = "CONSIDER"
+        reasoning = f"{passed_count}/{total_criteria} criteria met"
+    else:
+        recommendation = "SKIP"
+        reasoning = f"Only {passed_count}/{total_criteria} criteria met"
 
     # Display recommendation with color coding
     if recommendation == "APPLY":
         st.success(f"🎯 **Recommendation: {recommendation}**")
         st.success(f"**Reasoning:** {reasoning}")
+    elif recommendation == "CONSIDER":
+        st.warning(f"🤔 **Recommendation: {recommendation}**")
+        st.warning(f"**Reasoning:** {reasoning}")
     else:
         st.error(f"❌ **Recommendation: {recommendation}**")
         st.error(f"**Reasoning:** {reasoning}")
+
+    # Display detailed evaluation results
+    st.subheader("📊 Evaluation Results")
+
+    for criterion, result in evaluation_result.items():
+        if isinstance(result, dict) and "pass" in result:
+            criterion_name = criterion.replace("_", " ").title()
+            if result["pass"]:
+                st.success(f"✅ **{criterion_name}**: {result['reason']}")
+            else:
+                st.error(f"❌ **{criterion_name}**: {result['reason']}")
 
     # Display extracted information
     if extracted_info:
@@ -51,59 +110,55 @@ def display_job_evaluation_results(results: Dict[str, Any]) -> None:
         col1, col2 = st.columns(2)
 
         with col1:
-            if "job_title" in extracted_info:
-                st.write(f"**Job Title:** {extracted_info['job_title']}")
-            if "company_name" in extracted_info:
-                st.write(f"**Company:** {extracted_info['company_name']}")
-            if "location" in extracted_info:
-                st.write(f"**Location:** {extracted_info['location']}")
-            if "work_type" in extracted_info:
-                st.write(f"**Work Type:** {extracted_info['work_type']}")
+            if "title" in extracted_info:
+                st.write(f"**Job Title:** {extracted_info['title']}")
+            if "company" in extracted_info:
+                st.write(f"**Company:** {extracted_info['company']}")
+            if "location_policy" in extracted_info:
+                st.write(f"**Location Policy:** {extracted_info['location_policy']}")
+            if "role_type" in extracted_info:
+                st.write(f"**Role Type:** {extracted_info['role_type']}")
 
         with col2:
-            if "salary_range" in extracted_info:
-                salary = extracted_info["salary_range"]
-                if isinstance(salary, dict):
-                    min_sal = salary.get("min", "N/A")
-                    max_sal = salary.get("max", "N/A")
-                    st.write(f"**Salary Range:** ${min_sal} - ${max_sal}")
+            if "salary_min" in extracted_info or "salary_max" in extracted_info:
+                min_sal = extracted_info.get("salary_min", "N/A")
+                max_sal = extracted_info.get("salary_max", "N/A")
+                if min_sal and max_sal:
+                    st.write(f"**Salary Range:** ${min_sal:,} - ${max_sal:,}")
+                elif max_sal:
+                    st.write(f"**Salary Range:** Up to ${max_sal:,}")
+                elif min_sal:
+                    st.write(f"**Salary Range:** From ${min_sal:,}")
                 else:
-                    st.write(f"**Salary Range:** {salary}")
-
-            if "experience_level" in extracted_info:
-                exp_level = extracted_info["experience_level"]
-                st.write(f"**Experience Level:** {exp_level}")
-            if "employment_type" in extracted_info:
-                emp_type = extracted_info["employment_type"]
-                st.write(f"**Employment Type:** {emp_type}")
-
-        # Display skills if available
-        if "required_skills" in extracted_info:
-            skills = extracted_info["required_skills"]
-            if isinstance(skills, list):
-                st.write(f"**Required Skills:** {', '.join(skills)}")
-            else:
-                st.write(f"**Required Skills:** {skills}")
+                    st.write("**Salary Range:** Not specified")
 
 
 def check_environment_setup() -> tuple[bool, str]:
     """Check if the environment is properly configured"""
+    logger.debug("Checking environment setup...")
     try:
         # Check if configs can be loaded
         # configs is already imported at module level
+        logger.debug(f"Current APP_ENV: {os.getenv('APP_ENV')}")
 
         # Check if at least one LLM profile has an API key
         has_valid_profile = False
         for profile_name, profile in config.llm_profiles.items():
+            logger.debug(
+                f"Checking profile {profile_name}: has_api_key={bool(profile.api_key)}"
+            )
             if profile.api_key:
                 has_valid_profile = True
                 break
 
         if not has_valid_profile:
+            logger.warning("No LLM profiles have valid API keys configured")
             return False, "No LLM profiles have valid API keys configured"
 
+        logger.info("Environment setup check passed")
         return True, "Environment is properly configured"
     except Exception as e:
+        logger.error(f"Environment setup check failed: {e}", exc_info=True)
         return False, f"Configuration error: {str(e)}"
 
 
@@ -241,17 +296,24 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
 
     if evaluate_btn:
         if not job_description.strip():
+            logger.warning("User attempted to evaluate empty job description")
             st.error("⚠️ Please enter a job description before evaluating.")
         elif not env_ok:
+            logger.warning("User attempted evaluation with invalid environment setup")
             st.error(
                 "⚠️ Please configure your API keys first " "(see instructions above)."
             )
         else:
             # Show loading state
+            logger.info("Starting job evaluation process")
+            logger.debug(f"Job description length: {len(job_description)} characters")
             with st.spinner("🔍 Analyzing job posting... This may take 10-30 seconds."):
                 try:
                     # Call the job evaluation agent
+                    logger.debug("Calling evaluate_job_posting function")
                     results = evaluate_job_posting(job_description)
+                    logger.info("Job evaluation completed successfully")
+                    logger.debug(f"Results: {results}")
 
                     # Display results
                     st.divider()
@@ -259,6 +321,7 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
                     display_job_evaluation_results(results)
 
                 except Exception as e:
+                    logger.error(f"Job evaluation failed: {e}", exc_info=True)
                     st.error(f"❌ **Error during evaluation:** {str(e)}")
                     st.info(
                         """
