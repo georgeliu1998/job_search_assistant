@@ -34,6 +34,7 @@ class JobEvaluationState(TypedDict):
 
     # Metadata
     messages: List[Dict[str, Any]]  # LLM conversation tracking
+    langfuse_handler: Optional[Any]  # Langfuse callback handler
 
 
 def get_extraction_client():
@@ -62,13 +63,19 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
         extraction_llm = get_extraction_client()
 
     job_text = state["job_posting_text"]
+    langfuse_handler = state.get("langfuse_handler")
 
     # Get extraction prompt
     prompt_content = JOB_INFO_EXTRACTION_PROMPT.format(job_text=job_text)
     messages = [HumanMessage(content=prompt_content)]
 
     try:
-        response = extraction_llm.invoke(messages)
+        # Pass Langfuse callback to LLM call
+        config = {}
+        if langfuse_handler:
+            config = {"callbacks": [langfuse_handler]}
+
+        response = extraction_llm.invoke(messages, config=config)
         response_text = response.content
         extracted_info = parse_extraction_response(response_text)
 
@@ -257,12 +264,18 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
     # Create agent
     agent = create_job_evaluation_agent()
 
+    # Get Langfuse handler for tracing
+    langfuse_handler = get_langfuse_handler()
+    if langfuse_handler:
+        logger.info("Langfuse tracing enabled for job evaluation")
+
     # Prepare initial state
     initial_state = JobEvaluationState(
         job_posting_text=job_posting_text,
         extracted_info=None,
         evaluation_result=None,
         messages=[],
+        langfuse_handler=langfuse_handler,
     )
 
     try:
