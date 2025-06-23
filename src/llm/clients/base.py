@@ -6,7 +6,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, List
 
-from src.config.llm.base import BaseLLMConfig
+from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError
 from src.utils.logging import get_logger
 
@@ -19,12 +19,12 @@ class BaseLLMClient(ABC):
     must implement, ensuring consistency across different providers.
     """
 
-    def __init__(self, config: BaseLLMConfig):
+    def __init__(self, config: LLMProfileConfig):
         """
         Initialize the LLM client.
 
         Args:
-            config: Provider-specific configuration object
+            config: LLM profile configuration object
         """
         self.config = config
         self.logger = get_logger(f"llm.{self.__class__.__name__.lower()}")

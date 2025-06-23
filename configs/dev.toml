@@ -1,0 +1,18 @@
+# Development environment overrides
+# Only define settings that differ from base.toml
+
+[general]
+debug = true
+
+[logging]
+level = "DEBUG"
+
+# Enable observability for development tracing
+[observability.langfuse]
+enabled = true
+
+# Use faster model for development
+[llm_profiles.anthropic_reasoning]
+model = "claude-3-5-haiku-20241022"  # Faster for dev
+temperature = 0.0
+max_tokens = 512

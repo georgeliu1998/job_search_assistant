@@ -1,105 +1,87 @@
 """
-Unit tests for Langfuse configuration.
+Unit tests for Langfuse configuration via centralized configuration.
 """
 
 import os
 from unittest.mock import patch
 
-from src.config.langfuse import LangfuseConfig, get_langfuse_config
+from src.config import ConfigManager, config
 
 
 class TestLangfuseConfig:
-    """Test LangfuseConfig class."""
+    """Test Langfuse configuration via centralized config."""
 
-    def test_config_from_env_vars(self):
-        """Test configuration loading from environment variables."""
+    def test_langfuse_config_from_config(self, mock_api_keys):
+        """Test that Langfuse configuration is accessible via config."""
+        langfuse_config = config.observability.langfuse
+
+        # Test basic structure
+        assert hasattr(langfuse_config, "enabled")
+        assert hasattr(langfuse_config, "host")
+        assert hasattr(langfuse_config, "public_key")
+        assert hasattr(langfuse_config, "secret_key")
+        assert hasattr(langfuse_config, "is_valid")
+
+    def test_langfuse_validation_method(self, mock_api_keys):
+        """Test the is_valid method works correctly."""
+        langfuse_config = config.observability.langfuse
+
+        # With mocked keys, should be valid if enabled
+        if (
+            langfuse_config.enabled
+            and langfuse_config.public_key
+            and langfuse_config.secret_key
+        ):
+            assert langfuse_config.is_valid() is True
+        else:
+            # If disabled or missing keys, should be invalid
+            assert langfuse_config.is_valid() is False
+
+    def test_langfuse_default_host(self):
+        """Test that default host is set correctly."""
+        langfuse_config = config.observability.langfuse
+        assert langfuse_config.host == "https://us.cloud.langfuse.com"
+
+    def test_langfuse_environment_loading(self):
+        """Test that Langfuse config loads from environment variables."""
         with patch.dict(
             os.environ,
             {
-                "LANGFUSE_PUBLIC_KEY": "test_public",
-                "LANGFUSE_SECRET_KEY": "test_secret",
-                "LANGFUSE_HOST": "https://test.langfuse.com",
-                "LANGFUSE_ENABLED": "true",
+                "APP_ENV": "dev",
+                "LANGFUSE_PUBLIC_KEY": "test_public_key",
+                "LANGFUSE_SECRET_KEY": "test_secret_key",
             },
         ):
-            config = LangfuseConfig()
-            assert config.public_key == "test_public"
-            assert config.secret_key == "test_secret"
-            assert config.host == "https://test.langfuse.com"
-            assert config.enabled is True
+            # Reload config to pick up new environment variables
+            test_config = config.reload()
 
-    def test_config_disabled_by_default(self):
-        """Test that configuration is disabled by default."""
-        with patch.dict(os.environ, {}, clear=True):
-            config = LangfuseConfig()
-            assert config.enabled is False
+            langfuse_config = test_config.observability.langfuse
+            assert langfuse_config.public_key == "test_public_key"
+            assert langfuse_config.secret_key == "test_secret_key"
 
-    def test_config_enabled_variations(self):
-        """Test different ways to enable configuration."""
-        enabled_values = ["true", "True", "1", "yes", "on"]
+    def test_langfuse_enabled_in_dev_environment(self):
+        """Test that Langfuse is enabled in development environment."""
+        with patch.dict(os.environ, {"APP_ENV": "dev"}):
+            test_config = config.reload()
 
-        for value in enabled_values:
-            with patch.dict(os.environ, {"LANGFUSE_ENABLED": value}):
-                config = LangfuseConfig()
-                assert config.enabled is True, f"Failed for value: {value}"
+            langfuse_config = test_config.observability.langfuse
+            # In dev.toml, langfuse is enabled
+            assert langfuse_config.enabled is True
 
-    def test_config_validation(self):
-        """Test configuration validation."""
-        # Valid config
-        config = LangfuseConfig(
-            public_key="test_public", secret_key="test_secret", enabled=True
-        )
-        assert config.is_valid() is True
+    def test_langfuse_disabled_in_test_environment(self):
+        """Test that Langfuse is disabled in test environment."""
+        with patch.dict(os.environ, {"APP_ENV": "test"}):
+            test_config = config.reload()
 
-        # Missing keys - clear environment variables to ensure clean test
-        with patch.dict(os.environ, {}, clear=True):
-            config = LangfuseConfig(enabled=True)
-            assert config.is_valid() is False
+            langfuse_config = test_config.observability.langfuse
+            # In test.toml, langfuse is disabled
+            assert langfuse_config.enabled is False
 
-        # Disabled
-        config = LangfuseConfig(
-            public_key="test_public", secret_key="test_secret", enabled=False
-        )
-        assert config.is_valid() is False
+    def test_langfuse_disabled_in_prod_environment(self):
+        """Test that Langfuse is disabled by default in production environment."""
+        with patch.dict(os.environ, {"APP_ENV": "prod"}):
+            test_config = config.reload()
 
-    def test_host_validation(self):
-        """Test host URL validation."""
-        config = LangfuseConfig(host="https://valid.example.com")
-        assert config.validate_host() is True
-
-        config = LangfuseConfig(host="invalid-url")
-        assert config.validate_host() is False
-
-
-class TestGetLangfuseConfig:
-    """Test get_langfuse_config function."""
-
-    def test_get_config_function(self):
-        """Test that get_langfuse_config returns proper config."""
-        config = get_langfuse_config(
-            public_key="test_public",
-            secret_key="test_secret",
-            host="https://test.example.com",
-            enabled=True,
-        )
-
-        assert isinstance(config, LangfuseConfig)
-        assert config.public_key == "test_public"
-        assert config.secret_key == "test_secret"
-        assert config.host == "https://test.example.com"
-        assert config.enabled is True
-
-    def test_get_config_with_env_fallback(self):
-        """Test that get_langfuse_config falls back to environment variables."""
-        with patch.dict(
-            os.environ,
-            {
-                "LANGFUSE_PUBLIC_KEY": "env_public",
-                "LANGFUSE_SECRET_KEY": "env_secret",
-                "LANGFUSE_ENABLED": "true",
-            },
-        ):
-            config = get_langfuse_config()
-            assert config.public_key == "env_public"
-            assert config.secret_key == "env_secret"
-            assert config.enabled is True
+            langfuse_config = test_config.observability.langfuse
+            # In prod.toml, langfuse is disabled by default
+            assert langfuse_config.enabled is False

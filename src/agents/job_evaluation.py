@@ -1,226 +1,252 @@
 """
-Job Evaluation Agent using LangGraph
+Job evaluation agent using LangGraph for structured workflow.
 
-This agent evaluates job postings against user criteria using a structured
-approach:
-1. Extract key information from job posting
-2. Evaluate against specific criteria
-3. Generate recommendation with reasoning
+This agent extracts key information from job postings and evaluates them
+against predefined criteria using a multi-step workflow.
 """
 
+import json
 from typing import Any, Dict, List, Optional, TypedDict
 
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
 
-from src.config.llm import get_anthropic_config
+from src.config import config
 from src.core.job_evaluation import evaluate_job_against_criteria
 from src.llm.clients.anthropic import AnthropicClient
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.llm.prompts.job_evaluation.extraction import JOB_INFO_EXTRACTION_PROMPT
+from src.models.evaluation import EvaluationResult
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 class JobEvaluationState(TypedDict):
-    """State for job evaluation workflow"""
+    """State for the job evaluation agent workflow."""
 
     # Input
-    job_posting_text: str  # Raw job posting text
+    job_posting_text: str
 
-    # Processing
-    extracted_info: Optional[Dict[str, Any]]  # Parsed job details
-    evaluation_results: Optional[Dict[str, Any]]  # Pass/fail for each criteria
+    # Intermediate results
+    extracted_info: Optional[Dict[str, Any]]
+    evaluation_result: Optional[Dict[str, Any]]
 
-    # Output
-    recommendation: Optional[str]  # "APPLY" or "DO_NOT_APPLY"
-    reasoning: Optional[str]  # Detailed reasoning
-
-    # Tracking
+    # Metadata
     messages: List[Dict[str, Any]]  # LLM conversation tracking
 
 
-def get_anthropic_client():
-    """Initialize Anthropic client using the new LLM client architecture"""
-    config = get_anthropic_config()
-    return AnthropicClient(config)
+def get_extraction_client():
+    """Initialize LLM client for job information extraction."""
+    profile_name = config.agents.job_evaluation_extraction
+    profile = config.get_llm_profile(profile_name)
+    return AnthropicClient(profile)
 
 
-# LLM client will be initialized when needed
-llm = None
+def get_reasoning_client():
+    """Initialize LLM client for job evaluation reasoning."""
+    profile_name = config.agents.job_evaluation_reasoning
+    profile = config.get_llm_profile(profile_name)
+    return AnthropicClient(profile)
+
+
+# LLM clients will be initialized when needed
+extraction_llm = None
+reasoning_llm = None
 
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract key information from job posting using LLM"""
-    global llm
-    if llm is None:
-        llm = get_anthropic_client()
+    global extraction_llm
+    if extraction_llm is None:
+        extraction_llm = get_extraction_client()
 
     job_text = state["job_posting_text"]
 
+    # Get extraction prompt
     prompt_content = JOB_INFO_EXTRACTION_PROMPT.format(job_text=job_text)
-
     messages = [HumanMessage(content=prompt_content)]
 
     try:
-        response = llm.invoke(messages)
+        response = extraction_llm.invoke(messages)
         response_text = response.content
         extracted_info = parse_extraction_response(response_text)
 
-        return {"extracted_info": extracted_info}
+        logger.info(f"Successfully extracted job information: {extracted_info}")
+
+        return {
+            **state,
+            "extracted_info": extracted_info,
+            "messages": state.get("messages", [])
+            + [{"role": "extraction", "content": response_text}],
+        }
+
     except Exception as e:
-        logger.error(f"Error extracting job info: {e}")
-        return {"extracted_info": {}}
+        logger.error(f"Failed to extract job information: {e}")
+        # Return state with None extracted_info to indicate failure
+        return {
+            **state,
+            "extracted_info": None,
+            "messages": state.get("messages", [])
+            + [{"role": "extraction", "error": str(e)}],
+        }
+
+
+def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
+    """Evaluate job against criteria using core business logic"""
+    extracted_info = state["extracted_info"]
+
+    if extracted_info is None:
+        logger.error("Cannot evaluate job: extraction failed")
+        return {
+            **state,
+            "evaluation_result": {"error": "Failed to extract job information"},
+        }
+
+    try:
+        # Use core business logic for evaluation
+        evaluation_result = evaluate_job_against_criteria(extracted_info)
+
+        logger.info(f"Job evaluation completed: {evaluation_result}")
+
+        return {
+            **state,
+            "evaluation_result": evaluation_result,
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to evaluate job: {e}")
+        return {
+            **state,
+            "evaluation_result": {"error": f"Evaluation failed: {str(e)}"},
+        }
 
 
 def parse_extraction_response(response_text: str) -> Dict[str, Any]:
-    """Parse LLM extraction response from JSON format into structured data"""
-    import json
-
-    # Clean and extract JSON from response
-    response_text = response_text.strip()
-
-    # Handle case where response might have extra text around JSON
-    # Look for JSON object boundaries
-    start_idx = response_text.find("{")
-    end_idx = response_text.rfind("}")
-
-    if start_idx == -1 or end_idx == -1:
-        logger.error("No JSON object found in LLM response")
-        return {}
-
+    """Parse LLM response into structured job information"""
     try:
-        json_str = response_text[start_idx : end_idx + 1]
-        json_data = json.loads(json_str)
+        # First, try to find JSON in the response
+        response_text = response_text.strip()
 
-        # Since the prompt now returns the exact internal format,
-        # we can return it directly after validation
-        return json_data
+        # Look for JSON object boundaries
+        start_idx = response_text.find("{")
+        end_idx = response_text.rfind("}")
 
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
-        logger.error(f"Failed to parse JSON response: {e}")
-        logger.debug(f"Raw response: {response_text}")
-        return {}
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            # Extract the JSON part
+            json_str = response_text[start_idx : end_idx + 1]
+            try:
+                data = json.loads(json_str)
+                return data
+            except json.JSONDecodeError:
+                pass
 
+        # If JSON parsing failed, try simple line parsing
+        lines = response_text.split("\n")
+        info = {}
 
-def evaluate_criteria(state: JobEvaluationState) -> Dict[str, Any]:
-    """
-    LangGraph node function that evaluates job criteria.
+        for line in lines:
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key = key.strip().lower().replace(" ", "_")
+                value = value.strip()
 
-    This is a thin wrapper around the core evaluation logic that adapts
-    the LangGraph state to the core function interface.
-    """
-    extracted = state["extracted_info"]
-    evaluation_results = evaluate_job_against_criteria(extracted)
-    return {"evaluation_results": evaluation_results}
+                # Handle boolean values
+                if value.lower() in ["true", "yes", "y"]:
+                    value = True
+                elif value.lower() in ["false", "no", "n"]:
+                    value = False
+                # Handle numeric values
+                elif value.isdigit():
+                    value = int(value)
 
+                info[key] = value
 
-def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
-    """Generate final recommendation based on evaluation results"""
-    results = state["evaluation_results"]
-    if not results:
-        return {
-            "recommendation": "DO_NOT_APPLY",
-            "reasoning": ("Unable to evaluate job posting due to extraction errors"),
-        }
+        # Return the parsed info if we got anything, otherwise return default
+        if info:
+            return info
 
-    # Check if all criteria pass
-    all_pass = all(
-        result.get("pass", False)
-        for result in results.values()
-        if isinstance(result, dict)
-    )
+    except Exception as e:
+        logger.error(f"Failed to parse extraction response: {e}")
+        logger.debug(f"Response text: {response_text}")
 
-    if all_pass:
-        recommendation = "APPLY"
-        reasoning = "All criteria met: " + "; ".join(
-            [
-                result["reason"]
-                for result in results.values()
-                if isinstance(result, dict) and result.get("pass")
-            ]
-        )
-    else:
-        recommendation = "DO_NOT_APPLY"
-        failed_reasons = [
-            result["reason"]
-            for result in results.values()
-            if isinstance(result, dict) and not result.get("pass")
-        ]
-        reasoning = "Failed criteria: " + "; ".join(failed_reasons)
-
-    return {"recommendation": recommendation, "reasoning": reasoning}
+    # Return minimal job information as fallback
+    return {
+        "title": "Unknown",
+        "company": "Unknown",
+        "salary_max": None,
+        "location_policy": "unclear",
+        "role_type": "unclear",
+    }
 
 
-def create_job_evaluation_graph():
-    """Create and compile the job evaluation graph"""
-    # Create the graph
-    graph = StateGraph(JobEvaluationState)
+def create_job_evaluation_agent():
+    """Create the job evaluation agent workflow"""
+    # Initialize workflow
+    workflow = StateGraph(JobEvaluationState)
 
     # Add nodes
-    graph.add_node("extract_job_info", extract_job_info)
-    graph.add_node("evaluate_criteria", evaluate_criteria)
-    graph.add_node("generate_recommendation", generate_recommendation)
+    workflow.add_node("extract_info", extract_job_info)
+    workflow.add_node("evaluate", evaluate_job)
 
-    # Define the flow
-    graph.add_edge(START, "extract_job_info")
-    graph.add_edge("extract_job_info", "evaluate_criteria")
-    graph.add_edge("evaluate_criteria", "generate_recommendation")
-    graph.add_edge("generate_recommendation", END)
+    # Add edges
+    workflow.add_edge(START, "extract_info")
+    workflow.add_edge("extract_info", "evaluate")
+    workflow.add_edge("evaluate", END)
 
     # Compile the graph
-    return graph.compile()
+    app = workflow.compile()
+
+    # Add Langfuse tracing if enabled
+    langfuse_handler = get_langfuse_handler()
+    if langfuse_handler:
+        logger.info("Langfuse tracing enabled for job evaluation agent")
+        # Note: LangGraph tracing integration would go here
+        # This is a placeholder for actual tracing setup
+
+    return app
 
 
-def evaluate_job_posting(
-    job_posting_text: str, enable_tracing: bool = True
-) -> Dict[str, Any]:
+def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
     """
-    Main function to evaluate a job posting
+    Evaluate a job posting using the agent workflow.
 
     Args:
-        job_posting_text: Raw text of the job posting
-        enable_tracing: Whether to enable Langfuse tracing (default: True)
+        job_posting_text: The raw job posting text to evaluate
 
     Returns:
-        Dict containing recommendation and reasoning
+        Dictionary with evaluation results
     """
-    logger.info("Starting job posting evaluation")
-    logger.debug(f"Tracing enabled: {enable_tracing}")
+    logger.info("Starting job evaluation")
 
-    # Create the graph
-    graph = create_job_evaluation_graph()
+    # Create agent
+    agent = create_job_evaluation_agent()
 
-    # Initialize Langfuse handler if tracing is enabled
-    config = {}
-    if enable_tracing:
-        langfuse_handler = get_langfuse_handler()
-        if langfuse_handler:
-            config = {"callbacks": [langfuse_handler]}
-            logger.info("Langfuse tracing enabled for this evaluation")
-        else:
-            logger.debug("Langfuse handler not available, continuing without tracing")
-
-    # Run the evaluation with optional tracing
-    logger.debug("Executing job evaluation graph")
-    result = graph.invoke(
-        {
-            "job_posting_text": job_posting_text,
-            "extracted_info": None,
-            "evaluation_results": None,
-            "recommendation": None,
-            "reasoning": None,
-            "messages": [],
-        },
-        config=config,
+    # Prepare initial state
+    initial_state = JobEvaluationState(
+        job_posting_text=job_posting_text,
+        extracted_info=None,
+        evaluation_result=None,
+        messages=[],
     )
 
-    recommendation = result["recommendation"]
-    logger.info(f"Job evaluation completed with recommendation: {recommendation}")
-    return {
-        "recommendation": result["recommendation"],
-        "reasoning": result["reasoning"],
-        "extracted_info": result["extracted_info"],
-        "evaluation_results": result["evaluation_results"],
-    }
+    try:
+        # Run the agent workflow
+        final_state = agent.invoke(initial_state)
+
+        # Extract result
+        result = final_state["evaluation_result"]
+        if result is None:
+            logger.error("Agent workflow completed but no result was generated")
+            return {"error": "Agent workflow failed to generate result"}
+
+        logger.info(f"Job evaluation completed successfully")
+        return {
+            "evaluation_result": result,
+            "extracted_info": final_state["extracted_info"],
+            "messages": final_state["messages"],
+        }
+
+    except Exception as e:
+        logger.error(f"Agent workflow failed: {e}")
+        return {"error": f"Agent workflow error: {str(e)}"}
