@@ -1,39 +1,42 @@
 """
 Pytest configuration file for the Job Search Assistant tests.
+
+This file contains shared fixtures and configuration for all tests.
 """
 
 import os
 from pathlib import Path
 
 import pytest
-import yaml
 
-# Set test environment before any imports
-os.environ["APP_ENV"] = "test"
+from src.models.enums import Environment
+
+# Set stage environment before any imports
+os.environ["APP_ENV"] = Environment.STAGE.value
 
 
 @pytest.fixture(autouse=True)
-def reset_configs_state():
+def reset_config_state():
     """Reset global configs state before each test for proper isolation."""
     # This fixture runs automatically before each test
     yield  # Run the test
 
     # After the test, reset the global config proxy state
-    from src.config import config
+    from src.config.manager import ConfigManager
 
-    config._current_config_dir = None
+    # Clear any cached instances
+    ConfigManager._instances = {}
 
 
-# Define project root directory
 @pytest.fixture
 def project_root():
+    """Return the project root directory."""
     return Path(__file__).parent.parent
 
 
-# Configuration fixtures
 @pytest.fixture
 def test_config():
-    """Provide test config instance"""
+    """Provide stage config instance"""
     from src.config import config
 
     return config
@@ -49,40 +52,47 @@ def mock_api_keys(monkeypatch):
 
 
 @pytest.fixture
-def reload_config():
+def config_reload_helper():
     """Utility to reload config during tests"""
 
-    def _reload(config_dir=None):
+    def reload_config():
+        """Force reload configuration"""
+        from src.config.manager import ConfigManager
+
+        # Clear cached instances to force reload
+        ConfigManager._instances = {}
+
+        # Import and return fresh config
         from src.config import config
 
-        return config.reload(config_dir=config_dir)
+        return config
 
-    return _reload
+    return reload_config
 
 
-# Fixture for sample job descriptions
 @pytest.fixture
 def sample_job_descriptions_dir(project_root):
     return project_root / "tests" / "fixtures" / "sample_job_descriptions"
 
 
-# Fixture for sample resumes
 @pytest.fixture
 def sample_resumes_dir(project_root):
     return project_root / "tests" / "fixtures" / "sample_resumes"
 
 
-# Fixture to load a sample job description
 @pytest.fixture
 def sample_job_description(sample_job_descriptions_dir):
+    """Load sample software engineer job description."""
     job_file = sample_job_descriptions_dir / "software_engineer.txt"
-    with open(job_file, "r") as f:
-        return f.read()
+    if job_file.exists():
+        return job_file.read_text()
+    return "Sample job description not found"
 
 
-# Fixture to load a sample resume
 @pytest.fixture
 def sample_resume(sample_resumes_dir):
+    """Load sample software engineer resume."""
     resume_file = sample_resumes_dir / "software_engineer.yaml"
-    with open(resume_file, "r") as f:
-        return yaml.safe_load(f)
+    if resume_file.exists():
+        return resume_file.read_text()
+    return "Sample resume not found"

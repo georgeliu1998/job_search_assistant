@@ -1,6 +1,6 @@
 # Base configuration for Job Search Assistant
 # This file contains all default values and the complete configuration structure
-# Environment-specific files (dev.toml, test.toml) override these defaults
+# Environment-specific files (dev.toml, stage.toml) override these defaults
 
 [general]
 name = "job-search-assistant"

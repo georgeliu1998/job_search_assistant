@@ -10,6 +10,8 @@ from typing import ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.models.enums import Environment
+
 
 class GeneralConfig(BaseModel):
     """Application metadata and general settings."""
@@ -95,11 +97,12 @@ class LLMProfileConfig(BaseModel):
     @classmethod
     def validate_model(cls, v: str, info) -> str:
         """Validate that model is supported for the provider."""
-        # Skip validation in test environments or for test models
+        # Skip validation in stage environments or for stage models
+        current_env = os.getenv("APP_ENV", "").lower()
         if (
-            os.getenv("APP_ENV", "").lower() == "test"
-            or v.startswith("test")
-            or "test" in v.lower()
+            current_env == Environment.STAGE.value
+            or v.startswith("stage")
+            or "stage" in v.lower()
         ):
             return v
 

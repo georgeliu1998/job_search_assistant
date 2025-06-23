@@ -1,87 +1,62 @@
 #!/usr/bin/env python3
 """
-Simple script to run the Job Search Assistant Streamlit app
+Main entry point for the Job Search Assistant application.
+
+This script provides a simple CLI interface to run different components
+of the job search assistant system.
 """
 
-import os
-import subprocess
 import sys
 from pathlib import Path
 
-
-def check_env_setup():
-    """Check if environment is properly configured using centralized configs"""
-    # Set APP_ENV if not already set
-    if "APP_ENV" not in os.environ:
-        os.environ["APP_ENV"] = "dev"
-
-    try:
-        # Try to load configs to validate configuration
-        from src.config import config
-
-        # Check if at least one LLM profile has an API key
-        has_valid_profile = False
-        for profile_name, profile in config.llm_profiles.items():
-            if profile.api_key:
-                has_valid_profile = True
-                break
-
-        if not has_valid_profile:
-            print("⚠️  No LLM profiles have valid API keys configured!")
-            print("\n🔧 Setup Instructions:")
-            print("1. Set APP_ENV environment variable (dev, test, or prod)")
-            print("2. Add your API keys to environment variables:")
-            print("   - ANTHROPIC_API_KEY=your_anthropic_key")
-            print("   - FIREWORKS_API_KEY=your_fireworks_key (optional)")
-            print("3. Run this script again")
-            return False
-
-        print("✅ Configuration loaded successfully!")
-        print(f"📋 Active environment: {os.getenv('APP_ENV', 'dev')}")
-        print(f"🤖 Available LLM profiles: {', '.join(config.llm_profiles.keys())}")
-        return True
-
-    except Exception as e:
-        print(f"❌ Configuration error: {e}")
-        print("\n🔧 Setup Instructions:")
-        print("1. Set APP_ENV environment variable: export APP_ENV=dev")
-        print("2. Ensure configuration files exist in configs/ directory")
-        print("3. Add your API keys to environment variables")
-        return False
+# Add the src directory to Python path for imports
+project_root = Path(__file__).parent
+src_path = project_root / "src"
+sys.path.insert(0, str(src_path))
 
 
 def main():
-    """Main function to run the app"""
-    print("🚀 Starting Job Search Assistant...")
+    """Main entry point for the application."""
+    print("🚀 Job Search Assistant")
+    print("=" * 50)
 
-    # Check environment setup
-    if not check_env_setup():
+    try:
+        # Test basic imports
+        from src.agents.job_evaluation import JobEvaluationAgent
+        from src.config import config
+
+        print("✅ All modules imported successfully")
+
+        # Load configuration
+        print(f"✅ Configuration loaded for environment: {config.general.name}")
+
+        # Initialize job evaluation agent
+        agent = JobEvaluationAgent()
+        print("✅ Job evaluation agent initialized")
+
+        print("\n🎉 Application startup successful!")
+        print("\nNext steps:")
+        print("1. Set APP_ENV environment variable (dev, stage, or prod)")
+        print("2. Set required API keys in environment variables")
+        print("3. Use the JobEvaluationAgent to evaluate job postings")
+
+    except ImportError as e:
+        print(f"❌ Import error: {e}")
+        print("\nTroubleshooting:")
+        print("1. Make sure you're in the project root directory")
+        print("2. Install dependencies: uv sync")
+        print("3. Check that all required files are present")
         sys.exit(1)
 
-    # Run the Streamlit app
-    try:
-        print("🌐 Starting Streamlit server...")
-        print("📱 The app will open in your browser automatically")
-        print("🛑 Press Ctrl+C to stop the server")
-        print("-" * 50)
-
-        subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "streamlit",
-                "run",
-                "ui/app.py",
-                "--server.port",
-                "8501",
-                "--server.address",
-                "localhost",
-            ]
-        )
-    except KeyboardInterrupt:
-        print("\n👋 Shutting down...")
     except Exception as e:
-        print(f"❌ Error running the app: {e}")
+        print(f"❌ Configuration error: {e}")
+        print("\nTroubleshooting:")
+        print("1. Set APP_ENV environment variable (dev, stage, or prod)")
+        print("2. Check that config files exist in configs/ directory")
+        print("3. Set required API keys:")
+        print("   - ANTHROPIC_API_KEY")
+        print("   - LANGFUSE_PUBLIC_KEY (optional)")
+        print("   - LANGFUSE_SECRET_KEY (optional)")
         sys.exit(1)
 
 
