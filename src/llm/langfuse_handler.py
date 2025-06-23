@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 from langfuse.callback import CallbackHandler
 
-from src.config.settings import settings
+from src.config import configs
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -41,17 +41,17 @@ def _initialize_langfuse_handler(
     This should only be called once per application lifecycle.
 
     Args:
-        public_key: Langfuse public key (optional, uses settings if not provided)
-        secret_key: Langfuse secret key (optional, uses settings if not provided)
-        host: Langfuse host URL (optional, uses settings if not provided)
-        enabled: Whether to enable tracing (optional, uses settings if not provided)
+        public_key: Langfuse public key (optional, uses configs if not provided)
+        secret_key: Langfuse secret key (optional, uses configs if not provided)
+        host: Langfuse host URL (optional, uses configs if not provided)
+        enabled: Whether to enable tracing (optional, uses configs if not provided)
 
     Returns:
         CallbackHandler instance if successful, None if disabled or failed
     """
-    # Get configuration from centralized settings with optional overrides
-    config = settings.observability.langfuse
-    
+    # Get configuration from centralized configs with optional overrides
+    config = configs.observability.langfuse
+
     final_enabled = enabled if enabled is not None else config.enabled
     final_public_key = public_key if public_key is not None else config.public_key
     final_secret_key = secret_key if secret_key is not None else config.secret_key
@@ -60,7 +60,9 @@ def _initialize_langfuse_handler(
     # Check if tracing is explicitly disabled
     if not final_enabled:
         logger.info("Langfuse tracing disabled via configuration")
-        logger.debug("To enable tracing, set observability.langfuse.enabled=true in config or LANGFUSE_ENABLED=true")
+        logger.debug(
+            "To enable tracing, set observability.langfuse.enabled=true in config or LANGFUSE_ENABLED=true"
+        )
         logger.debug(
             "Note: Currently disabled due to compatibility issues with Anthropic SDK"
         )
@@ -122,10 +124,10 @@ def get_langfuse_handler(
     This avoids the overhead of reinitializing the handler for every LLM call.
 
     Args:
-        public_key: Langfuse public key (optional, uses settings if not provided)
-        secret_key: Langfuse secret key (optional, uses settings if not provided)
-        host: Langfuse host URL (optional, uses settings if not provided)
-        enabled: Whether to enable tracing (optional, uses settings if not provided)
+        public_key: Langfuse public key (optional, uses configs if not provided)
+        secret_key: Langfuse secret key (optional, uses configs if not provided)
+        host: Langfuse host URL (optional, uses configs if not provided)
+        enabled: Whether to enable tracing (optional, uses configs if not provided)
 
     Returns:
         CallbackHandler instance if successful, None if disabled or failed
@@ -184,5 +186,5 @@ def reset_langfuse_handler() -> None:
 
 def is_langfuse_enabled() -> bool:
     """Check if Langfuse tracing is enabled based on current configuration."""
-    config = settings.observability.langfuse
+    config = configs.observability.langfuse
     return config.enabled and config.is_valid()

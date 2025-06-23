@@ -18,7 +18,7 @@ if "APP_ENV" not in os.environ:
     os.environ["APP_ENV"] = "dev"
 
 from src.agents.job_evaluation import evaluate_job_posting
-from src.config.settings import settings
+from src.config import configs
 
 # Set up the page
 st.set_page_config(
@@ -89,12 +89,12 @@ def display_job_evaluation_results(results: Dict[str, Any]) -> None:
 def check_environment_setup() -> tuple[bool, str]:
     """Check if the environment is properly configured"""
     try:
-        # Check if settings can be loaded
-        from src.config.settings import settings
+        # Check if configs can be loaded
+        # configs is already imported at module level
 
         # Check if at least one LLM profile has an API key
         has_valid_profile = False
-        for profile_name, profile in settings.llm_profiles.items():
+        for profile_name, profile in configs.llm_profiles.items():
             if profile.api_key:
                 has_valid_profile = True
                 break

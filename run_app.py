@@ -10,22 +10,22 @@ from pathlib import Path
 
 
 def check_env_setup():
-    """Check if environment is properly configured using centralized settings"""
+    """Check if environment is properly configured using centralized configs"""
     # Set APP_ENV if not already set
     if "APP_ENV" not in os.environ:
         os.environ["APP_ENV"] = "dev"
-    
+
     try:
-        # Try to load settings to validate configuration
-        from src.config.settings import settings
-        
+        # Try to load configs to validate configuration
+        from src.config import configs
+
         # Check if at least one LLM profile has an API key
         has_valid_profile = False
-        for profile_name, profile in settings.llm_profiles.items():
+        for profile_name, profile in configs.llm_profiles.items():
             if profile.api_key:
                 has_valid_profile = True
                 break
-        
+
         if not has_valid_profile:
             print("⚠️  No LLM profiles have valid API keys configured!")
             print("\n🔧 Setup Instructions:")
@@ -35,12 +35,12 @@ def check_env_setup():
             print("   - FIREWORKS_API_KEY=your_fireworks_key (optional)")
             print("3. Run this script again")
             return False
-            
+
         print("✅ Configuration loaded successfully!")
         print(f"📋 Active environment: {os.getenv('APP_ENV', 'dev')}")
-        print(f"🤖 Available LLM profiles: {', '.join(settings.llm_profiles.keys())}")
+        print(f"🤖 Available LLM profiles: {', '.join(configs.llm_profiles.keys())}")
         return True
-        
+
     except Exception as e:
         print(f"❌ Configuration error: {e}")
         print("\n🔧 Setup Instructions:")

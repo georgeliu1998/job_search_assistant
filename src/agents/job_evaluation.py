@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
 
-from src.config.settings import settings
+from src.config import configs
 from src.core.job_evaluation import evaluate_job_against_criteria
 from src.llm.clients.anthropic import AnthropicClient
 from src.llm.langfuse_handler import get_langfuse_handler
@@ -38,15 +38,15 @@ class JobEvaluationState(TypedDict):
 
 def get_extraction_client():
     """Initialize LLM client for job information extraction."""
-    profile_name = settings.agents.job_evaluation_extraction
-    profile = settings.get_llm_profile(profile_name)
+    profile_name = configs.agents.job_evaluation_extraction
+    profile = configs.get_llm_profile(profile_name)
     return AnthropicClient(profile)
 
 
 def get_reasoning_client():
     """Initialize LLM client for job evaluation reasoning."""
-    profile_name = settings.agents.job_evaluation_reasoning
-    profile = settings.get_llm_profile(profile_name)
+    profile_name = configs.agents.job_evaluation_reasoning
+    profile = configs.get_llm_profile(profile_name)
     return AnthropicClient(profile)
 
 

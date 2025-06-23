@@ -1,7 +1,7 @@
 """
 Job evaluation criteria configuration.
 
-DEPRECATED: This module is deprecated. Use src.config.settings instead.
+DEPRECATED: This module is deprecated. Use src.config (configs) instead.
 This module now acts as a compatibility layer.
 """
 
@@ -11,18 +11,19 @@ import warnings
 def _deprecation_warning():
     """Issue deprecation warning for this module."""
     warnings.warn(
-        "src.core.job_evaluation.criteria is deprecated. Use 'from src.config.settings import settings' "
-        "and access criteria via settings.evaluation_criteria instead.",
+        "src.core.job_evaluation.criteria is deprecated. Use 'from src.config import configs' "
+        "and access criteria via configs.evaluation_criteria instead.",
         DeprecationWarning,
-        stacklevel=3
+        stacklevel=3,
     )
 
 
 def _get_evaluation_criteria():
-    """Get evaluation criteria from new settings system or fallback to hardcoded values."""
+    """Get evaluation criteria from new config system or fallback to hardcoded values."""
     try:
-        from src.config.settings import settings
-        criteria = settings.evaluation_criteria
+        from src.config import configs
+
+        criteria = configs.evaluation_criteria
         return {
             "min_salary": criteria.min_salary,
             "remote_required": criteria.remote_required,
@@ -45,34 +46,34 @@ def _get_evaluation_criteria():
 # Create a lazy-loaded EVALUATION_CRITERIA that issues deprecation warning
 class _EvaluationCriteriaProxy:
     """Proxy object that issues deprecation warning and loads criteria."""
-    
+
     def __init__(self):
         self._criteria = None
-    
+
     def _load_criteria(self):
         if self._criteria is None:
             _deprecation_warning()
             self._criteria = _get_evaluation_criteria()
         return self._criteria
-    
+
     def __getitem__(self, key):
         return self._load_criteria()[key]
-    
+
     def __contains__(self, key):
         return key in self._load_criteria()
-    
+
     def __iter__(self):
         return iter(self._load_criteria())
-    
+
     def get(self, key, default=None):
         return self._load_criteria().get(key, default)
-    
+
     def keys(self):
         return self._load_criteria().keys()
-    
+
     def values(self):
         return self._load_criteria().values()
-    
+
     def items(self):
         return self._load_criteria().items()
 

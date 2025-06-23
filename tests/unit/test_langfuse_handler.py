@@ -28,11 +28,7 @@ class TestGetLangfuseHandler:
     def test_missing_credentials(self):
         """Test that missing credentials returns None."""
         # Use direct parameters with missing credentials (empty strings)
-        handler = get_langfuse_handler(
-            enabled=True,
-            public_key="",
-            secret_key=""
-        )
+        handler = get_langfuse_handler(enabled=True, public_key="", secret_key="")
         assert handler is None
 
     @patch("src.llm.langfuse_handler.CallbackHandler")
@@ -46,7 +42,7 @@ class TestGetLangfuseHandler:
             enabled=True,
             public_key="test_public",
             secret_key="test_secret",
-            host="https://test.langfuse.com"
+            host="https://test.langfuse.com",
         )
         assert handler is mock_handler
         mock_callback_handler.assert_called_once_with(
@@ -61,15 +57,13 @@ class TestGetLangfuseHandler:
         mock_callback_handler.side_effect = Exception("Connection failed")
 
         handler = get_langfuse_handler(
-            enabled=True,
-            public_key="test_public",
-            secret_key="test_secret"
+            enabled=True, public_key="test_public", secret_key="test_secret"
         )
         assert handler is None
 
     def test_direct_parameter_override(self):
-        """Test that direct parameters override settings."""
-        # Disable via direct parameter even if settings might enable it
+        """Test that direct parameters override configs."""
+        # Disable via direct parameter even if configs might enable it
         handler = get_langfuse_handler(enabled=False)
         assert handler is None
 
@@ -81,9 +75,7 @@ class TestGetLangfuseHandler:
 
         # First call should initialize
         handler1 = get_langfuse_handler(
-            enabled=True,
-            public_key="test_public",
-            secret_key="test_secret"
+            enabled=True, public_key="test_public", secret_key="test_secret"
         )
         assert handler1 is mock_handler
         assert mock_callback_handler.call_count == 1
@@ -134,9 +126,7 @@ class TestResetLangfuseHandler:
 
         # First initialization
         handler1 = get_langfuse_handler(
-            enabled=True,
-            public_key="test_public",
-            secret_key="test_secret"
+            enabled=True, public_key="test_public", secret_key="test_secret"
         )
         assert handler1 is mock_handler1
         assert mock_callback_handler.call_count == 1
@@ -146,9 +136,7 @@ class TestResetLangfuseHandler:
 
         # Second initialization should create a new instance
         handler2 = get_langfuse_handler(
-            enabled=True,
-            public_key="test_public2",
-            secret_key="test_secret2"
+            enabled=True, public_key="test_public2", secret_key="test_secret2"
         )
         assert handler2 is mock_handler2
         assert handler2 is not handler1
@@ -163,8 +151,8 @@ class TestHelperFunctions:
         reset_langfuse_handler()
 
     def test_is_langfuse_enabled(self, mock_api_keys):
-        """Test is_langfuse_enabled function with centralized settings."""
-        # This will test the actual settings configuration
+        """Test is_langfuse_enabled function with centralized configs."""
+        # This will test the actual configs configuration
         # In test environment, langfuse should be disabled by default
         enabled = is_langfuse_enabled()
         # Since we're in test environment, it should be False
@@ -180,10 +168,11 @@ class TestHelperFunctions:
                 "LANGFUSE_SECRET_KEY": "test_secret",
             },
         ):
-            # Reload settings to pick up environment changes
-            from src.config.settings import reload_settings
-            reload_settings()
-            
+            # Reload configs to pick up environment changes
+            from src.config import configs
+
+            configs.reload()
+
             # In dev environment with valid keys, should be enabled
             enabled = is_langfuse_enabled()
             assert enabled is True

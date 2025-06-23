@@ -143,8 +143,8 @@ class ObservabilityConfig(BaseModel):
     )
 
 
-class Settings(BaseModel):
-    """Root configuration model containing all settings."""
+class ApplicationConfig(BaseModel):
+    """Root configuration model containing all application configuration."""
 
     app: AppConfig = Field(..., description="Application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
