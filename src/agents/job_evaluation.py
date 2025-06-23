@@ -290,7 +290,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
                 "recommendation": "DO_NOT_APPLY",
                 "reasoning": "Agent workflow failed to generate result",
                 "extracted_info": final_state.get("extracted_info", {}),
-                "evaluation_results": {},
+                "evaluation_result": {},
             }
 
         # Generate recommendation and reasoning from evaluation results
@@ -303,7 +303,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
             "recommendation": recommendation,
             "reasoning": reasoning,
             "extracted_info": final_state["extracted_info"],
-            "evaluation_results": result,
+            "evaluation_result": result,
         }
 
     except Exception as e:
@@ -312,5 +312,5 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
             "recommendation": "DO_NOT_APPLY",
             "reasoning": f"Agent workflow error: {str(e)}",
             "extracted_info": {},
-            "evaluation_results": {},
+            "evaluation_result": {},
         }
