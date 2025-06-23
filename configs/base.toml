@@ -11,7 +11,13 @@ debug = false
 level = "INFO"
 format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 
-# Agent task to LLM profile mappings - both use the same profile
+[llm_profiles.anthropic_reasoning]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+temperature = 0.0
+max_tokens = 1024
+
+# Agent task to LLM profile mapping
 [agents]
 job_evaluation_extraction = "anthropic_reasoning"
 job_evaluation_reasoning = "anthropic_reasoning"
@@ -22,14 +28,6 @@ min_salary = 160000
 remote_required = true
 ic_title_requirements = ["lead", "staff", "principal", "senior staff"]
 
-# Single LLM profile for all tasks
-[llm_profiles.anthropic_reasoning]
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"
-temperature = 0.1
-max_tokens = 1024
-
-# Observability and monitoring settings
 [observability.langfuse]
 enabled = false
 host = "https://us.cloud.langfuse.com"
