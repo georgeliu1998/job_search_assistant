@@ -72,12 +72,13 @@ class AnthropicClient(BaseLLMClient):
         """Get the model identifier for this client."""
         return self.config.model
 
-    def invoke(self, messages: List[Any]) -> Any:
+    def invoke(self, messages: List[Any], config: dict = None) -> Any:
         """
         Send messages to the LLM and get a response.
 
         Args:
             messages: List of messages to send to the LLM
+            config: Optional configuration dictionary (e.g., for callbacks)
 
         Returns:
             The response from the LLM
@@ -90,7 +91,12 @@ class AnthropicClient(BaseLLMClient):
 
         try:
             client = self._get_client()
-            response = client.invoke(messages)
+
+            # Pass config to the underlying LangChain client if provided
+            if config:
+                response = client.invoke(messages, config=config)
+            else:
+                response = client.invoke(messages)
 
             duration = time.time() - start_time
             self._log_llm_call(messages, response, duration)

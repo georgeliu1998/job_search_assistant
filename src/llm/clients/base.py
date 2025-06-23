@@ -30,7 +30,7 @@ class BaseLLMClient(ABC):
         self.logger = get_logger(f"llm.{self.__class__.__name__.lower()}")
 
     @abstractmethod
-    def invoke(self, messages: List[Any]) -> Any:
+    def invoke(self, messages: List[Any], config: dict = None) -> Any:
         """
         Send messages to the LLM and get a response.
 
@@ -39,6 +39,7 @@ class BaseLLMClient(ABC):
 
         Args:
             messages: List of messages to send to the LLM
+            config: Optional configuration dictionary (e.g., for callbacks)
 
         Returns:
             The response from the LLM provider
