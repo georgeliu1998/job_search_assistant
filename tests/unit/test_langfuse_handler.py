@@ -169,9 +169,9 @@ class TestHelperFunctions:
             },
         ):
             # Reload configs to pick up environment changes
-            from src.config import configs
+            from src.config import config
 
-            configs.reload()
+            config.reload()
 
             # In dev environment with valid keys, should be enabled
             enabled = is_langfuse_enabled()

@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 from langfuse.callback import CallbackHandler
 
-from src.config import configs
+from src.config import config
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -49,13 +49,17 @@ def _initialize_langfuse_handler(
     Returns:
         CallbackHandler instance if successful, None if disabled or failed
     """
-    # Get configuration from centralized configs with optional overrides
-    config = configs.observability.langfuse
+    # Get configuration from centralized config with optional overrides
+    langfuse_config = config.observability.langfuse
 
-    final_enabled = enabled if enabled is not None else config.enabled
-    final_public_key = public_key if public_key is not None else config.public_key
-    final_secret_key = secret_key if secret_key is not None else config.secret_key
-    final_host = host if host is not None else config.host
+    final_enabled = enabled if enabled is not None else langfuse_config.enabled
+    final_public_key = (
+        public_key if public_key is not None else langfuse_config.public_key
+    )
+    final_secret_key = (
+        secret_key if secret_key is not None else langfuse_config.secret_key
+    )
+    final_host = host if host is not None else langfuse_config.host
 
     # Check if tracing is explicitly disabled
     if not final_enabled:
@@ -186,5 +190,5 @@ def reset_langfuse_handler() -> None:
 
 def is_langfuse_enabled() -> bool:
     """Check if Langfuse tracing is enabled based on current configuration."""
-    config = configs.observability.langfuse
-    return config.enabled and config.is_valid()
+    langfuse_config = config.observability.langfuse
+    return langfuse_config.enabled and langfuse_config.is_valid()

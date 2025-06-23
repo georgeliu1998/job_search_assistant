@@ -18,10 +18,10 @@ def reset_configs_state():
     # This fixture runs automatically before each test
     yield  # Run the test
 
-    # After the test, reset the global configs proxy state
-    from src.config import configs
+    # After the test, reset the global config proxy state
+    from src.config import config
 
-    configs._current_config_dir = None
+    config._current_config_dir = None
 
 
 # Define project root directory
@@ -32,11 +32,11 @@ def project_root():
 
 # Configuration fixtures
 @pytest.fixture
-def test_configs():
-    """Provide test configs instance"""
-    from src.config import configs
+def test_config():
+    """Provide test config instance"""
+    from src.config import config
 
-    return configs
+    return config
 
 
 @pytest.fixture
@@ -49,13 +49,13 @@ def mock_api_keys(monkeypatch):
 
 
 @pytest.fixture
-def reload_configs():
-    """Utility to reload configs during tests"""
+def reload_config():
+    """Utility to reload config during tests"""
 
     def _reload(config_dir=None):
-        from src.config import configs
+        from src.config import config
 
-        return configs.reload(config_dir=config_dir)
+        return config.reload(config_dir=config_dir)
 
     return _reload
 

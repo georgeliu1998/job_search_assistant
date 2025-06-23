@@ -11,8 +11,8 @@ import warnings
 def _deprecation_warning():
     """Issue deprecation warning for this module."""
     warnings.warn(
-        "src.core.job_evaluation.criteria is deprecated. Use 'from src.config import configs' "
-        "and access criteria via configs.evaluation_criteria instead.",
+        "src.core.job_evaluation.criteria is deprecated. Use 'from src.config import config' "
+        "and access criteria via config.evaluation_criteria instead.",
         DeprecationWarning,
         stacklevel=3,
     )
@@ -21,9 +21,9 @@ def _deprecation_warning():
 def _get_evaluation_criteria():
     """Get evaluation criteria from new config system or fallback to hardcoded values."""
     try:
-        from src.config import configs
+        from src.config import config
 
-        criteria = configs.evaluation_criteria
+        criteria = config.evaluation_criteria
         return {
             "min_salary": criteria.min_salary,
             "remote_required": criteria.remote_required,

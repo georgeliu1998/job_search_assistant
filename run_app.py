@@ -17,11 +17,11 @@ def check_env_setup():
 
     try:
         # Try to load configs to validate configuration
-        from src.config import configs
+        from src.config import config
 
         # Check if at least one LLM profile has an API key
         has_valid_profile = False
-        for profile_name, profile in configs.llm_profiles.items():
+        for profile_name, profile in config.llm_profiles.items():
             if profile.api_key:
                 has_valid_profile = True
                 break
@@ -38,7 +38,7 @@ def check_env_setup():
 
         print("✅ Configuration loaded successfully!")
         print(f"📋 Active environment: {os.getenv('APP_ENV', 'dev')}")
-        print(f"🤖 Available LLM profiles: {', '.join(configs.llm_profiles.keys())}")
+        print(f"🤖 Available LLM profiles: {', '.join(config.llm_profiles.keys())}")
         return True
 
     except Exception as e:

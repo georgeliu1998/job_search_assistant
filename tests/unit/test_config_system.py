@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.config import ConfigLoader, ConfigManager, configs
+from src.config import ConfigLoader, ConfigManager, config
 from src.config.models import AppConfig
 from src.exceptions.config import (
     ConfigError,
@@ -504,8 +504,8 @@ enabled = false
 
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             # Initial load
-            configs.reload(config_dir=tmp_path)
-            assert configs.general.name == "proxy-initial"
+            config.reload(config_dir=tmp_path)
+            assert config.general.name == "proxy-initial"
 
             # Update config
             base_config.write_text(
@@ -536,8 +536,8 @@ enabled = false
             )
 
             # Reload and verify
-            configs.reload(config_dir=tmp_path)
-            assert configs.general.name == "proxy-updated"
+            config.reload(config_dir=tmp_path)
+            assert config.general.name == "proxy-updated"
 
 
 class TestConfigIntegration:

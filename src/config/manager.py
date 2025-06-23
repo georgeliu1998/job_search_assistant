@@ -158,4 +158,4 @@ class LazyConfigProxy:
 
 
 # Create global proxy instance for application use
-configs = LazyConfigProxy()
+config = LazyConfigProxy()
