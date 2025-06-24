@@ -7,9 +7,3 @@ level = "WARNING"  # Less noise during stage
 # Disable external services during stage
 [observability.langfuse]
 enabled = false
-
-# Use fastest/cheapest model for stage
-[llm_profiles.anthropic_reasoning]
-model = "claude-3-5-haiku-20241022"  # Fastest model
-temperature = 0.0  # Deterministic for stage
-max_tokens = 256   # Minimal tokens for stage

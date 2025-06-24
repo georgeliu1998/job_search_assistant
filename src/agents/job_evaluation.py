@@ -44,16 +44,8 @@ def get_extraction_client():
     return AnthropicClient(profile)
 
 
-def get_reasoning_client():
-    """Initialize LLM client for job evaluation reasoning."""
-    profile_name = config.agents.job_evaluation_reasoning
-    profile = config.get_llm_profile(profile_name)
-    return AnthropicClient(profile)
-
-
-# LLM clients will be initialized when needed
+# LLM client will be initialized when needed
 extraction_llm = None
-reasoning_llm = None
 
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:

@@ -255,7 +255,9 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
             )
         else:
             # Show loading state
-            with st.spinner("🔍 Analyzing job posting... This may take 10-30 seconds."):
+            with st.spinner(
+                "🔍 Analyzing job posting... This may take several seconds."
+            ):
                 try:
                     # Call the job evaluation agent
                     results = evaluate_job_posting(job_description)

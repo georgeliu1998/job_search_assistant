@@ -46,9 +46,6 @@ class AgentConfig(BaseModel):
     job_evaluation_extraction: str = Field(
         ..., description="LLM profile for job information extraction"
     )
-    job_evaluation_reasoning: str = Field(
-        ..., description="LLM profile for job evaluation reasoning"
-    )
 
 
 class EvaluationCriteriaConfig(BaseModel):
@@ -64,7 +61,7 @@ class EvaluationCriteriaConfig(BaseModel):
 class LLMProfileConfig(BaseModel):
     """Configuration for a single LLM profile."""
 
-    provider: str = Field(..., description="LLM provider (anthropic)")
+    provider: str = Field(..., description="LLM provider")
     model: str = Field(..., description="Model identifier")
     temperature: float = Field(
         default=0.0, ge=0.0, le=1.0, description="Sampling temperature"
