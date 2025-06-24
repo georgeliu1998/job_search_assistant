@@ -194,7 +194,7 @@ def create_job_evaluation_agent():
     workflow.add_edge("evaluate", END)
 
     # Compile the graph
-    app = workflow.compile()
+    agent = workflow.compile()
 
     # Add Langfuse tracing if enabled
     langfuse_handler = get_langfuse_handler()
@@ -203,7 +203,7 @@ def create_job_evaluation_agent():
         # Note: LangGraph tracing integration would go here
         # This is a placeholder for actual tracing setup
 
-    return app
+    return agent
 
 
 def generate_recommendation_from_results(
