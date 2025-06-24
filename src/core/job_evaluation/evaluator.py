@@ -8,7 +8,7 @@ and reusable across different contexts.
 
 from typing import Any, Dict
 
-from src.core.job_evaluation.criteria import EVALUATION_CRITERIA
+from src.config import config
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -34,13 +34,16 @@ def evaluate_job_against_criteria(extracted_job_info: Dict[str, Any]) -> Dict[st
     logger.info("Starting job evaluation against criteria")
     results = {}
 
+    # Get evaluation criteria from centralized config
+    criteria = config.evaluation_criteria
+
     # 1. Salary check
     salary_max = extracted_job_info.get("salary_max")
     if salary_max is None:
         results["salary"] = {"pass": False, "reason": "Salary not specified"}
         logger.debug("Salary evaluation: Failed - not specified")
-    elif salary_max < EVALUATION_CRITERIA["min_salary"]:
-        min_salary = EVALUATION_CRITERIA["min_salary"]
+    elif salary_max < criteria.min_salary:
+        min_salary = criteria.min_salary
         results["salary"] = {
             "pass": False,
             "reason": (
@@ -50,7 +53,7 @@ def evaluate_job_against_criteria(extracted_job_info: Dict[str, Any]) -> Dict[st
         }
         logger.debug(f"Salary evaluation: Failed - ${salary_max:,} < ${min_salary:,}")
     else:
-        min_salary = EVALUATION_CRITERIA["min_salary"]
+        min_salary = criteria.min_salary
         results["salary"] = {
             "pass": True,
             "reason": (
@@ -80,7 +83,7 @@ def evaluate_job_against_criteria(extracted_job_info: Dict[str, Any]) -> Dict[st
 
     if "ic" in role_type or "individual contributor" in role_type:
         # Check if title contains required seniority level
-        ic_requirements = EVALUATION_CRITERIA["ic_title_requirements"]
+        ic_requirements = criteria.ic_title_requirements
         has_required_level = any(level in title for level in ic_requirements)
         if has_required_level:
             results["title_level"] = {

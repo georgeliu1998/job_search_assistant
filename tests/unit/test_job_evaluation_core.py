@@ -4,7 +4,7 @@ Unit tests for core job evaluation logic
 
 import pytest
 
-from src.core.job_evaluation import EVALUATION_CRITERIA, evaluate_job_against_criteria
+from src.core.job_evaluation import evaluate_job_against_criteria
 
 
 class TestEvaluateJobAgainstCriteria:
