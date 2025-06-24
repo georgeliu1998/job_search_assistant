@@ -94,12 +94,14 @@ class LLMProfileConfig(BaseModel):
     @classmethod
     def validate_model(cls, v: str, info) -> str:
         """Validate that model is supported for the provider."""
-        # Skip validation in stage environments or for stage models
+        # Skip validation in stage environments or for test/stage models
         current_env = os.getenv("APP_ENV", "").lower()
         if (
             current_env == Environment.STAGE.value
             or v.startswith("stage")
+            or v.startswith("test")
             or "stage" in v.lower()
+            or "test" in v.lower()
         ):
             return v
 

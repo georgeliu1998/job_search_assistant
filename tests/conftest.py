@@ -22,10 +22,14 @@ def reset_config_state():
     yield  # Run the test
 
     # After the test, reset the global config proxy state
+    from src.config import config
     from src.config.manager import ConfigManager
 
     # Clear any cached instances
     ConfigManager._instances = {}
+
+    # Reset the lazy config proxy state
+    config._current_config_dir = None
 
 
 @pytest.fixture

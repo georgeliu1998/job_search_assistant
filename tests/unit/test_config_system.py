@@ -20,6 +20,7 @@ from src.exceptions.config import (
     ConfigValidationError,
     EnvironmentError,
 )
+from src.models.enums import Environment
 
 
 class TestConfigLoader:
@@ -41,7 +42,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -50,7 +50,7 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 temperature = 0.0
 max_tokens = 100
 
@@ -86,13 +86,13 @@ level = "DEBUG"
         loader = ConfigLoader(config_dir=tmp_path)
 
         with patch.dict(os.environ, {"APP_ENV": "development"}):
-            assert loader.get_environment() == "dev"
+            assert loader.get_environment() == Environment.DEV
 
-        with patch.dict(os.environ, {"APP_ENV": "testing"}):
-            assert loader.get_environment() == "test"
+        with patch.dict(os.environ, {"APP_ENV": "staging"}):
+            assert loader.get_environment() == Environment.STAGE
 
         with patch.dict(os.environ, {"APP_ENV": "production"}):
-            assert loader.get_environment() == "prod"
+            assert loader.get_environment() == Environment.PROD
 
     def test_missing_app_env_raises_error(self, tmp_path):
         """Test that missing APP_ENV raises appropriate error."""
@@ -113,7 +113,7 @@ level = "DEBUG"
 
         with patch.dict(os.environ, {"APP_ENV": "invalid"}):
             loader = ConfigLoader(config_dir=tmp_path)
-            with pytest.raises(EnvironmentError, match="Invalid APP_ENV value"):
+            with pytest.raises(EnvironmentError, match="Invalid environment"):
                 loader.get_environment()
 
     def test_missing_base_config_raises_error(self, tmp_path):
@@ -147,7 +147,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "anthropic_profile"
-job_evaluation_reasoning = "anthropic_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -156,7 +155,7 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.anthropic_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = true
@@ -254,7 +253,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -263,17 +261,17 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
 """
         )
 
-        dev_config = tmp_path / "dev.toml"
-        dev_config.write_text("")
+        stage_config = tmp_path / "stage.toml"
+        stage_config.write_text("")
 
-        with patch.dict(os.environ, {"APP_ENV": "dev"}):
+        with patch.dict(os.environ, {"APP_ENV": "stage"}):
             manager = ConfigManager(config_dir=tmp_path)
             settings = manager.load()
 
@@ -294,7 +292,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -303,7 +300,7 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
@@ -327,13 +324,13 @@ enabled = false
             )  # Different instances due to different params
 
     def test_reload_functionality(self, tmp_path):
-        """Test configuration reload functionality."""
+        """Test that configuration can be reloaded."""
         # Create initial config
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
 [general]
-name = "initial-app"
+name = "original-app"
 version = "1.0.0"
 
 [logging]
@@ -341,7 +338,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -350,22 +346,23 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
 """
         )
 
-        dev_config = tmp_path / "dev.toml"
-        dev_config.write_text("")
+        stage_config = tmp_path / "stage.toml"
+        stage_config.write_text("")
 
-        with patch.dict(os.environ, {"APP_ENV": "dev"}):
+        with patch.dict(os.environ, {"APP_ENV": "stage"}):
             manager = ConfigManager(config_dir=tmp_path)
-            initial_settings = manager.load()
-            assert initial_settings.general.name == "initial-app"
+            initial_config = manager.load()
 
-            # Update config file
+            assert initial_config.general.name == "original-app"
+
+            # Modify the config file
             base_config.write_text(
                 """
 [general]
@@ -377,7 +374,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -386,16 +382,16 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
 """
             )
 
-            # Reload and verify update
-            updated_settings = manager.reload()
-            assert updated_settings.general.name == "updated-app"
+            # Reload and verify change
+            reloaded_config = manager.reload()
+            assert reloaded_config.general.name == "updated-app"
 
     def test_validation_error_handling(self, tmp_path):
         """Test that validation errors are properly handled."""
@@ -422,8 +418,8 @@ class TestLazyConfigProxy:
     """Test the lazy configuration proxy."""
 
     def test_lazy_attribute_access(self, tmp_path):
-        """Test that attributes are lazily loaded through the proxy."""
-        # Create valid config
+        """Test that config attributes are accessible via lazy proxy."""
+        # Create test config
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
@@ -432,50 +428,49 @@ name = "proxy-test"
 version = "1.0.0"
 
 [logging]
-level = "INFO"
+level = "DEBUG"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
+min_salary = 150000
+remote_required = false
+ic_title_requirements = ["staff", "principal"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
-enabled = false
+enabled = true
 """
         )
 
-        dev_config = tmp_path / "dev.toml"
-        dev_config.write_text("")
+        stage_config = tmp_path / "stage.toml"
+        stage_config.write_text("")
 
-        with patch.dict(os.environ, {"APP_ENV": "dev"}):
-            # Test using a separate proxy instance to avoid global state
-            from src.config.manager import LazyConfigProxy
+        with patch.dict(os.environ, {"APP_ENV": "stage"}):
+            # Import fresh config proxy
+            from src.config import config as test_config
 
-            test_proxy = LazyConfigProxy()
+            # Force reload with test directory
+            test_config.reload(config_dir=tmp_path)
 
-            # Force the proxy to use our test config
-            test_proxy.reload(config_dir=tmp_path)
-
-            # Access through proxy should work
-            assert test_proxy.general.name == "proxy-test"
-            assert test_proxy.logging.level == "INFO"
+            # Test attribute access
+            assert test_config.general.name == "proxy-test"
+            assert test_config.logging.level == "DEBUG"
+            assert test_config.evaluation_criteria.min_salary == 150000
+            assert test_config.evaluation_criteria.remote_required is False
 
     def test_proxy_reload(self, tmp_path):
-        """Test reloading through the proxy."""
+        """Test that proxy reload works correctly."""
         # Create initial config
         base_config = tmp_path / "base.toml"
         base_config.write_text(
             """
 [general]
-name = "proxy-initial"
+name = "initial"
 version = "1.0.0"
 
 [logging]
@@ -483,7 +478,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -492,26 +486,28 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
 """
         )
 
-        dev_config = tmp_path / "dev.toml"
-        dev_config.write_text("")
+        stage_config = tmp_path / "stage.toml"
+        stage_config.write_text("")
 
-        with patch.dict(os.environ, {"APP_ENV": "dev"}):
-            # Initial load
-            config.reload(config_dir=tmp_path)
-            assert config.general.name == "proxy-initial"
+        with patch.dict(os.environ, {"APP_ENV": "stage"}):
+            from src.config import config as test_config
 
-            # Update config
+            # Load initial config
+            test_config.reload(config_dir=tmp_path)
+            assert test_config.general.name == "initial"
+
+            # Modify config file
             base_config.write_text(
                 """
 [general]
-name = "proxy-updated"
+name = "modified"
 version = "1.0.0"
 
 [logging]
@@ -519,7 +515,6 @@ level = "INFO"
 
 [agents]
 job_evaluation_extraction = "test_profile"
-job_evaluation_reasoning = "test_profile"
 
 [evaluation_criteria]
 min_salary = 100000
@@ -528,7 +523,7 @@ ic_title_requirements = ["senior"]
 
 [llm_profiles.test_profile]
 provider = "anthropic"
-model = "test-model"
+model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
@@ -536,8 +531,8 @@ enabled = false
             )
 
             # Reload and verify
-            config.reload(config_dir=tmp_path)
-            assert config.general.name == "proxy-updated"
+            test_config.reload(config_dir=tmp_path)
+            assert test_config.general.name == "modified"
 
 
 class TestConfigIntegration:
@@ -560,7 +555,6 @@ format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 
 [agents]
 job_evaluation_extraction = "claude_profile"
-job_evaluation_reasoning = "claude_profile"
 
 [evaluation_criteria]
 min_salary = 150000
