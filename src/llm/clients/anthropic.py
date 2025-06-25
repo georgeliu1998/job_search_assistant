@@ -31,8 +31,6 @@ class AnthropicClient(BaseLLMClient):
             LLMProviderError: If API key is missing or invalid
         """
         super().__init__(config)
-        self.config: LLMProfileConfig = config
-        self._client = None
 
         # Validate that this is an Anthropic config
         if config.provider != "anthropic":
