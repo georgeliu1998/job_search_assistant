@@ -31,12 +31,8 @@ class JobDescription(BaseDataModel):
         None, description="Source of the job posting (e.g., LinkedIn, Indeed)."
     )
     url: Optional[str] = Field(None, description="URL of the job posting.")
-    date_posted: Optional[str] = Field(
-        None, description="Date the job was posted."
-    )  # Consider using datetime
-    date_scraped: Optional[str] = Field(
-        None, description="Date the job was scraped."
-    )  # Consider using datetime
+    date_posted: Optional[str] = Field(None, description="Date the job was posted.")
+    date_scraped: Optional[str] = Field(None, description="Date the job was scraped.")
 
     # Evaluation fields
     status: JobStatus = Field(
