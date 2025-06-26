@@ -1,9 +1,10 @@
 # Base configuration for Job Search Assistant
 # This file contains all default values and the complete configuration structure
-# Environment-specific files (dev.toml, test.toml) override these defaults
+# Environment-specific files (dev.toml, stage.toml) override these defaults
 
 [general]
 name = "job-search-assistant"
+tagline = "AI-powered job search assistant who does the heavy lifting and gets the job for you"
 version = "0.1.0"
 debug = false
 
@@ -11,25 +12,22 @@ debug = false
 level = "INFO"
 format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 
-# Agent task to LLM profile mappings - both use the same profile
+[llm_profiles.anthropic_extraction]
+provider = "anthropic"
+model = "claude-3-5-haiku-20241022"
+temperature = 0.0
+max_tokens = 512
+
+# Agent task to LLM profile mapping
 [agents]
-job_evaluation_extraction = "anthropic_reasoning"
-job_evaluation_reasoning = "anthropic_reasoning"
+job_evaluation_extraction = "anthropic_extraction"
 
 # Business logic parameters for job evaluation
 [evaluation_criteria]
-min_salary = 160000
+min_salary = 100000
 remote_required = true
 ic_title_requirements = ["lead", "staff", "principal", "senior staff"]
 
-# Single LLM profile for all tasks
-[llm_profiles.anthropic_reasoning]
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"
-temperature = 0.1
-max_tokens = 1024
-
-# Observability and monitoring settings
 [observability.langfuse]
 enabled = false
 host = "https://us.cloud.langfuse.com"

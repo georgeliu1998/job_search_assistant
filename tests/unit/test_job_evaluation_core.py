@@ -4,7 +4,7 @@ Unit tests for core job evaluation logic
 
 import pytest
 
-from src.core.job_evaluation import EVALUATION_CRITERIA, evaluate_job_against_criteria
+from src.core.job_evaluation import evaluate_job_against_criteria
 
 
 class TestEvaluateJobAgainstCriteria:
@@ -28,7 +28,7 @@ class TestEvaluateJobAgainstCriteria:
     def test_low_salary_fails(self):
         """Test job with salary below minimum"""
         job_info = {
-            "salary_max": 120000,  # Below 160k minimum
+            "salary_max": 80000,  # Below 100k minimum
             "location_policy": "Remote",
             "role_type": "IC",
             "title": "Staff Software Engineer",

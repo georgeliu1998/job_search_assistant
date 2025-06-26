@@ -44,16 +44,8 @@ def get_extraction_client():
     return AnthropicClient(profile)
 
 
-def get_reasoning_client():
-    """Initialize LLM client for job evaluation reasoning."""
-    profile_name = config.agents.job_evaluation_reasoning
-    profile = config.get_llm_profile(profile_name)
-    return AnthropicClient(profile)
-
-
-# LLM clients will be initialized when needed
+# LLM client will be initialized when needed
 extraction_llm = None
-reasoning_llm = None
 
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
@@ -202,7 +194,7 @@ def create_job_evaluation_agent():
     workflow.add_edge("evaluate", END)
 
     # Compile the graph
-    app = workflow.compile()
+    agent = workflow.compile()
 
     # Add Langfuse tracing if enabled
     langfuse_handler = get_langfuse_handler()
@@ -211,7 +203,7 @@ def create_job_evaluation_agent():
         # Note: LangGraph tracing integration would go here
         # This is a placeholder for actual tracing setup
 
-    return app
+    return agent
 
 
 def generate_recommendation_from_results(

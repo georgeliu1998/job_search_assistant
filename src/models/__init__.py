@@ -1,24 +1,28 @@
-"""Data models for the job search assistant."""
+"""
+Models package for the Job Search Assistant.
 
-# Import all models from the new separated files
-from src.models.enums import JobSource, JobStatus
+This package contains all the data models and enums used throughout the application.
+"""
+
+from src.models.base import BaseDataModel
+from src.models.enums import Environment, JobSource, JobStatus
 from src.models.evaluation import EvaluationResult
 from src.models.job import JobDescription
 from src.models.resume import Education, Experience, Resume
 from src.models.user import UserPreferences
 
 __all__ = [
+    # Base
+    "BaseDataModel",
     # Enums
+    "Environment",
     "JobSource",
     "JobStatus",
-    # Job models
+    # Domain models
+    "EvaluationResult",
     "JobDescription",
-    # Resume models
     "Education",
     "Experience",
     "Resume",
-    # User models
     "UserPreferences",
-    # Evaluation models
-    "EvaluationResult",
 ]

@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, field_validator
 
-from src.models.base import BaseJobSearchModel
+from src.models.base import BaseDataModel
 from src.models.enums import JobSource, JobStatus
 
 
-class JobDescription(BaseJobSearchModel):
+class JobDescription(BaseDataModel):
     """Model representing a job posting with evaluation metadata."""
 
     # Core job information
@@ -31,12 +31,8 @@ class JobDescription(BaseJobSearchModel):
         None, description="Source of the job posting (e.g., LinkedIn, Indeed)."
     )
     url: Optional[str] = Field(None, description="URL of the job posting.")
-    date_posted: Optional[str] = Field(
-        None, description="Date the job was posted."
-    )  # Consider using datetime
-    date_scraped: Optional[str] = Field(
-        None, description="Date the job was scraped."
-    )  # Consider using datetime
+    date_posted: Optional[str] = Field(None, description="Date the job was posted.")
+    date_scraped: Optional[str] = Field(None, description="Date the job was scraped.")
 
     # Evaluation fields
     status: JobStatus = Field(

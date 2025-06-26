@@ -68,20 +68,20 @@ class TestLangfuseConfig:
             # In dev.toml, langfuse is enabled
             assert langfuse_config.enabled is True
 
-    def test_langfuse_disabled_in_test_environment(self):
-        """Test that Langfuse is disabled in test environment."""
-        with patch.dict(os.environ, {"APP_ENV": "test"}):
+    def test_langfuse_disabled_in_stage_environment(self):
+        """Test that Langfuse is disabled in stage environment."""
+        with patch.dict(os.environ, {"APP_ENV": "stage"}):
             test_config = config.reload()
 
             langfuse_config = test_config.observability.langfuse
-            # In test.toml, langfuse is disabled
+            # In stage.toml, langfuse is disabled
             assert langfuse_config.enabled is False
 
-    def test_langfuse_disabled_in_prod_environment(self):
-        """Test that Langfuse is disabled by default in production environment."""
+    def test_langfuse_enabled_in_prod_environment(self):
+        """Test that Langfuse is enabled in production environment."""
         with patch.dict(os.environ, {"APP_ENV": "prod"}):
             test_config = config.reload()
 
             langfuse_config = test_config.observability.langfuse
-            # In prod.toml, langfuse is disabled by default
-            assert langfuse_config.enabled is False
+            # In prod.toml, langfuse is enabled
+            assert langfuse_config.enabled is True

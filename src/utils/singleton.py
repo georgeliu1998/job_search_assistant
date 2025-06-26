@@ -1,22 +1,14 @@
 """
 Thread-safe singleton decorator with reload capability.
 
-This module provides a reusable singleton pattern that can be applied to any class.
-The singleton supports reload functionality which is useful for testing and
-configuration management.
+Provides a reusable singleton pattern that creates one instance per unique
+set of initialization parameters, with reload functionality for testing.
 
-Example Usage:
+Example:
     @singleton
     class ConfigManager:
         def __init__(self, config_dir=None):
             self.config_dir = config_dir
-
-        def load(self):
-            return f"Config from {self.config_dir}"
-
-        def reload(self):
-            # This is the class's own reload method
-            return self.load()
 
     # Same parameters return same instance
     manager1 = ConfigManager(config_dir="/path/to/config")
@@ -24,21 +16,12 @@ Example Usage:
     assert manager1 is manager2  # True
 
     # Different parameters create different instances
-    manager3 = ConfigManager()  # No config_dir
+    manager3 = ConfigManager()
     assert manager1 is not manager3  # True
 
-    # Class methods work normally
-    result = manager1.reload()  # Calls ConfigManager.reload()
-
-    # Singleton reload for testing (creates new instance)
+    # Reload for testing
     new_manager = manager1.reload_singleton(config_dir="/new/path")
     assert new_manager is not manager1  # True
-
-Note:
-    The singleton decorator adds a `reload_singleton` method to avoid conflicts
-    with existing class methods named `reload`. If your class has a `reload`
-    method, it will work normally - only `reload_singleton` triggers the
-    singleton reload behavior.
 """
 
 import threading
@@ -51,27 +34,8 @@ def singleton(cls: type[T]) -> type[T]:
     """
     Thread-safe singleton decorator with reload capability.
 
-    This decorator ensures that only one instance of the decorated class exists
-    per unique set of initialization parameters, while providing a reload
-    mechanism for testing and dynamic configuration.
-
-    Usage:
-        @singleton
-        class MyClass:
-            def __init__(self, value):
-                self.value = value
-
-        # Normal usage - same parameters return same instance
-        instance1 = MyClass("test")
-        instance2 = MyClass("test")  # Returns same instance
-        assert instance1 is instance2
-
-        # Different parameters create different instances
-        instance3 = MyClass("different")  # Creates new instance
-        assert instance1 is not instance3
-
-        # Reload functionality
-        new_instance = instance1.reload(new_value="updated")
+    Ensures only one instance exists per unique set of initialization parameters.
+    Adds a `reload_singleton` method for creating new instances during testing.
 
     Args:
         cls: The class to make singleton

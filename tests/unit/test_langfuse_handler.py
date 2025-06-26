@@ -153,9 +153,9 @@ class TestHelperFunctions:
     def test_is_langfuse_enabled(self, mock_api_keys):
         """Test is_langfuse_enabled function with centralized configs."""
         # This will test the actual configs configuration
-        # In test environment, langfuse should be disabled by default
+        # In stage environment, langfuse should be disabled by default
         enabled = is_langfuse_enabled()
-        # Since we're in test environment, it should be False
+        # Since we're in stage environment, it should be False
         assert enabled is False
 
     def test_is_langfuse_enabled_with_environment_override(self):

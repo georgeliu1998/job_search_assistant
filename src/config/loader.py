@@ -1,12 +1,8 @@
 """
-Configuration loader for handling file operations and environment variables.
+Configuration loader for the Job Search Assistant.
 
-This module is responsible for:
-- Loading and parsing TOML configuration files
-- Environment detection and validation
-- Loading secrets from environment variables
-- Merging configuration dictionaries
-- Dotenv file loading for development
+This module provides functionality to load, merge, and validate configuration
+from multiple sources including TOML files and environment variables.
 """
 
 import os
@@ -15,23 +11,26 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from src.exceptions.config import ConfigError, ConfigFileError, EnvironmentError
+from src.models.enums import Environment
 
 
 class ConfigLoader:
     """
-    Handles loading configuration data from files and environment variables.
+    Configuration loader that handles loading from multiple sources.
 
-    This class is responsible for the low-level operations of gathering
-    configuration data from various sources and returning raw dictionaries
-    for further processing.
+    The loader follows this precedence order:
+    1. Base configuration (base.toml)
+    2. Environment-specific overrides ({env}.toml)
+    3. Environment variables (for secrets)
     """
 
     def __init__(self, config_dir: Optional[Path] = None):
         """
-        Initialize configuration loader.
+        Initialize the configuration loader.
 
         Args:
-            config_dir: Directory containing config files (defaults to project root/configs)
+            config_dir: Directory containing configuration files.
+                       Defaults to 'configs' in project root.
         """
         self.config_dir = self._resolve_config_dir(config_dir)
         self._load_dotenv()
@@ -39,11 +38,13 @@ class ConfigLoader:
 
     def _resolve_config_dir(self, config_dir: Optional[Path]) -> Path:
         """Resolve the configuration directory path."""
-        if config_dir is None:
-            # Default to configs/ directory at project root
-            project_root = Path(__file__).parent.parent.parent
-            config_dir = project_root / "configs"
-        return Path(config_dir)
+        if config_dir:
+            return config_dir.resolve()
+
+        # Default to configs directory in project root
+        current_file = Path(__file__).resolve()
+        project_root = current_file.parent.parent.parent
+        return project_root / "configs"
 
     def _load_dotenv(self) -> None:
         """
@@ -84,40 +85,29 @@ class ConfigLoader:
                 config_path=str(base_config),
             )
 
-    def get_environment(self) -> str:
+    def get_environment(self) -> Environment:
         """
         Get and validate current environment from APP_ENV variable.
 
         Returns:
-            Normalized environment name (dev, test, prod)
+            Environment enum value
 
         Raises:
             EnvironmentError: If APP_ENV is not set or invalid
         """
-        env = os.getenv("APP_ENV", "").lower()
+        env_str = os.getenv("APP_ENV", "").lower()
 
-        if not env:
+        if not env_str:
+            valid_values = ", ".join([e.value for e in Environment])
             raise EnvironmentError(
-                "APP_ENV environment variable is not set. "
-                "Valid values: dev, test, prod"
+                f"APP_ENV environment variable is not set. "
+                f"Valid values: {valid_values}"
             )
 
-        # Normalize environment names
-        env_mapping = {
-            "development": "dev",
-            "testing": "test",
-            "production": "prod",
-        }
-        env = env_mapping.get(env, env)
-
-        valid_environments = {"dev", "test", "prod"}
-        if env not in valid_environments:
-            raise EnvironmentError(
-                f"Invalid APP_ENV value: '{env}'. "
-                f"Valid values: {', '.join(valid_environments)}"
-            )
-
-        return env
+        try:
+            return Environment.from_string(env_str)
+        except ValueError as e:
+            raise EnvironmentError(str(e))
 
     def load_toml_file(self, file_path: Path) -> Dict[str, Any]:
         """
@@ -227,7 +217,7 @@ class ConfigLoader:
             config = self.load_toml_file(base_config_path)
 
             # 3. Load environment-specific overrides
-            env_config_path = self.config_dir / f"{env}.toml"
+            env_config_path = self.config_dir / f"{env.value}.toml"
             if env_config_path.exists():
                 env_config = self.load_toml_file(env_config_path)
                 config = self.merge_configs(config, env_config)

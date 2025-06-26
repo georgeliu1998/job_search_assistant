@@ -31,8 +31,6 @@ class AnthropicClient(BaseLLMClient):
             LLMProviderError: If API key is missing or invalid
         """
         super().__init__(config)
-        self.config: LLMProfileConfig = config
-        self._client = None
 
         # Validate that this is an Anthropic config
         if config.provider != "anthropic":
@@ -43,9 +41,9 @@ class AnthropicClient(BaseLLMClient):
         # Use the generic API key management from base class
         self._ensure_api_key("ANTHROPIC_API_KEY", "Enter your Anthropic API key: ")
 
-    def _get_client(self) -> ChatAnthropic:
+    def _initialize_client(self) -> ChatAnthropic:
         """
-        Get or create the underlying ChatAnthropic client.
+        Create and return the underlying ChatAnthropic client instance.
 
         Returns:
             Configured ChatAnthropic instance
@@ -53,20 +51,19 @@ class AnthropicClient(BaseLLMClient):
         Raises:
             LLMProviderError: If client initialization fails
         """
-        if self._client is None:
-            try:
-                self._client = ChatAnthropic(
-                    model=self.config.model,  # Now just a string, not an enum
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
-                    api_key=self.config.api_key,
-                )
-                self.logger.debug(
-                    f"Initialized Anthropic client with model: {self.config.model}"
-                )
-            except Exception as e:
-                raise LLMProviderError(f"Failed to initialize Anthropic client: {e}")
-        return self._client
+        try:
+            client = ChatAnthropic(
+                model=self.config.model,
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens,
+                api_key=self.config.api_key,
+            )
+            self.logger.debug(
+                f"Initialized Anthropic client with model: {self.config.model}"
+            )
+            return client
+        except Exception as e:
+            raise LLMProviderError(f"Failed to initialize Anthropic client: {e}")
 
     def get_model_name(self) -> str:
         """Get the model identifier for this client."""

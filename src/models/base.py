@@ -3,10 +3,11 @@
 from pydantic import BaseModel, ConfigDict
 
 
-class BaseJobSearchModel(BaseModel):
-    """Base model with common configuration for all job search models."""
+class BaseDataModel(BaseModel):
+    """Base model with common configuration for all data models."""
 
     model_config = ConfigDict(
         use_enum_values=True,
-        # anystr_strip_whitespace = True  # TODO: Decide if desired
+        str_strip_whitespace=True,
+        # validate_assignment=True,
     )

@@ -17,6 +17,11 @@ class BaseLLMClient(ABC):
 
     This class defines the common interface that all LLM provider clients
     must implement, ensuring consistency across different providers.
+
+    Subclasses should implement the `_initialize_client` method to provide
+    provider-specific client initialization. The `_get_client` method provides
+    a default lazy initialization pattern and should only be overridden if
+    custom logic is required.
     """
 
     def __init__(self, config: LLMProfileConfig):
@@ -28,6 +33,7 @@ class BaseLLMClient(ABC):
         """
         self.config = config
         self.logger = get_logger(f"llm.{self.__class__.__name__.lower()}")
+        self._client = None  # For lazy initialization
 
     @abstractmethod
     def invoke(self, messages: List[Any], config: dict = None) -> Any:
@@ -47,7 +53,7 @@ class BaseLLMClient(ABC):
         Raises:
             LLMProviderError: If there's an error communicating with the LLM
         """
-        pass
+        raise NotImplementedError("Subclasses must implement the 'invoke' method.")
 
     @abstractmethod
     def get_model_name(self) -> str:
@@ -59,14 +65,13 @@ class BaseLLMClient(ABC):
         """
         pass
 
-    @abstractmethod
     def _get_client(self) -> Any:
         """
         Get or create the underlying LLM client instance.
 
-        This method should implement lazy initialization of the provider-specific
-        client (e.g., ChatAnthropic). Different providers may need
-        different initialization parameters or patterns.
+        This default implementation uses lazy initialization and stores the client
+        in self._client. Subclasses should override this method only if they require
+        custom initialization logic.
 
         Returns:
             The provider-specific client instance
@@ -74,7 +79,19 @@ class BaseLLMClient(ABC):
         Raises:
             LLMProviderError: If client initialization fails
         """
-        pass
+        if self._client is None:
+            self._client = self._initialize_client()
+        return self._client
+
+    @abstractmethod
+    def _initialize_client(self) -> Any:
+        """
+        Subclasses must implement this method to create and return the provider-specific client instance.
+        This method is called by the default _get_client implementation for lazy initialization.
+        """
+        raise NotImplementedError(
+            "Subclasses must implement the '_initialize_client' method."
+        )
 
     def _ensure_api_key(self, env_var_name: str, prompt_text: str = None) -> str:
         """

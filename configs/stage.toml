@@ -1,0 +1,9 @@
+# Stage environment overrides
+# Only define settings that differ from base.toml
+
+[logging]
+level = "WARNING"  # Less noise during stage
+
+# Disable external services during stage
+[observability.langfuse]
+enabled = false

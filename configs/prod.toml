@@ -7,9 +7,5 @@ debug = false
 [logging]
 level = "INFO"
 
-# Disable observability in production by default (can be enabled via env vars)
 [observability.langfuse]
-enabled = false
-
-# Production uses the default anthropic_reasoning profile from base.toml
-# (claude-sonnet-4-20250514 with temperature=0.1, max_tokens=1024)
+enabled = true

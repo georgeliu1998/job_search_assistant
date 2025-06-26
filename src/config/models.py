@@ -10,11 +10,14 @@ from typing import ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.models.enums import Environment
+
 
 class GeneralConfig(BaseModel):
     """Application metadata and general settings."""
 
     name: str = Field(..., description="Application name")
+    tagline: str = Field(..., description="Application tagline")
     version: str = Field(..., description="Application version")
     debug: bool = Field(default=False, description="Enable debug mode")
 
@@ -44,9 +47,6 @@ class AgentConfig(BaseModel):
     job_evaluation_extraction: str = Field(
         ..., description="LLM profile for job information extraction"
     )
-    job_evaluation_reasoning: str = Field(
-        ..., description="LLM profile for job evaluation reasoning"
-    )
 
 
 class EvaluationCriteriaConfig(BaseModel):
@@ -62,7 +62,7 @@ class EvaluationCriteriaConfig(BaseModel):
 class LLMProfileConfig(BaseModel):
     """Configuration for a single LLM profile."""
 
-    provider: str = Field(..., description="LLM provider (anthropic)")
+    provider: str = Field(..., description="LLM provider")
     model: str = Field(..., description="Model identifier")
     temperature: float = Field(
         default=0.0, ge=0.0, le=1.0, description="Sampling temperature"
@@ -95,10 +95,13 @@ class LLMProfileConfig(BaseModel):
     @classmethod
     def validate_model(cls, v: str, info) -> str:
         """Validate that model is supported for the provider."""
-        # Skip validation in test environments or for test models
+        # Skip validation in stage environments or for test/stage models
+        current_env = os.getenv("APP_ENV", "").lower()
         if (
-            os.getenv("APP_ENV", "").lower() == "test"
+            current_env == Environment.STAGE.value
+            or v.startswith("stage")
             or v.startswith("test")
+            or "stage" in v.lower()
             or "test" in v.lower()
         ):
             return v
