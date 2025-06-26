@@ -92,7 +92,7 @@ def test_job_evaluation_should_apply(mock_extraction_llm):
     mock_response.content = """{
   "title": "Lead Machine Learning Engineer",
   "company": "TechCorp",
-  "salary_min": 160000,
+  "salary_min": 100000,
   "salary_max": 180000,
   "location_policy": "remote",
   "role_type": "ic"
@@ -124,8 +124,8 @@ def test_job_evaluation_should_not_apply_low_salary(mock_extraction_llm):
     mock_response.content = """{
   "title": "Lead Machine Learning Engineer",
   "company": "TechCorp",
-  "salary_min": 120000,
-  "salary_max": 140000,
+  "salary_min": 70000,
+  "salary_max": 90000,
   "location_policy": "remote",
   "role_type": "ic"
 }"""
@@ -133,7 +133,7 @@ def test_job_evaluation_should_not_apply_low_salary(mock_extraction_llm):
 
     job_posting = """
     Lead Machine Learning Engineer at TechCorp
-    Salary: $120k-$140k
+    Salary: $70k-$90k
     Remote position
     """
 
@@ -153,7 +153,7 @@ def test_job_evaluation_should_not_apply_not_remote(mock_extraction_llm):
     mock_response.content = """{
   "title": "Lead Machine Learning Engineer",
   "company": "TechCorp",
-  "salary_min": 160000,
+  "salary_min": 100000,
   "salary_max": 180000,
   "location_policy": "onsite",
   "role_type": "ic"
@@ -182,7 +182,7 @@ def test_job_evaluation_should_not_apply_junior_ic_role(mock_extraction_llm):
     mock_response.content = """{
   "title": "Machine Learning Engineer",
   "company": "TechCorp",
-  "salary_min": 160000,
+  "salary_min": 100000,
   "salary_max": 180000,
   "location_policy": "remote",
   "role_type": "ic"

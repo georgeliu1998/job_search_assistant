@@ -18,7 +18,7 @@ def render_settings_page():
         """
     The job evaluation currently uses these built-in criteria:
 
-    - **💰 Minimum Salary:** $160,000/year
+    - **💰 Minimum Salary:** $100,000/year
     - **🏠 Work Location:** Remote preferred
     - **📊 Experience Level:** 3-8 years preferred
     - **🛠️ Technical Skills:** Python, ML, Data Science focus

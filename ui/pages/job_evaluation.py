@@ -18,7 +18,7 @@ def render_job_evaluation_page():
     based on your preferences.
 
     **Current evaluation criteria:**
-    - 💰 Salary range ($160,000+ preferred)
+    - 💰 Salary range ($100,000+ preferred)
     - 🏠 Remote work availability
     - 📊 Experience level match
     - 🛠️ Technical skills alignment

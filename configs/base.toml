@@ -24,7 +24,7 @@ job_evaluation_extraction = "anthropic_extraction"
 
 # Business logic parameters for job evaluation
 [evaluation_criteria]
-min_salary = 160000
+min_salary = 100000
 remote_required = true
 ic_title_requirements = ["lead", "staff", "principal", "senior staff"]
 

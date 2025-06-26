@@ -6,7 +6,7 @@ AI-powered job search assistant who does the heavy lifting and gets the job for 
 
 ### ✅ Available Now
 - **Job Evaluation**: AI-powered analysis of job descriptions against your criteria
-  - Salary range evaluation ($160,000+ minimum)
+  - Salary range evaluation ($100,000+ minimum)
   - Remote work compatibility check
   - Experience level matching
   - Skills alignment assessment
