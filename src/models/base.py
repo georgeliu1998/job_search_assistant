@@ -8,5 +8,6 @@ class BaseDataModel(BaseModel):
 
     model_config = ConfigDict(
         use_enum_values=True,
-        # anystr_strip_whitespace = True  # TODO: Decide if desired
+        str_strip_whitespace=True,
+        # validate_assignment=True,
     )
