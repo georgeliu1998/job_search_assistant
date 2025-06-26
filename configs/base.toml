@@ -4,6 +4,7 @@
 
 [general]
 name = "job-search-assistant"
+tagline = "AI-powered job search assistant who does the heavy lifting and gets the job for you"
 version = "0.1.0"
 debug = false
 

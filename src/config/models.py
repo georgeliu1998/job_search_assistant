@@ -17,6 +17,7 @@ class GeneralConfig(BaseModel):
     """Application metadata and general settings."""
 
     name: str = Field(..., description="Application name")
+    tagline: str = Field(..., description="Application tagline")
     version: str = Field(..., description="Application version")
     debug: bool = Field(default=False, description="Enable debug mode")
 
