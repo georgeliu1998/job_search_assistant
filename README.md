@@ -60,10 +60,6 @@ Then edit `.env` with your actual API keys.
 
 3. **Run the application**
 ```bash
-# Easy way - using the provided script
-uv run python run_app.py
-
-# Or run Streamlit directly
 uv run streamlit run ui/app.py
 ```
 
