@@ -82,6 +82,7 @@ The application uses the following environment variables:
 The application uses TOML configuration files in the `configs/` directory:
 - `base.toml` - Default settings and complete configuration structure
 - `dev.toml` - Development environment overrides
+- `stage.toml` - Staging environment overrides
 - `prod.toml` - Production environment settings
 
 Key configuration areas:
