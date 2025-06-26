@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from src.models.base import BaseJobSearchModel
+from src.models.base import BaseDataModel
 
 
-class Education(BaseJobSearchModel):
+class Education(BaseDataModel):
     """Model representing educational background."""
 
     institution: str = Field(..., description="Name of the educational institution.")
@@ -17,7 +17,7 @@ class Education(BaseJobSearchModel):
     end_date: Optional[str] = Field(None, description="End date of education.")
 
 
-class Experience(BaseJobSearchModel):
+class Experience(BaseDataModel):
     """Model representing work experience."""
 
     company: str = Field(..., description="Company name.")
@@ -29,7 +29,7 @@ class Experience(BaseJobSearchModel):
     )
 
 
-class Resume(BaseJobSearchModel):
+class Resume(BaseDataModel):
     """Model representing a complete resume."""
 
     personal_info: Dict[str, Any] = Field(

@@ -3,8 +3,8 @@
 from pydantic import BaseModel, ConfigDict
 
 
-class BaseJobSearchModel(BaseModel):
-    """Base model with common configuration for all job search models."""
+class BaseDataModel(BaseModel):
+    """Base model with common configuration for all data models."""
 
     model_config = ConfigDict(
         use_enum_values=True,

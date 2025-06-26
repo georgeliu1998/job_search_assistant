@@ -4,10 +4,10 @@ from typing import List
 
 from pydantic import Field
 
-from src.models.base import BaseJobSearchModel
+from src.models.base import BaseDataModel
 
 
-class UserPreferences(BaseJobSearchModel):
+class UserPreferences(BaseDataModel):
     """Model representing user job search preferences."""
 
     job_titles: List[str] = Field(..., description="List of desired job titles.")

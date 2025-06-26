@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, field_validator
 
-from src.models.base import BaseJobSearchModel
+from src.models.base import BaseDataModel
 from src.models.enums import JobSource, JobStatus
 
 
-class JobDescription(BaseJobSearchModel):
+class JobDescription(BaseDataModel):
     """Model representing a job posting with evaluation metadata."""
 
     # Core job information

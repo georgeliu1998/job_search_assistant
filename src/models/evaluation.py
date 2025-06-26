@@ -4,11 +4,11 @@ from typing import List
 
 from pydantic import Field, field_validator
 
-from src.models.base import BaseJobSearchModel
+from src.models.base import BaseDataModel
 from src.models.job import JobDescription
 
 
-class EvaluationResult(BaseJobSearchModel):
+class EvaluationResult(BaseDataModel):
     """Model representing the result of evaluating a job against user preferences."""
 
     job: JobDescription = Field(..., description="The job description being evaluated.")
