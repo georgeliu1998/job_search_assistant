@@ -53,7 +53,7 @@ class AnthropicClient(BaseLLMClient):
         """
         try:
             client = ChatAnthropic(
-                model=self.config.model,  # Now just a string, not an enum
+                model=self.config.model,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
                 api_key=self.config.api_key,
