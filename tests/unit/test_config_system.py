@@ -34,6 +34,7 @@ class TestConfigLoader:
             """
 [general]
 name = "test-app"
+tagline = "Test dev application"
 version = "1.0.0"
 debug = false
 
@@ -140,6 +141,7 @@ level = "DEBUG"
             """
 [general]
 name = "test"
+tagline = "Test secrets application"
 version = "1.0.0"
 
 [logging]
@@ -197,6 +199,7 @@ enabled = true
             """
 [general]
 name = "test-app"
+tagline = "Test merge application"
 debug = false
 
 [logging]
@@ -246,6 +249,7 @@ class TestConfigManager:
             """
 [general]
 name = "test-app"
+tagline = "Test application"
 version = "1.0.0"
 
 [logging]
@@ -285,6 +289,7 @@ enabled = false
             """
 [general]
 name = "test-app"
+tagline = "Test application"
 version = "1.0.0"
 
 [logging]
@@ -331,6 +336,7 @@ enabled = false
             """
 [general]
 name = "original-app"
+tagline = "Original application"
 version = "1.0.0"
 
 [logging]
@@ -367,6 +373,7 @@ enabled = false
                 """
 [general]
 name = "updated-app"
+tagline = "Updated application"
 version = "1.0.0"
 
 [logging]
@@ -425,6 +432,7 @@ class TestLazyConfigProxy:
             """
 [general]
 name = "proxy-test"
+tagline = "Proxy test application"
 version = "1.0.0"
 
 [logging]
@@ -471,6 +479,7 @@ enabled = true
             """
 [general]
 name = "initial"
+tagline = "Initial application"
 version = "1.0.0"
 
 [logging]
@@ -508,6 +517,7 @@ enabled = false
                 """
 [general]
 name = "modified"
+tagline = "Modified application"
 version = "1.0.0"
 
 [logging]
@@ -546,6 +556,7 @@ class TestConfigIntegration:
             """
 [general]
 name = "integration-test"
+tagline = "Integration test application"
 version = "1.0.0"
 debug = false
 
