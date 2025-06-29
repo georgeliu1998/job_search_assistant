@@ -124,16 +124,11 @@ class LLMProfileConfig(BaseModel):
         """Validate that API key is provided for non-test environments."""
         current_env = os.getenv("APP_ENV", "").lower()
 
-        # Skip validation in test environments
-        if (
-            current_env == Environment.STAGE.value
-            or "test" in current_env
-            or "pytest" in (os.getenv("_") or "")
-            or os.getenv("PYTEST_CURRENT_TEST") is not None
-        ):
+        # Skip validation in stage environment (used for testing)
+        if current_env == Environment.STAGE.value:
             return v
 
-        # In production environments, require API key
+        # In dev and prod environments, require API key
         if not v:
             provider = info.data.get("provider", "unknown")
             raise ValueError(

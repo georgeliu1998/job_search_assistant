@@ -18,17 +18,23 @@ class TestAPIKeyValidation:
 
     def test_api_key_required_in_production_environment(self):
         """Test that API key is required in production environment"""
-        # Mock the validation method to simulate production environment
         with patch("src.config.models.os.getenv") as mock_getenv:
+            mock_getenv.return_value = "prod"  # Production environment
 
-            def side_effect(key, default=""):
-                if key == "APP_ENV":
-                    return "prod"  # Production environment
-                elif key in ["PYTEST_CURRENT_TEST", "_"]:
-                    return None
-                return default
+            with pytest.raises(ValidationError) as exc_info:
+                LLMProfileConfig(
+                    provider="anthropic",
+                    model="claude-3-5-haiku-20241022",
+                    api_key=None,
+                )
 
-            mock_getenv.side_effect = side_effect
+            error_msg = str(exc_info.value)
+            assert "API key is required for anthropic provider" in error_msg
+
+    def test_api_key_required_in_dev_environment(self):
+        """Test that API key is required in development environment"""
+        with patch("src.config.models.os.getenv") as mock_getenv:
+            mock_getenv.return_value = "dev"  # Development environment
 
             with pytest.raises(ValidationError) as exc_info:
                 LLMProfileConfig(
@@ -50,8 +56,8 @@ class TestAPIKeyValidation:
             assert config.api_key is None
 
     def test_api_key_optional_in_test_environment(self):
-        """Test that API key is optional when pytest is detected"""
-        # This test runs in actual pytest environment, so validation should be skipped
+        """Test that API key is optional when running in pytest (stage environment)"""
+        # This test runs in actual pytest environment with APP_ENV=stage, so validation should be skipped
         config = LLMProfileConfig(
             provider="anthropic", model="claude-3-5-haiku-20241022", api_key=None
         )
