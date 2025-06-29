@@ -71,7 +71,7 @@ The application uses the following environment variables:
 
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | ✅ **Required** | Anthropic API key for Claude models | - |
+| `ANTHROPIC_API_KEY` | ✅  | Anthropic API key for Claude models | - |
 | `APP_ENV` | ❌ No | Application environment | `dev` |
 | `FIREWORKS_API_KEY` | ❌ No | Fireworks AI API key (alternative provider) | - |
 | `LANGFUSE_PUBLIC_KEY` | ❌ No | Langfuse public key for observability | - |
