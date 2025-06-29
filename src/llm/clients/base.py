@@ -99,7 +99,7 @@ class BaseLLMClient(ABC):
 
         Args:
             env_var_name: Environment variable name for the API key
-            prompt_text: Optional custom prompt text (defaults to env_var_name)
+            prompt_text: Optional custom prompt text (deprecated, no longer used)
 
         Returns:
             The API key value
@@ -115,30 +115,10 @@ class BaseLLMClient(ABC):
             api_key = os.getenv(env_var_name)
 
         if not api_key:
-            # Prompt user for API key
-            try:
-                import getpass
-
-                prompt = prompt_text or f"{env_var_name}: "
-                api_key = getpass.getpass(prompt)
-                if not api_key:
-                    raise LLMProviderError("No API key provided")
-
-                # Set in environment for future use
-                os.environ[env_var_name] = api_key
-
-                # Update config if it has api_key attribute
-                if hasattr(self.config, "api_key"):
-                    self.config.api_key = api_key
-
-                self.logger.debug(
-                    f"API key obtained and set in environment: {env_var_name}"
-                )
-
-            except (KeyboardInterrupt, EOFError):
-                raise LLMProviderError("API key input was cancelled")
-            except Exception as e:
-                raise LLMProviderError(f"Failed to get API key: {e}")
+            raise LLMProviderError(
+                f"API key not found. Please set {env_var_name} in your environment or .env file. "
+                f"See README.md for setup instructions."
+            )
 
         return api_key
 

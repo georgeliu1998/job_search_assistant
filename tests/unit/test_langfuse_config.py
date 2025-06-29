@@ -48,6 +48,7 @@ class TestLangfuseConfig:
             os.environ,
             {
                 "APP_ENV": "dev",
+                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
                 "LANGFUSE_PUBLIC_KEY": "test_public_key",
                 "LANGFUSE_SECRET_KEY": "test_secret_key",
             },
@@ -61,7 +62,13 @@ class TestLangfuseConfig:
 
     def test_langfuse_enabled_in_dev_environment(self):
         """Test that Langfuse is enabled in development environment."""
-        with patch.dict(os.environ, {"APP_ENV": "dev"}):
+        with patch.dict(
+            os.environ,
+            {
+                "APP_ENV": "dev",
+                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
+            },
+        ):
             test_config = config.reload()
 
             langfuse_config = test_config.observability.langfuse
@@ -79,7 +86,13 @@ class TestLangfuseConfig:
 
     def test_langfuse_enabled_in_prod_environment(self):
         """Test that Langfuse is enabled in production environment."""
-        with patch.dict(os.environ, {"APP_ENV": "prod"}):
+        with patch.dict(
+            os.environ,
+            {
+                "APP_ENV": "prod",
+                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for prod environment
+            },
+        ):
             test_config = config.reload()
 
             langfuse_config = test_config.observability.langfuse

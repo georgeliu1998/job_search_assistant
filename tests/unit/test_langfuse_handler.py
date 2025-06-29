@@ -164,6 +164,7 @@ class TestHelperFunctions:
             os.environ,
             {
                 "APP_ENV": "dev",
+                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
                 "LANGFUSE_PUBLIC_KEY": "test_public",
                 "LANGFUSE_SECRET_KEY": "test_secret",
             },
