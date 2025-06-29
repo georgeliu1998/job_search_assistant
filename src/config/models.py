@@ -118,6 +118,31 @@ class LLMProfileConfig(BaseModel):
 
         return v
 
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v: Optional[str], info) -> Optional[str]:
+        """Validate that API key is provided for non-test environments."""
+        current_env = os.getenv("APP_ENV", "").lower()
+
+        # Skip validation in test environments
+        if (
+            current_env == Environment.STAGE.value
+            or "test" in current_env
+            or "pytest" in (os.getenv("_") or "")
+            or os.getenv("PYTEST_CURRENT_TEST") is not None
+        ):
+            return v
+
+        # In production environments, require API key
+        if not v:
+            provider = info.data.get("provider", "unknown")
+            raise ValueError(
+                f"API key is required for {provider} provider. "
+                f"Please set {provider.upper()}_API_KEY in your environment or .env file."
+            )
+
+        return v
+
 
 class LangfuseConfig(BaseModel):
     """Langfuse observability configuration."""
