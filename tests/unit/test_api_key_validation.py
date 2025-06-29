@@ -77,10 +77,19 @@ class TestAPIKeyValidation:
             provider="anthropic", model="claude-3-5-haiku-20241022", api_key=None
         )
 
-        client = AnthropicClient(config)
+        # We need to test the _ensure_api_key method directly since the client constructor
+        # will call it during initialization. Let's create a client with a valid API key first,
+        # then test the method with a missing key.
+        config_with_key = LLMProfileConfig(
+            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="dummy-key"
+        )
+        client = AnthropicClient(config_with_key)
 
         # Mock os.getenv to return empty string for API key
         with patch("src.llm.clients.base.os.getenv", return_value=""):
+            # Override the config to have no API key
+            client.config.api_key = None
+
             with pytest.raises(LLMProviderError) as exc_info:
                 client._ensure_api_key("ANTHROPIC_API_KEY")
 
