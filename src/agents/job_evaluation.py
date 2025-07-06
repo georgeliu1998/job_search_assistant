@@ -3,6 +3,9 @@ Job evaluation agent using LangGraph for structured workflow.
 
 This agent extracts key information from job postings and evaluates them
 against predefined criteria using a multi-step workflow.
+
+UPDATED: Now uses the new agent architecture with structured outputs
+while maintaining backward compatibility.
 """
 
 import json
@@ -11,17 +14,23 @@ from typing import Any, Dict, List, Optional, TypedDict
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
 
+from src.agent.workflows.job_evaluation.workflow import (
+    JobEvaluationWorkflow,
+    generate_recommendation_from_results,
+)
 from src.config import config
 from src.core.job_evaluation import evaluate_job_against_criteria
 from src.llm.clients.anthropic import AnthropicClient
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.llm.prompts.job_evaluation.extraction import JOB_INFO_EXTRACTION_PROMPT
 from src.models.evaluation import EvaluationResult
+from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
+# Legacy state definition - kept for backward compatibility
 class JobEvaluationState(TypedDict):
     """State for the job evaluation agent workflow."""
 
@@ -37,8 +46,86 @@ class JobEvaluationState(TypedDict):
     langfuse_handler: Optional[Any]  # Langfuse callback handler
 
 
+def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
+    """
+    Evaluate a job posting using the new agent workflow.
+
+    This function now uses the new structured extraction system while
+    maintaining exact backward compatibility with the existing API.
+
+    Args:
+        job_posting_text: The raw job posting text to evaluate
+
+    Returns:
+        Dictionary with evaluation results in the format expected by UI
+    """
+    logger.info("Starting job evaluation with new agent architecture")
+
+    # Get Langfuse handler for tracing
+    langfuse_handler = get_langfuse_handler()
+    if langfuse_handler:
+        logger.info("Langfuse tracing enabled for job evaluation")
+
+    try:
+        # Use the new workflow
+        workflow = JobEvaluationWorkflow()
+        final_state = workflow.run(job_posting_text, langfuse_handler)
+
+        # Extract result
+        result = final_state["evaluation_result"]
+        if result is None:
+            logger.error("New workflow completed but no result was generated")
+            return {
+                "recommendation": "DO_NOT_APPLY",
+                "reasoning": "Workflow failed to generate result",
+                "extracted_info": {},
+                "evaluation_result": {},
+            }
+
+        # Convert extracted_info back to dictionary format for UI compatibility
+        extracted_info_dict = {}
+        if final_state["extracted_info"] is not None:
+            schema = final_state["extracted_info"]
+            extracted_info_dict = {
+                "title": schema.title,
+                "company": schema.company,
+                "salary_min": schema.salary_min,
+                "salary_max": schema.salary_max,
+                "location_policy": schema.location_policy,
+                "role_type": schema.role_type,
+                # Additional fields for UI compatibility
+                "job_title": schema.title,
+                "company_name": schema.company,
+            }
+
+        # Generate recommendation and reasoning from evaluation results
+        recommendation, reasoning = generate_recommendation_from_results(result)
+
+        logger.info(
+            f"Job evaluation completed successfully with recommendation: {recommendation}"
+        )
+
+        return {
+            "recommendation": recommendation,
+            "reasoning": reasoning,
+            "extracted_info": extracted_info_dict,
+            "evaluation_result": result,
+        }
+
+    except Exception as e:
+        logger.error(f"New agent workflow failed: {e}")
+        return {
+            "recommendation": "DO_NOT_APPLY",
+            "reasoning": f"Agent workflow error: {str(e)}",
+            "extracted_info": {},
+            "evaluation_result": {},
+        }
+
+
+# Legacy functions - kept for backward compatibility but deprecated
 def get_extraction_client():
     """Initialize LLM client for job information extraction."""
+    logger.warning("get_extraction_client() is deprecated - use new agent architecture")
     profile_name = config.agents.job_evaluation_extraction
     profile = config.get_llm_profile(profile_name)
     return AnthropicClient(profile)
@@ -50,6 +137,7 @@ extraction_llm = None
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract key information from job posting using LLM"""
+    logger.warning("extract_job_info() is deprecated - use new agent architecture")
     global extraction_llm
     if extraction_llm is None:
         extraction_llm = get_extraction_client()
@@ -93,6 +181,7 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
 
 def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
     """Evaluate job against criteria using core business logic"""
+    logger.warning("evaluate_job() is deprecated - use new agent architecture")
     extracted_info = state["extracted_info"]
 
     if extracted_info is None:
@@ -122,7 +211,16 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
 
 
 def parse_extraction_response(response_text: str) -> Dict[str, Any]:
-    """Parse LLM response into structured job information"""
+    """
+    Parse LLM response into structured job information.
+
+    DEPRECATED: This function is no longer needed with structured outputs.
+    Kept for backward compatibility only.
+    """
+    logger.warning(
+        "parse_extraction_response() is deprecated - structured outputs eliminate the need for manual parsing"
+    )
+
     try:
         # First, try to find JSON in the response
         response_text = response_text.strip()
@@ -180,7 +278,16 @@ def parse_extraction_response(response_text: str) -> Dict[str, Any]:
 
 
 def create_job_evaluation_agent():
-    """Create the job evaluation agent workflow"""
+    """
+    Create the job evaluation agent workflow.
+
+    DEPRECATED: Use JobEvaluationWorkflow instead.
+    Kept for backward compatibility only.
+    """
+    logger.warning(
+        "create_job_evaluation_agent() is deprecated - use JobEvaluationWorkflow instead"
+    )
+
     # Initialize workflow
     workflow = StateGraph(JobEvaluationState)
 
@@ -204,105 +311,3 @@ def create_job_evaluation_agent():
         # This is a placeholder for actual tracing setup
 
     return agent
-
-
-def generate_recommendation_from_results(
-    evaluation_results: Dict[str, Any],
-) -> tuple[str, str]:
-    """Generate final recommendation and reasoning from evaluation results"""
-    if not evaluation_results or "error" in evaluation_results:
-        return "DO_NOT_APPLY", "Unable to evaluate job posting due to extraction errors"
-
-    # Check if all criteria pass
-    all_pass = all(
-        result.get("pass", False)
-        for result in evaluation_results.values()
-        if isinstance(result, dict)
-    )
-
-    if all_pass:
-        recommendation = "APPLY"
-        reasoning = "All criteria met: " + "; ".join(
-            [
-                result["reason"]
-                for result in evaluation_results.values()
-                if isinstance(result, dict) and result.get("pass")
-            ]
-        )
-    else:
-        recommendation = "DO_NOT_APPLY"
-        failed_reasons = [
-            result["reason"]
-            for result in evaluation_results.values()
-            if isinstance(result, dict) and not result.get("pass")
-        ]
-        reasoning = "Failed criteria: " + "; ".join(failed_reasons)
-
-    return recommendation, reasoning
-
-
-def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
-    """
-    Evaluate a job posting using the agent workflow.
-
-    Args:
-        job_posting_text: The raw job posting text to evaluate
-
-    Returns:
-        Dictionary with evaluation results in the format expected by UI
-    """
-    logger.info("Starting job evaluation")
-
-    # Create agent
-    agent = create_job_evaluation_agent()
-
-    # Get Langfuse handler for tracing
-    langfuse_handler = get_langfuse_handler()
-    if langfuse_handler:
-        logger.info("Langfuse tracing enabled for job evaluation")
-
-    # Prepare initial state
-    initial_state = JobEvaluationState(
-        job_posting_text=job_posting_text,
-        extracted_info=None,
-        evaluation_result=None,
-        messages=[],
-        langfuse_handler=langfuse_handler,
-    )
-
-    try:
-        # Run the agent workflow
-        final_state = agent.invoke(initial_state)
-
-        # Extract result
-        result = final_state["evaluation_result"]
-        if result is None:
-            logger.error("Agent workflow completed but no result was generated")
-            return {
-                "recommendation": "DO_NOT_APPLY",
-                "reasoning": "Agent workflow failed to generate result",
-                "extracted_info": final_state.get("extracted_info", {}),
-                "evaluation_result": {},
-            }
-
-        # Generate recommendation and reasoning from evaluation results
-        recommendation, reasoning = generate_recommendation_from_results(result)
-
-        logger.info(
-            f"Job evaluation completed successfully with recommendation: {recommendation}"
-        )
-        return {
-            "recommendation": recommendation,
-            "reasoning": reasoning,
-            "extracted_info": final_state["extracted_info"],
-            "evaluation_result": result,
-        }
-
-    except Exception as e:
-        logger.error(f"Agent workflow failed: {e}")
-        return {
-            "recommendation": "DO_NOT_APPLY",
-            "reasoning": f"Agent workflow error: {str(e)}",
-            "extracted_info": {},
-            "evaluation_result": {},
-        }
