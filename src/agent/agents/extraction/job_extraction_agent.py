@@ -1,203 +1,125 @@
 """
-Job extraction agent using LangGraph's tool calling capabilities.
+Provides the nodes for the job evaluation workflow graph.
 
-This agent uses LangGraph's create_react_agent to reason about when and how
-to use extraction tools, providing true tool calling rather than function composition.
+These functions act as the "specialist" agents for extraction and evaluation,
+each performing a single, well-defined task within the larger workflow.
 """
 
-from typing import Any, Dict, Optional
-
-from src.agent.base.agent import BaseAgent
 from src.agent.tools.extraction.schema_extraction_tool import (
     extract_job_posting,
-    get_extraction_summary,
     validate_extraction_result,
 )
-from src.models.job import JobPostingExtractionSchema
+from src.agent.workflows.job_evaluation.states import JobEvaluationWorkflowState
+from src.core.job_evaluation import evaluate_job_against_criteria
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class JobExtractionAgent(BaseAgent):
+def extraction_node(state: JobEvaluationWorkflowState) -> dict:
     """
-    LangGraph agent for job information extraction using tool calling.
+    Extracts structured information from the job posting text.
 
-    This agent can reason about when to use extraction tools, validate results,
-    and provide summaries. It uses LangGraph's create_react_agent for true
-    tool calling capabilities.
+    This is the primary LLM-calling node in the workflow.
     """
+    logger.info("Node: extract_job_info")
+    job_text = state["job_posting_text"]
 
-    def __init__(self):
-        """Initialize the job extraction agent with available tools."""
-        # Define the tools available to this agent
-        tools = [
-            extract_job_posting,
-            validate_extraction_result,
-            get_extraction_summary,
-        ]
+    try:
+        extracted_data = extract_job_posting.invoke({"job_text": job_text})
+        logger.info(f"Successfully extracted job information: {extracted_data}")
 
-        super().__init__(tools)
-        logger.info(f"Initialized JobExtractionAgent with {len(tools)} tools")
-
-    def _get_llm_profile_name(self) -> str:
-        """Get the LLM profile for job extraction."""
-        return "anthropic_extraction"
-
-    def invoke(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Extract job information using tool calling.
-
-        Args:
-            input_data: Dict containing:
-                - job_text: The job posting text to extract from
-                - langfuse_handler: Optional Langfuse handler for tracing
-
-        Returns:
-            Dict containing:
-                - extracted_info: JobPostingExtractionSchema as dict
-                - is_valid: Boolean indicating if extraction was successful
-                - summary: Human-readable summary of extraction
-                - messages: Agent conversation messages
-        """
-        job_text = input_data.get("job_text", "")
-        langfuse_handler = input_data.get("langfuse_handler")
-
-        if not job_text or not job_text.strip():
-            logger.warning("Empty job text provided to JobExtractionAgent")
-            return {
-                "extracted_info": JobPostingExtractionSchema().model_dump(),
-                "is_valid": False,
-                "summary": "No job text provided",
-                "messages": [],
-            }
-
-        try:
-            # Create the agent if not already created
-            agent = self._create_agent()
-
-            # Create the input message for the agent
-            agent_input = {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": f"""Please extract job information from the following job posting text.
-
-Use the extract_job_posting tool to extract structured information, then validate the results and provide a summary.
-
-Job posting text:
-{job_text}
-
-Please:
-1. Extract the job information using the extract_job_posting tool
-2. Validate the extraction results using validate_extraction_result
-3. Provide a summary using get_extraction_summary
-
-Return the extracted information in a structured format.""",
-                    }
-                ]
-            }
-
-            # Configure with Langfuse if available
-            config_dict = {}
-            if langfuse_handler:
-                config_dict = {"callbacks": [langfuse_handler]}
-                logger.debug("Using Langfuse tracing for agent execution")
-
-            # Invoke the agent
-            logger.info("Starting job extraction with tool calling agent")
-
-            if config_dict:
-                result = agent.invoke(agent_input, config=config_dict)
-            else:
-                result = agent.invoke(agent_input)
-
-            # Extract the final message content and any tool calls
-            messages = result.get("messages", [])
-
-            # Find the extracted information from tool calls
-            extracted_info = None
-            is_valid = False
-            summary = ""
-
-            for message in messages:
-                if hasattr(message, "tool_calls") and message.tool_calls:
-                    for tool_call in message.tool_calls:
-                        if tool_call.get("name") == "extract_job_posting":
-                            # This should contain the extracted info
-                            pass
-                elif hasattr(message, "content") and message.content:
-                    if "extract_job_posting" in str(message.content):
-                        # Look for tool results in the content
-                        pass
-
-            # If we can't parse the agent's tool usage, fall back to direct extraction
-            if extracted_info is None:
-                logger.info("Falling back to direct tool usage for extraction")
-                extracted_info = extract_job_posting.invoke({"job_text": job_text})
-                is_valid = validate_extraction_result.invoke(
-                    {"extraction_result": extracted_info, "schema_name": "job_posting"}
+        return {
+            "extracted_info": extracted_data,
+            "messages": [
+                (
+                    "extract_node",
+                    (
+                        extracted_data
+                        if isinstance(extracted_data, dict)
+                        else str(extracted_data)
+                    ),
                 )
-                summary = get_extraction_summary.invoke(
-                    {"extraction_result": extracted_info, "schema_name": "job_posting"}
-                )
+            ],
+        }
+    except Exception as e:
+        logger.error(f"Failed to extract job information: {e}")
+        return {
+            "extracted_info": None,
+            "messages": [("extract_node", f"Extraction failed: {str(e)}")],
+        }
 
-            logger.info(
-                f"Job extraction completed: valid={is_valid}, summary='{summary}'"
-            )
 
-            return {
-                "extracted_info": extracted_info,
-                "is_valid": is_valid,
-                "summary": summary,
-                "messages": messages,
-            }
+def validation_node(state: JobEvaluationWorkflowState) -> dict:
+    """
+    Validates the data extracted by the extraction_node.
+    """
+    logger.info("Node: validate_extraction")
 
-        except Exception as e:
-            logger.error(f"Failed to extract job information with agent: {e}")
+    if not state.get("extracted_info"):
+        logger.warning("No extracted info to validate")
+        return {
+            "is_valid": False,
+            "messages": [("validation_node", "No extracted info to validate")],
+        }
 
-            # Return fallback result
-            empty_schema = JobPostingExtractionSchema()
-            return {
-                "extracted_info": empty_schema.model_dump(),
-                "is_valid": False,
-                "summary": f"Extraction failed: {str(e)}",
-                "messages": [],
-            }
-
-    def extract(
-        self, job_text: str, langfuse_handler: Optional[object] = None
-    ) -> JobPostingExtractionSchema:
-        """
-        Convenience method to extract job information and return schema object.
-
-        Args:
-            job_text: The job posting text to extract from
-            langfuse_handler: Optional Langfuse handler for tracing
-
-        Returns:
-            JobPostingExtractionSchema: Extracted job information
-        """
-        result = self.invoke(
-            {"job_text": job_text, "langfuse_handler": langfuse_handler}
+    try:
+        is_valid = validate_extraction_result.invoke(
+            {"extraction_result": state["extracted_info"], "schema_name": "job_posting"}
         )
+        logger.info(f"Validation result: {is_valid}")
 
-        extracted_info = result.get("extracted_info", {})
+        return {
+            "is_valid": is_valid,
+            "messages": [("validation_node", f"is_valid: {is_valid}")],
+        }
+    except Exception as e:
+        logger.error(f"Failed to validate extraction: {e}")
+        return {
+            "is_valid": False,
+            "messages": [("validation_node", f"Validation failed: {str(e)}")],
+        }
 
-        # Convert back to schema object
-        return JobPostingExtractionSchema(**extracted_info)
 
-    def extract_and_validate(
-        self, job_text: str, langfuse_handler: Optional[object] = None
-    ) -> Dict[str, Any]:
-        """
-        Extract job information and return full results including validation.
+def evaluation_node(state: JobEvaluationWorkflowState) -> dict:
+    """
+    Evaluates the extracted job information against predefined criteria.
+    """
+    logger.info("Node: evaluate_job")
 
-        Args:
-            job_text: The job posting text to extract from
-            langfuse_handler: Optional Langfuse handler for tracing
+    if not state.get("extracted_info"):
+        logger.warning("Skipping evaluation due to missing extraction.")
+        return {
+            "evaluation_result": None,
+            "messages": [("evaluation_node", "Skipped due to missing extraction")],
+        }
 
-        Returns:
-            Dict containing extracted_info, is_valid, and summary
-        """
-        return self.invoke({"job_text": job_text, "langfuse_handler": langfuse_handler})
+    try:
+        # Convert extracted info to dict format for the core evaluation function
+        extracted_info = state["extracted_info"]
+        if hasattr(extracted_info, "model_dump"):
+            extracted_info_dict = extracted_info.model_dump()
+        elif isinstance(extracted_info, dict):
+            extracted_info_dict = extracted_info
+        else:
+            # Handle the case where extracted_info might be a different format
+            extracted_info_dict = dict(extracted_info) if extracted_info else {}
+
+        evaluation_result = evaluate_job_against_criteria(extracted_info_dict)
+        logger.info(f"Job evaluation completed: {evaluation_result}")
+
+        return {
+            "evaluation_result": evaluation_result,
+            "messages": [
+                (
+                    "evaluation_node",
+                    f"Evaluation completed with {len(evaluation_result)} criteria",
+                )
+            ],
+        }
+    except Exception as e:
+        logger.error(f"Failed to evaluate job: {e}")
+        return {
+            "evaluation_result": None,
+            "messages": [("evaluation_node", f"Evaluation failed: {str(e)}")],
+        }
