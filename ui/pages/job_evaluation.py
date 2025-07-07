@@ -4,7 +4,7 @@ Job Evaluation page for analyzing job postings
 
 import streamlit as st
 
-from src.agents.job_evaluation import evaluate_job_posting
+from src.agent.workflows.job_evaluation import evaluate_job_posting
 from ui.components.environment_check import check_environment_setup
 from ui.components.job_results import display_job_evaluation_results
 

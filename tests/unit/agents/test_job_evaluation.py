@@ -4,7 +4,7 @@ Tests for the job evaluation agent
 
 from unittest.mock import MagicMock, patch
 
-from src.agents.job_evaluation import evaluate_job_posting
+from src.agent.workflows.job_evaluation import evaluate_job_posting
 
 
 @patch("src.agent.tools.extraction.schema_extraction_tool.extract_job_posting")
