@@ -2,7 +2,7 @@
 Job evaluation workflow implementation.
 
 This module contains the workflow for evaluating job postings against
-user criteria, including extraction and evaluation steps.
+user criteria, including extraction and evaluation steps using specialized agents.
 """
 
 from src.agent.workflows.job_evaluation.main import (
@@ -16,6 +16,7 @@ from src.agent.workflows.job_evaluation.states import (
     add_message,
     create_initial_state,
     get_extracted_info_as_dict,
+    is_evaluation_successful,
     is_extraction_successful,
 )
 
@@ -26,6 +27,7 @@ __all__ = [
     "JobEvaluationWorkflowState",
     "create_initial_state",
     "is_extraction_successful",
+    "is_evaluation_successful",
     "get_extracted_info_as_dict",
     "add_message",
     # Workflow

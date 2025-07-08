@@ -25,7 +25,14 @@ class JobEvaluationWorkflowState(TypedDict):
 
     # Intermediate results - now type-safe!
     extracted_info: Optional[JobPostingExtractionSchema]
+    is_valid: Optional[bool]  # Validation result from extraction
     evaluation_result: Optional[Dict[str, Any]]
+
+    # Final results - provided by evaluation agent
+    recommendation: Optional[str]  # "APPLY", "DO_NOT_APPLY", or "ERROR"
+    reasoning: Optional[str]  # Human-readable explanation
+    passed_criteria: Optional[int]  # Number of criteria that passed
+    total_criteria: Optional[int]  # Total number of criteria evaluated
 
     # Metadata
     messages: List[Dict[str, Any]]  # LLM conversation tracking
@@ -53,10 +60,15 @@ def create_initial_state(
     return JobEvaluationWorkflowState(
         job_posting_text=job_posting_text,
         extracted_info=None,
+        is_valid=None,
         evaluation_result=None,
+        recommendation=None,
+        reasoning=None,
+        passed_criteria=None,
+        total_criteria=None,
         messages=[],
         langfuse_handler=langfuse_handler,
-        workflow_version="2.0",  # New workflow version
+        workflow_version="3.0",  # Updated version with new agents
         extraction_duration=None,
         evaluation_duration=None,
     )
@@ -74,6 +86,23 @@ def is_extraction_successful(state: JobEvaluationWorkflowState) -> bool:
     """
     return state["extracted_info"] is not None and isinstance(
         state["extracted_info"], JobPostingExtractionSchema
+    )
+
+
+def is_evaluation_successful(state: JobEvaluationWorkflowState) -> bool:
+    """
+    Check if evaluation was successful.
+
+    Args:
+        state: The current workflow state
+
+    Returns:
+        bool: True if evaluation was successful
+    """
+    return (
+        state.get("recommendation") is not None
+        and state.get("recommendation") != "ERROR"
+        and state.get("evaluation_result") is not None
     )
 
 

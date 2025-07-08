@@ -1,14 +1,18 @@
 """
-Extraction agents for structured data extraction from unstructured text.
+Extraction agents module.
 
-This module contains node functions for job evaluation workflow that
-extract typed data from various sources like job postings, resumes, etc.
+This module contains agents specialized for extracting structured information
+from unstructured text sources like job postings and resumes.
 """
 
 from src.agent.agents.extraction.job_extraction_agent import (
-    evaluation_node,
-    extraction_node,
-    validation_node,
+    JobExtractionAgent,
+    JobExtractionInput,
+    JobExtractionOutput,
 )
 
-__all__ = ["extraction_node", "validation_node", "evaluation_node"]
+__all__ = [
+    "JobExtractionAgent",
+    "JobExtractionInput",
+    "JobExtractionOutput",
+]
