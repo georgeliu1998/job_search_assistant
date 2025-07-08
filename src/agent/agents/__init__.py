@@ -5,8 +5,6 @@ This module provides the foundation for creating specialized, reusable agents
 that can be composed into different workflows.
 """
 
-from src.agent.agents.base import Agent, AgentResult
-
 # Import evaluation agents
 from src.agent.agents.evaluation.job_evaluation_agent import (
     JobEvaluationAgent,
@@ -20,6 +18,7 @@ from src.agent.agents.extraction.job_extraction_agent import (
     JobExtractionInput,
     JobExtractionOutput,
 )
+from src.agent.common.base import Agent, AgentResult
 
 __all__ = [
     # Base classes

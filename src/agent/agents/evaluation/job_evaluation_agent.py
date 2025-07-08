@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
-from src.agent.agents.base import Agent, AgentResult
+from src.agent.common.base import Agent, AgentResult
 from src.core.job_evaluation import evaluate_job_against_criteria
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger

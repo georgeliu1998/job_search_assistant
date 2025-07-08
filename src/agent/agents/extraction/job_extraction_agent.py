@@ -9,7 +9,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from src.agent.agents.base import Agent, AgentResult
+from src.agent.common.base import Agent, AgentResult
 from src.agent.tools.extraction.schema_extraction_tool import (
     extract_job_posting,
     validate_extraction_result,
