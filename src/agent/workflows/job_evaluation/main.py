@@ -9,11 +9,6 @@ from typing import Any, Dict, Optional
 
 from langgraph.graph import END, StateGraph
 
-from src.agent.agents.extraction.job_extraction_agent import (
-    evaluation_node,
-    extraction_node,
-    validation_node,
-)
 from src.agent.workflows.job_evaluation.states import JobEvaluationWorkflowState
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.utils.logging import get_logger
@@ -32,6 +27,13 @@ class JobEvaluationWorkflow:
 
     def _build_graph(self) -> StateGraph:
         """Builds the StateGraph for the job evaluation workflow."""
+        # Lazy import to avoid circular imports
+        from src.agent.agents.extraction.job_extraction_agent import (
+            evaluation_node,
+            extraction_node,
+            validation_node,
+        )
+
         workflow = StateGraph(JobEvaluationWorkflowState)
 
         # Add nodes
