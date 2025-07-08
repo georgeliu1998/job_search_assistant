@@ -33,7 +33,7 @@ class TestCreateInitialState:
         assert state["evaluation_result"] is None
         assert state["messages"] == []
         assert state["langfuse_handler"] is None
-        assert state["workflow_version"] == "2.0"
+        assert state["workflow_version"] == "3.0"
         assert state["extraction_duration"] is None
         assert state["evaluation_duration"] is None
 
@@ -45,7 +45,7 @@ class TestCreateInitialState:
 
         assert state["job_posting_text"] == job_text
         assert state["langfuse_handler"] == mock_langfuse_handler
-        assert state["workflow_version"] == "2.0"
+        assert state["workflow_version"] == "3.0"
 
     def test_create_initial_state_empty_text(self):
         """Test creating initial state with empty job text."""
@@ -268,7 +268,7 @@ class TestAddMessage:
             extracted_info={"title": "Engineer"},
             evaluation_result={"pass": True},
             messages=[],
-            workflow_version="2.0",
+            workflow_version="3.0",
         )
 
         updated_state = add_message(original_state, "test", "message")
@@ -277,7 +277,7 @@ class TestAddMessage:
         assert updated_state["job_posting_text"] == "Test job"
         assert updated_state["extracted_info"] == {"title": "Engineer"}
         assert updated_state["evaluation_result"] == {"pass": True}
-        assert updated_state["workflow_version"] == "2.0"
+        assert updated_state["workflow_version"] == "3.0"
         # But messages should be updated
         assert len(updated_state["messages"]) == 1
 
@@ -324,7 +324,7 @@ class TestJobEvaluationWorkflowState:
             evaluation_result=None,
             messages=[],
             langfuse_handler=None,
-            workflow_version="2.0",
+            workflow_version="3.0",
             extraction_duration=None,
             evaluation_duration=None,
         )
@@ -334,7 +334,7 @@ class TestJobEvaluationWorkflowState:
         assert state["evaluation_result"] is None
         assert state["messages"] == []
         assert state["langfuse_handler"] is None
-        assert state["workflow_version"] == "2.0"
+        assert state["workflow_version"] == "3.0"
         assert state["extraction_duration"] is None
         assert state["evaluation_duration"] is None
 
@@ -350,7 +350,7 @@ class TestJobEvaluationWorkflowState:
             evaluation_result=mock_evaluation_result,
             messages=messages,
             langfuse_handler=None,
-            workflow_version="2.0",
+            workflow_version="3.0",
             extraction_duration=1.5,
             evaluation_duration=0.8,
         )
@@ -365,12 +365,12 @@ class TestJobEvaluationWorkflowState:
     def test_workflow_state_field_access(self, workflow_state_factory):
         """Test accessing workflow state fields."""
         state = workflow_state_factory(
-            job_posting_text="Test job", workflow_version="2.0"
+            job_posting_text="Test job", workflow_version="3.0"
         )
 
         # Test dict-like access
         assert state["job_posting_text"] == "Test job"
-        assert state["workflow_version"] == "2.0"
+        assert state["workflow_version"] == "3.0"
 
         # Test get method
         assert state.get("job_posting_text") == "Test job"
@@ -386,4 +386,4 @@ class TestJobEvaluationWorkflowState:
 
         assert updated_state["workflow_version"] == "2.1"
         # Original state should be unchanged
-        assert state["workflow_version"] == "2.0"
+        assert state["workflow_version"] == "3.0"

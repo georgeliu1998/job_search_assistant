@@ -9,7 +9,6 @@ from src.agent.workflows.job_evaluation.main import (
     JobEvaluationWorkflow,
     create_job_evaluation_workflow,
     evaluate_job_posting,
-    generate_recommendation_from_results,
 )
 from src.agent.workflows.job_evaluation.states import (
     JobEvaluationWorkflowState,
@@ -33,5 +32,4 @@ __all__ = [
     # Workflow
     "JobEvaluationWorkflow",
     "create_job_evaluation_workflow",
-    "generate_recommendation_from_results",
 ]

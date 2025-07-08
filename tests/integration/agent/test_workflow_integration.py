@@ -13,7 +13,6 @@ from src.agent.workflows.job_evaluation.main import (
     JobEvaluationWorkflow,
     create_job_evaluation_workflow,
     evaluate_job_posting,
-    generate_recommendation_from_results,
 )
 from src.agent.workflows.job_evaluation.states import (
     JobEvaluationWorkflowState,
@@ -77,7 +76,7 @@ class TestJobEvaluationWorkflow:
         assert result is not None
         assert result["extracted_info"] is not None
         assert result["evaluation_result"] is not None
-        assert result["workflow_version"] == "2.0"
+        assert result["workflow_version"] == "3.0"
         assert len(result["messages"]) > 0
 
     @patch("src.agent.agents.extraction.job_extraction_agent.extract_job_posting")
@@ -335,110 +334,6 @@ class TestEvaluateJobPosting:
                     assert result["extracted_info"]["location_policy"] == "hybrid"
 
 
-class TestGenerateRecommendationFromResults:
-    """Tests for the generate_recommendation_from_results function."""
-
-    def test_generate_recommendation_all_pass(self):
-        """Test recommendation generation when all criteria pass."""
-        evaluation_results = {
-            "salary": {"pass": True, "reason": "Salary meets requirement"},
-            "remote": {"pass": True, "reason": "Position is remote"},
-            "title_level": {
-                "pass": True,
-                "reason": "IC role has appropriate seniority",
-            },
-        }
-
-        recommendation, reasoning = generate_recommendation_from_results(
-            evaluation_results
-        )
-
-        assert recommendation == "APPLY"
-        assert "all criteria met" in reasoning.lower()
-        assert "salary meets requirement" in reasoning
-        assert "position is remote" in reasoning
-        assert "ic role has appropriate seniority" in reasoning
-
-    def test_generate_recommendation_some_fail(self):
-        """Test recommendation generation when some criteria fail."""
-        evaluation_results = {
-            "salary": {"pass": False, "reason": "Salary too low"},
-            "remote": {"pass": True, "reason": "Position is remote"},
-            "title_level": {
-                "pass": True,
-                "reason": "IC role has appropriate seniority",
-            },
-        }
-
-        recommendation, reasoning = generate_recommendation_from_results(
-            evaluation_results
-        )
-
-        assert recommendation == "DO_NOT_APPLY"
-        assert "failed criteria" in reasoning.lower()
-        assert "salary too low" in reasoning
-
-    def test_generate_recommendation_all_fail(self):
-        """Test recommendation generation when all criteria fail."""
-        evaluation_results = {
-            "salary": {"pass": False, "reason": "Salary too low"},
-            "remote": {"pass": False, "reason": "Position is not remote"},
-            "title_level": {
-                "pass": False,
-                "reason": "IC role lacks required seniority",
-            },
-        }
-
-        recommendation, reasoning = generate_recommendation_from_results(
-            evaluation_results
-        )
-
-        assert recommendation == "DO_NOT_APPLY"
-        assert "failed criteria" in reasoning.lower()
-        assert "salary too low" in reasoning
-        assert "position is not remote" in reasoning
-        assert "ic role lacks required seniority" in reasoning
-
-    def test_generate_recommendation_empty_results(self):
-        """Test recommendation generation with empty results."""
-        recommendation, reasoning = generate_recommendation_from_results({})
-
-        assert recommendation == "DO_NOT_APPLY"
-        assert "unable to evaluate" in reasoning.lower()
-
-    def test_generate_recommendation_error_results(self):
-        """Test recommendation generation with error in results."""
-        evaluation_results = {"error": "Extraction failed"}
-
-        recommendation, reasoning = generate_recommendation_from_results(
-            evaluation_results
-        )
-
-        assert recommendation == "DO_NOT_APPLY"
-        assert "unable to evaluate" in reasoning.lower()
-        assert "extraction errors" in reasoning.lower()
-
-    def test_generate_recommendation_mixed_result_types(self):
-        """Test recommendation generation with mixed result types."""
-        evaluation_results = {
-            "salary": {"pass": True, "reason": "Salary meets requirement"},
-            "remote": {"pass": False, "reason": "Position is not remote"},
-            "error": "Some error occurred",
-            "title_level": {
-                "pass": True,
-                "reason": "IC role has appropriate seniority",
-            },
-        }
-
-        recommendation, reasoning = generate_recommendation_from_results(
-            evaluation_results
-        )
-
-        assert recommendation == "DO_NOT_APPLY"
-        assert "failed criteria" in reasoning.lower()
-        assert "position is not remote" in reasoning
-
-
 class TestWorkflowStateManagement:
     """Tests for workflow state management functions."""
 
@@ -454,7 +349,7 @@ class TestWorkflowStateManagement:
         assert state["evaluation_result"] is None
         assert state["messages"] == []
         assert state["langfuse_handler"] == mock_langfuse_handler
-        assert state["workflow_version"] == "2.0"
+        assert state["workflow_version"] == "3.0"
         assert state["extraction_duration"] is None
         assert state["evaluation_duration"] is None
 
@@ -479,7 +374,7 @@ class TestWorkflowStateManagement:
             evaluation_result=None,
             messages=[],
             langfuse_handler=None,
-            workflow_version="2.0",
+            workflow_version="3.0",
             extraction_duration=None,
             evaluation_duration=None,
         )
@@ -500,7 +395,7 @@ class TestWorkflowStateManagement:
             evaluation_result=None,
             messages=[],
             langfuse_handler=None,
-            workflow_version="2.0",
+            workflow_version="3.0",
             extraction_duration=None,
             evaluation_duration=None,
         )
@@ -516,7 +411,7 @@ class TestWorkflowStateManagement:
             evaluation_result=None,
             messages=[],
             langfuse_handler=None,
-            workflow_version="2.0",
+            workflow_version="3.0",
             extraction_duration=None,
             evaluation_duration=None,
         )

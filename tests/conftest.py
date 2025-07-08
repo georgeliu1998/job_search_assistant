@@ -222,7 +222,7 @@ def workflow_state_factory():
         evaluation_result=None,
         messages=None,
         langfuse_handler=None,
-        workflow_version="2.0",
+        workflow_version="3.0",
         extraction_duration=None,
         evaluation_duration=None,
     ):
