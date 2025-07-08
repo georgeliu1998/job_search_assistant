@@ -59,45 +59,32 @@ def _extract_with_schema(
     Returns:
         Dict containing extracted data
     """
-    try:
-        # Get client and create structured LLM
-        client = _get_extraction_client()
-        structured_llm = client._get_client().with_structured_output(schema_class)
+    # Get client and create structured LLM
+    client = _get_extraction_client()
+    structured_llm = client._get_client().with_structured_output(schema_class)
 
-        # Format prompt
-        prompt_content = prompt_template.format(job_text=text)
-        messages = [HumanMessage(content=prompt_content)]
+    # Format prompt
+    prompt_content = prompt_template.format(job_text=text)
+    messages = [HumanMessage(content=prompt_content)]
 
-        # Configure with Langfuse if available
-        config_dict = {}
-        if langfuse_handler:
-            config_dict = {"callbacks": [langfuse_handler]}
+    # Configure with Langfuse if available
+    config_dict = {}
+    if langfuse_handler:
+        config_dict = {"callbacks": [langfuse_handler]}
 
-        # Extract structured information
-        logger.info(f"Extracting structured data using schema: {schema_class.__name__}")
+    # Extract structured information
+    logger.info(f"Extracting structured data using schema: {schema_class.__name__}")
 
-        if config_dict:
-            result = structured_llm.invoke(messages, config=config_dict)
-        else:
-            result = structured_llm.invoke(messages)
+    if config_dict:
+        result = structured_llm.invoke(messages, config=config_dict)
+    else:
+        result = structured_llm.invoke(messages)
 
-        # Convert to dict for tool return
-        result_dict = (
-            result.model_dump() if hasattr(result, "model_dump") else dict(result)
-        )
+    # Convert to dict for tool return
+    result_dict = result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
-        logger.info(f"Successfully extracted data: {result_dict}")
-        return result_dict
-
-    except Exception as e:
-        logger.error(f"Failed to extract data with schema {schema_class.__name__}: {e}")
-        # Return empty dict matching schema structure
-        empty_instance = schema_class()
-        return (
-            empty_instance.model_dump()
-            if hasattr(empty_instance, "model_dump")
-            else dict(empty_instance)
-        )
+    logger.info(f"Successfully extracted data: {result_dict}")
+    return result_dict
 
 
 @tool
