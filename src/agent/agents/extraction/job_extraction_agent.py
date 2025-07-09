@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field
 
 from src.agent.common.base import Agent, AgentResult
 from src.agent.tools.extraction.schema_extraction_tool import (
-    extract_job_posting,
-    validate_extraction_result,
+    extract_job_posting_fn,
+    validate_extraction_result_fn,
 )
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
@@ -67,10 +67,8 @@ class JobExtractionAgent(Agent[JobExtractionInput, JobExtractionOutput]):
         logger.info(f"Agent {self.name}: Starting job extraction")
 
         try:
-            # Extract job information using the tool
-            extracted_data = extract_job_posting.invoke(
-                {"job_text": input_data.job_text}
-            )
+            # Extract job information using the direct function
+            extracted_data = extract_job_posting_fn(input_data.job_text)
             logger.info(f"Successfully extracted job information: {extracted_data}")
 
             # Validate if requested
@@ -79,11 +77,8 @@ class JobExtractionAgent(Agent[JobExtractionInput, JobExtractionOutput]):
 
             if input_data.validation_enabled:
                 try:
-                    is_valid = validate_extraction_result.invoke(
-                        {
-                            "extraction_result": extracted_data,
-                            "schema_name": "job_posting",
-                        }
+                    is_valid = validate_extraction_result_fn(
+                        extracted_data, "job_posting"
                     )
                     validation_details = (
                         f"Validation {'passed' if is_valid else 'failed'}"

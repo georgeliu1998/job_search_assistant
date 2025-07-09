@@ -87,13 +87,12 @@ def _extract_with_schema(
     return result_dict
 
 
-@tool
-def extract_structured_data(text: str, schema_name: str) -> Dict[str, Any]:
+def extract_structured_data_fn(text: str, schema_name: str) -> Dict[str, Any]:
     """
     Extract structured data from text based on a specified schema.
 
-    This is a generalized extraction tool that can handle different types
-    of structured data extraction based on the schema name provided.
+    This is the direct function implementation that can be called without
+    the tool decorator interfering.
 
     Args:
         text: The text to extract information from
@@ -127,13 +126,32 @@ def extract_structured_data(text: str, schema_name: str) -> Dict[str, Any]:
 
 
 @tool
-def extract_job_posting(job_text: str) -> Dict[str, Any]:
+def extract_structured_data(text: str, schema_name: str) -> Dict[str, Any]:
+    """
+    Extract structured data from text based on a specified schema.
+
+    This is a generalized extraction tool that can handle different types
+    of structured data extraction based on the schema name provided.
+
+    Args:
+        text: The text to extract information from
+        schema_name: Name of the schema to use (e.g., 'job_posting', 'resume', etc.)
+
+    Returns:
+        Dict containing extracted structured data matching the schema
+
+    Raises:
+        ValueError: If schema_name is not supported
+    """
+    return extract_structured_data_fn(text, schema_name)
+
+
+def extract_job_posting_fn(job_text: str) -> Dict[str, Any]:
     """
     Extract job posting information from text.
 
-    This is a convenience tool that specifically extracts job posting
-    information using the job_posting schema. It's equivalent to calling
-    extract_structured_data(job_text, "job_posting").
+    This is the direct function implementation that can be called without
+    the tool decorator interfering.
 
     Args:
         job_text: The job posting text to extract information from
@@ -154,11 +172,37 @@ def extract_job_posting(job_text: str) -> Dict[str, Any]:
 
 
 @tool
-def validate_extraction_result(
+def extract_job_posting(job_text: str) -> Dict[str, Any]:
+    """
+    Extract job posting information from text.
+
+    This is a convenience tool that specifically extracts job posting
+    information using the job_posting schema. It's equivalent to calling
+    extract_structured_data(job_text, "job_posting").
+
+    Args:
+        job_text: The job posting text to extract information from
+
+    Returns:
+        Dict containing extracted job posting information with fields:
+        - title: Job title
+        - company: Company name
+        - salary_min: Minimum salary
+        - salary_max: Maximum salary
+        - location_policy: remote/hybrid/onsite/unclear
+        - role_type: ic/manager/unclear
+    """
+    return extract_job_posting_fn(job_text)
+
+
+def validate_extraction_result_fn(
     extraction_result: Dict[str, Any], schema_name: str
 ) -> bool:
     """
     Validate that an extraction result contains meaningful data.
+
+    This is the direct function implementation that can be called without
+    the tool decorator interfering.
 
     Args:
         extraction_result: The extraction result to validate
@@ -172,13 +216,11 @@ def validate_extraction_result(
 
     if schema_name == "job_posting":
         # Check if we have at least some meaningful extracted data
-        has_title = (
-            extraction_result.get("title") is not None
-            and str(extraction_result.get("title")).strip()
+        has_title = extraction_result.get("title") is not None and bool(
+            str(extraction_result.get("title")).strip()
         )
-        has_company = (
-            extraction_result.get("company") is not None
-            and str(extraction_result.get("company")).strip()
+        has_company = extraction_result.get("company") is not None and bool(
+            str(extraction_result.get("company")).strip()
         )
         has_salary = (
             extraction_result.get("salary_min") is not None
@@ -197,7 +239,7 @@ def validate_extraction_result(
             f"Job posting validation: {is_valid} (title={has_title}, company={has_company}, salary={has_salary}, policy={has_clear_policy}, role={has_clear_role})"
         )
 
-        return is_valid
+        return bool(is_valid)
 
     # For other schemas, just check if we have any non-empty values
     return any(
@@ -206,9 +248,30 @@ def validate_extraction_result(
 
 
 @tool
-def get_extraction_summary(extraction_result: Dict[str, Any], schema_name: str) -> str:
+def validate_extraction_result(
+    extraction_result: Dict[str, Any], schema_name: str
+) -> bool:
+    """
+    Validate that an extraction result contains meaningful data.
+
+    Args:
+        extraction_result: The extraction result to validate
+        schema_name: Name of the schema used for extraction
+
+    Returns:
+        bool: True if the result contains meaningful data
+    """
+    return validate_extraction_result_fn(extraction_result, schema_name)
+
+
+def get_extraction_summary_fn(
+    extraction_result: Dict[str, Any], schema_name: str
+) -> str:
     """
     Get a human-readable summary of the extraction result.
+
+    This is the direct function implementation that can be called without
+    the tool decorator interfering.
 
     Args:
         extraction_result: The extraction result to summarize
@@ -261,6 +324,21 @@ def get_extraction_summary(extraction_result: Dict[str, Any], schema_name: str) 
         return "No meaningful information extracted"
 
     return f"Extracted {len(non_empty_fields)} fields: {', '.join(non_empty_fields.keys())}"
+
+
+@tool
+def get_extraction_summary(extraction_result: Dict[str, Any], schema_name: str) -> str:
+    """
+    Get a human-readable summary of the extraction result.
+
+    Args:
+        extraction_result: The extraction result to summarize
+        schema_name: Name of the schema used for extraction
+
+    Returns:
+        str: Human-readable summary of the extraction
+    """
+    return get_extraction_summary_fn(extraction_result, schema_name)
 
 
 def get_available_schemas() -> list[str]:

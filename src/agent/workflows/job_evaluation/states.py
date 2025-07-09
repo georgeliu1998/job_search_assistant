@@ -161,11 +161,12 @@ def add_message(
     """
     message = {"role": role}
 
-    if content:
+    # Include all non-None parameters in the message
+    if content is not None:
         message["content"] = content
-    if error:
+    if error is not None:
         message["error"] = error
-    if metadata:
+    if metadata is not None:
         message["metadata"] = metadata
 
     updated_messages = state["messages"] + [message]
