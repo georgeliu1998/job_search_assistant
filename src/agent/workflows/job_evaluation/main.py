@@ -165,7 +165,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
 
     try:
         # Create and run workflow
-        app = get_compiled_workflow()
+        workflow = get_compiled_workflow()
 
         # Initial state
         initial_state = JobEvaluationState(job_posting_text=job_posting_text)
@@ -175,7 +175,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
         config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
 
         # Run workflow
-        final_state = app.invoke(initial_state, config=config)
+        final_state = workflow.invoke(initial_state, config=config)
 
         # Return results in expected format
         # Note: LangGraph returns AddableValuesDict, so we use dict-style access
