@@ -109,7 +109,7 @@ def _generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, st
                 failed_criteria.append(f"{criterion}: {result['reason']}")
 
     # Generate recommendation based on results
-    if len(passed_criteria) == len(passed_criteria) + len(failed_criteria):
+    if not failed_criteria:
         recommendation = "APPLY"
         reasoning = f"All criteria passed: {'; '.join(passed_criteria)}"
     else:

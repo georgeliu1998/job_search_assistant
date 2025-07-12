@@ -16,17 +16,17 @@ from src.exceptions.llm import LLMProviderError
 class TestEvaluateJobPosting:
     """Integration tests for the main evaluate_job_posting function."""
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool.extract_job_posting_fn")
+    @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
     )
     @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
     def test_evaluate_job_posting_should_apply(
-        self, mock_evaluate, mock_validate, mock_extract
+        self, mock_evaluate, mock_validate, mock_extract_schema
     ):
         """Test complete workflow resulting in APPLY recommendation."""
         # Setup extraction with passing criteria
-        mock_extract.return_value = {
+        mock_extract_schema.return_value = {
             "title": "Staff Software Engineer",
             "company": "TechCorp",
             "salary_min": 140000,
@@ -55,17 +55,17 @@ class TestEvaluateJobPosting:
         assert result["extracted_info"]["title"] == "Staff Software Engineer"
         assert result["extracted_info"]["company"] == "TechCorp"
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool.extract_job_posting_fn")
+    @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
     )
     @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
     def test_evaluate_job_posting_should_not_apply(
-        self, mock_evaluate, mock_validate, mock_extract
+        self, mock_evaluate, mock_validate, mock_extract_schema
     ):
         """Test complete workflow resulting in DO_NOT_APPLY recommendation."""
         # Setup extraction with failing criteria
-        mock_extract.return_value = {
+        mock_extract_schema.return_value = {
             "title": "Junior Software Engineer",
             "company": "TechCorp",
             "salary_min": 70000,
@@ -92,16 +92,16 @@ class TestEvaluateJobPosting:
         assert result["extracted_info"] is not None
         assert result["evaluation_result"] is not None
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool.extract_job_posting_fn")
+    @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
     )
     @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
     def test_evaluate_job_posting_mixed_results(
-        self, mock_evaluate, mock_validate, mock_extract
+        self, mock_evaluate, mock_validate, mock_extract_schema
     ):
         """Test workflow with mixed evaluation results."""
-        mock_extract.return_value = {
+        mock_extract_schema.return_value = {
             "title": "Senior Software Engineer",
             "company": "TechCorp",
             "salary_min": 120000,
@@ -167,13 +167,15 @@ class TestEvaluateJobPosting:
         assert result["extracted_info"] == {}
         assert result["evaluation_result"] == {}
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool.extract_job_posting_fn")
+    @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
     )
-    def test_evaluate_job_posting_extraction_failure(self, mock_validate, mock_extract):
+    def test_evaluate_job_posting_extraction_failure(
+        self, mock_validate, mock_extract_schema
+    ):
         """Test evaluation when extraction fails."""
-        mock_extract.side_effect = LLMProviderError("API error")
+        mock_extract_schema.side_effect = LLMProviderError("API error")
 
         result = evaluate_job_posting("Some job posting")
 
@@ -182,13 +184,15 @@ class TestEvaluateJobPosting:
         assert result["extracted_info"] is None
         assert result["evaluation_result"] is None
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool.extract_job_posting_fn")
+    @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
     )
-    def test_evaluate_job_posting_invalid_extraction(self, mock_validate, mock_extract):
+    def test_evaluate_job_posting_invalid_extraction(
+        self, mock_validate, mock_extract_schema
+    ):
         """Test evaluation when extraction is invalid."""
-        mock_extract.return_value = {"title": "", "company": ""}
+        mock_extract_schema.return_value = {"title": "", "company": ""}
         mock_validate.return_value = False
 
         result = evaluate_job_posting("Some job posting")
