@@ -24,7 +24,7 @@ def test_all_main_modules_import():
     """Test that all main application modules can be imported."""
     # These imports should not raise any errors
     try:
-        import src.agents
+        import src.agent
         import src.api
         import src.config
         import src.core
