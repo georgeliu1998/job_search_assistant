@@ -1,5 +1,5 @@
 """
-Tests for schema extraction tools
+Tests for job posting extraction tools
 """
 
 from unittest.mock import Mock, patch
@@ -9,69 +9,11 @@ import pytest
 from src.agent.tools.extraction.schema_extraction_tool import (
     _extract_with_schema,
     extract_job_posting,
-    extract_structured_data,
-    get_available_schemas,
     get_extraction_summary,
-    register_schema,
     validate_extraction_result,
 )
 from src.exceptions.llm import LLMProviderError
 from src.models.job import JobPostingExtractionSchema
-
-
-class TestExtractStructuredData:
-    """Test cases for the extract_structured_data function."""
-
-    @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
-    def test_extract_structured_data_success(self, mock_extract_with_schema):
-        """Test successful structured data extraction."""
-        expected_result = {
-            "title": "Senior Software Engineer",
-            "company": "TechCorp",
-            "salary_min": 140000,
-            "salary_max": 170000,
-            "location_policy": "remote",
-            "role_type": "ic",
-        }
-        mock_extract_with_schema.return_value = expected_result
-
-        result = extract_structured_data(
-            "Software Engineer at TechCorp, remote, $140k-$170k", "job_posting"
-        )
-
-        assert result == expected_result
-        mock_extract_with_schema.assert_called_once()
-
-    def test_extract_structured_data_empty_text(self):
-        """Test extraction with empty text."""
-        result = extract_structured_data("", "job_posting")
-        assert result == {}
-
-    def test_extract_structured_data_whitespace_only(self):
-        """Test extraction with whitespace-only text."""
-        result = extract_structured_data("   \n\t  ", "job_posting")
-        assert result == {}
-
-    def test_extract_structured_data_invalid_schema(self):
-        """Test extraction with invalid schema name."""
-        with pytest.raises(ValueError, match="Schema 'invalid_schema' not supported"):
-            extract_structured_data("Some text", "invalid_schema")
-
-    def test_extract_structured_data_missing_prompt(self):
-        """Test extraction when prompt template is missing."""
-        # Temporarily add a schema without a prompt
-        from src.agent.tools.extraction.schema_extraction_tool import SCHEMA_REGISTRY
-
-        original_registry = SCHEMA_REGISTRY.copy()
-        SCHEMA_REGISTRY["test_schema"] = Mock()
-
-        try:
-            with pytest.raises(ValueError, match="No prompt template found"):
-                extract_structured_data("Some text", "test_schema")
-        finally:
-            # Restore original registry
-            SCHEMA_REGISTRY.clear()
-            SCHEMA_REGISTRY.update(original_registry)
 
 
 class TestExtractJobPosting:
@@ -186,11 +128,11 @@ class TestValidateExtractionResult:
         result = validate_extraction_result(None, "job_posting")
         assert result is False
 
-    def test_validate_extraction_result_unknown_schema(self):
-        """Test validation with unknown schema (falls back to generic validation)."""
+    def test_validate_extraction_result_invalid_schema(self):
+        """Test validation with invalid schema name."""
         extraction_result = {"field1": "value1", "field2": "value2"}
-        result = validate_extraction_result(extraction_result, "unknown_schema")
-        assert result is True
+        with pytest.raises(ValueError, match="Only 'job_posting' schema is supported"):
+            validate_extraction_result(extraction_result, "unknown_schema")
 
 
 class TestGetExtractionSummary:
@@ -292,55 +234,11 @@ class TestGetExtractionSummary:
         result = get_extraction_summary(extraction_result, "job_posting")
         assert result == "No meaningful information extracted"
 
-    def test_get_extraction_summary_unknown_schema(self):
-        """Test summary generation for unknown schema."""
+    def test_get_extraction_summary_invalid_schema(self):
+        """Test summary generation with invalid schema name."""
         extraction_result = {"field1": "value1", "field2": "value2"}
-        result = get_extraction_summary(extraction_result, "unknown_schema")
-        assert "Extracted 2 fields" in result
-        assert "field1, field2" in result
-
-
-class TestUtilityFunctions:
-    """Test cases for utility functions."""
-
-    def test_get_available_schemas(self):
-        """Test getting available schemas."""
-        result = get_available_schemas()
-        assert "job_posting" in result
-        assert isinstance(result, list)
-
-    def test_register_schema(self):
-        """Test registering a new schema."""
-        from src.agent.tools.extraction.schema_extraction_tool import (
-            PROMPT_REGISTRY,
-            SCHEMA_REGISTRY,
-        )
-
-        # Store original state
-        original_schemas = SCHEMA_REGISTRY.copy()
-        original_prompts = PROMPT_REGISTRY.copy()
-
-        try:
-            # Register new schema
-            test_schema = Mock()
-            test_prompt = "Test prompt: {job_text}"
-            register_schema("test_schema", test_schema, test_prompt)
-
-            # Verify registration
-            assert "test_schema" in SCHEMA_REGISTRY
-            assert SCHEMA_REGISTRY["test_schema"] == test_schema
-            assert "test_schema" in PROMPT_REGISTRY
-            assert PROMPT_REGISTRY["test_schema"] == test_prompt
-
-            # Verify it's in available schemas
-            assert "test_schema" in get_available_schemas()
-
-        finally:
-            # Restore original state
-            SCHEMA_REGISTRY.clear()
-            SCHEMA_REGISTRY.update(original_schemas)
-            PROMPT_REGISTRY.clear()
-            PROMPT_REGISTRY.update(original_prompts)
+        with pytest.raises(ValueError, match="Only 'job_posting' schema is supported"):
+            get_extraction_summary(extraction_result, "unknown_schema")
 
 
 class TestExtractWithSchema:
@@ -358,14 +256,7 @@ class TestExtractWithSchema:
         mock_anthropic_client = Mock()
         mock_structured_llm = Mock()
         mock_result = Mock()
-        mock_result.model_dump.return_value = {
-            "title": "Senior Software Engineer",
-            "company": "TechCorp",
-            "salary_min": 140000,
-            "salary_max": 170000,
-            "location_policy": "remote",
-            "role_type": "ic",
-        }
+        mock_result.model_dump.return_value = {"title": "Software Engineer"}
 
         mock_get_client.return_value = mock_client
         mock_client._get_client.return_value = mock_anthropic_client
@@ -373,17 +264,12 @@ class TestExtractWithSchema:
         mock_structured_llm.invoke.return_value = mock_result
 
         result = _extract_with_schema(
-            "Software Engineer at TechCorp, remote, $140k-$170k",
+            "Software Engineer position",
             JobPostingExtractionSchema,
             JOB_POSTING_EXTRACTION_PROMPT,
         )
 
         assert result == mock_result.model_dump.return_value
-        mock_get_client.assert_called_once()
-        mock_client._get_client.assert_called_once()
-        mock_anthropic_client.with_structured_output.assert_called_once_with(
-            JobPostingExtractionSchema
-        )
         mock_structured_llm.invoke.assert_called_once()
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
@@ -425,14 +311,14 @@ class TestExtractWithSchema:
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
     def test_extract_with_schema_client_error(self, mock_get_client):
-        """Test extraction when client raises an error."""
+        """Test extraction when client initialization fails."""
         from src.agent.prompts.extraction.job_posting import (
             JOB_POSTING_EXTRACTION_PROMPT,
         )
 
-        mock_get_client.side_effect = LLMProviderError("API key error")
+        mock_get_client.side_effect = LLMProviderError("Client initialization failed")
 
-        with pytest.raises(LLMProviderError, match="API key error"):
+        with pytest.raises(LLMProviderError, match="Client initialization failed"):
             _extract_with_schema(
                 "Software Engineer position",
                 JobPostingExtractionSchema,

@@ -1,9 +1,8 @@
 """
-Generalized schema-based extraction tools.
+Job posting extraction tools.
 
-This module provides functions for extracting structured data from text
-based on different schemas. These functions can be used directly by
-LangGraph workflows and other components.
+This module provides functions for extracting structured data from job posting text.
+These functions can be used directly by LangGraph workflows and other components.
 """
 
 from typing import Any, Dict, Optional, Type
@@ -17,20 +16,6 @@ from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
-
-# Registry of available schemas
-SCHEMA_REGISTRY = {
-    "job_posting": JobPostingExtractionSchema,
-    # Future schemas can be added here:
-    # "resume": ResumeExtractionSchema,
-    # "company": CompanyExtractionSchema,
-}
-
-# Registry of prompts for different schemas
-PROMPT_REGISTRY = {
-    "job_posting": JOB_POSTING_EXTRACTION_PROMPT,
-    # Future prompts can be added here
-}
 
 
 def _get_extraction_client() -> AnthropicClient:
@@ -86,41 +71,6 @@ def _extract_with_schema(
     return result_dict
 
 
-def extract_structured_data(text: str, schema_name: str) -> Dict[str, Any]:
-    """
-    Extract structured data from text based on a specified schema.
-
-    Args:
-        text: The text to extract information from
-        schema_name: Name of the schema to use (e.g., 'job_posting', 'resume', etc.)
-
-    Returns:
-        Dict containing extracted structured data matching the schema
-
-    Raises:
-        ValueError: If schema_name is not supported
-    """
-    if not text or not text.strip():
-        logger.warning("Empty text provided for extraction")
-        return {}
-
-    if schema_name not in SCHEMA_REGISTRY:
-        available_schemas = list(SCHEMA_REGISTRY.keys())
-        raise ValueError(
-            f"Schema '{schema_name}' not supported. Available schemas: {available_schemas}"
-        )
-
-    if schema_name not in PROMPT_REGISTRY:
-        raise ValueError(f"No prompt template found for schema '{schema_name}'")
-
-    schema_class = SCHEMA_REGISTRY[schema_name]
-    prompt_template = PROMPT_REGISTRY[schema_name]
-
-    logger.info(f"Starting structured extraction with schema: {schema_name}")
-
-    return _extract_with_schema(text, schema_class, prompt_template)
-
-
 def extract_job_posting(job_text: str) -> Dict[str, Any]:
     """
     Extract job posting information from text.
@@ -137,131 +87,108 @@ def extract_job_posting(job_text: str) -> Dict[str, Any]:
         - location_policy: remote/hybrid/onsite/unclear
         - role_type: ic/manager/unclear
     """
-    schema_class = SCHEMA_REGISTRY["job_posting"]
-    prompt_template = PROMPT_REGISTRY["job_posting"]
-    return _extract_with_schema(job_text, schema_class, prompt_template)
+    return _extract_with_schema(
+        job_text, JobPostingExtractionSchema, JOB_POSTING_EXTRACTION_PROMPT
+    )
 
 
 def validate_extraction_result(
     extraction_result: Dict[str, Any], schema_name: str
 ) -> bool:
     """
-    Validate that an extraction result contains meaningful data.
+    Validate that a job posting extraction result contains meaningful data.
 
     Args:
         extraction_result: The extraction result to validate
-        schema_name: Name of the schema used for extraction
+        schema_name: Name of the schema used for extraction (must be "job_posting")
 
     Returns:
         bool: True if the result contains meaningful data
+
+    Raises:
+        ValueError: If schema_name is not "job_posting"
     """
+    if schema_name != "job_posting":
+        raise ValueError(f"Only 'job_posting' schema is supported, got: {schema_name}")
+
     if not extraction_result:
         return False
 
-    if schema_name == "job_posting":
-        # Check if we have at least some meaningful extracted data
-        has_title = extraction_result.get("title") is not None and bool(
-            str(extraction_result.get("title")).strip()
-        )
-        has_company = extraction_result.get("company") is not None and bool(
-            str(extraction_result.get("company")).strip()
-        )
-        has_salary = (
-            extraction_result.get("salary_min") is not None
-            or extraction_result.get("salary_max") is not None
-        )
-        has_clear_policy = extraction_result.get("location_policy") != "unclear"
-        has_clear_role = extraction_result.get("role_type") != "unclear"
-
-        # Consider it valid if we have at least title or company, plus one other field
-        basic_info = has_title or has_company
-        additional_info = has_salary or has_clear_policy or has_clear_role
-
-        is_valid = basic_info and additional_info
-
-        logger.debug(
-            f"Job posting validation: {is_valid} (title={has_title}, company={has_company}, salary={has_salary}, policy={has_clear_policy}, role={has_clear_role})"
-        )
-
-        return bool(is_valid)
-
-    # For other schemas, just check if we have any non-empty values
-    return any(
-        value is not None and str(value).strip() for value in extraction_result.values()
+    # Check if we have at least some meaningful extracted data
+    has_title = extraction_result.get("title") is not None and bool(
+        str(extraction_result.get("title")).strip()
     )
+    has_company = extraction_result.get("company") is not None and bool(
+        str(extraction_result.get("company")).strip()
+    )
+    has_salary = (
+        extraction_result.get("salary_min") is not None
+        or extraction_result.get("salary_max") is not None
+    )
+    has_clear_policy = extraction_result.get("location_policy") != "unclear"
+    has_clear_role = extraction_result.get("role_type") != "unclear"
+
+    # Consider it valid if we have at least title or company, plus one other field
+    basic_info = has_title or has_company
+    additional_info = has_salary or has_clear_policy or has_clear_role
+
+    is_valid = basic_info and additional_info
+
+    logger.debug(
+        f"Job posting validation: {is_valid} (title={has_title}, company={has_company}, salary={has_salary}, policy={has_clear_policy}, role={has_clear_role})"
+    )
+
+    return bool(is_valid)
 
 
 def get_extraction_summary(extraction_result: Dict[str, Any], schema_name: str) -> str:
     """
-    Get a human-readable summary of the extraction result.
+    Get a human-readable summary of the job posting extraction result.
 
     Args:
         extraction_result: The extraction result to summarize
-        schema_name: Name of the schema used for extraction
+        schema_name: Name of the schema used for extraction (must be "job_posting")
 
     Returns:
         str: Human-readable summary of the extraction
+
+    Raises:
+        ValueError: If schema_name is not "job_posting"
     """
+    if schema_name != "job_posting":
+        raise ValueError(f"Only 'job_posting' schema is supported, got: {schema_name}")
+
     if not extraction_result:
         return "No data extracted"
 
-    if schema_name == "job_posting":
-        parts = []
+    parts = []
 
-        if extraction_result.get("title"):
-            parts.append(f"Title: {extraction_result['title']}")
+    if extraction_result.get("title"):
+        parts.append(f"Title: {extraction_result['title']}")
 
-        if extraction_result.get("company"):
-            parts.append(f"Company: {extraction_result['company']}")
+    if extraction_result.get("company"):
+        parts.append(f"Company: {extraction_result['company']}")
 
-        salary_min = extraction_result.get("salary_min")
-        salary_max = extraction_result.get("salary_max")
-        if salary_min or salary_max:
-            if salary_min and salary_max:
-                parts.append(f"Salary: ${salary_min:,} - ${salary_max:,}")
-            elif salary_max:
-                parts.append(f"Salary: Up to ${salary_max:,}")
-            elif salary_min:
-                parts.append(f"Salary: From ${salary_min:,}")
+    salary_min = extraction_result.get("salary_min")
+    salary_max = extraction_result.get("salary_max")
+    if salary_min or salary_max:
+        if salary_min and salary_max:
+            parts.append(f"Salary: ${salary_min:,} - ${salary_max:,}")
+        elif salary_max:
+            parts.append(f"Salary: Up to ${salary_max:,}")
+        elif salary_min:
+            parts.append(f"Salary: From ${salary_min:,}")
 
-        location_policy = extraction_result.get("location_policy")
-        if location_policy and location_policy != "unclear":
-            parts.append(f"Location: {location_policy.title()}")
+    location_policy = extraction_result.get("location_policy")
+    if location_policy and location_policy != "unclear":
+        parts.append(f"Location: {location_policy.title()}")
 
-        role_type = extraction_result.get("role_type")
-        if role_type and role_type != "unclear":
-            role_display = "Individual Contributor" if role_type == "ic" else "Manager"
-            parts.append(f"Role: {role_display}")
+    role_type = extraction_result.get("role_type")
+    if role_type and role_type != "unclear":
+        role_display = "Individual Contributor" if role_type == "ic" else "Manager"
+        parts.append(f"Role: {role_display}")
 
-        if not parts:
-            return "No meaningful information extracted"
-
-        return " | ".join(parts)
-
-    # For other schemas, provide a generic summary
-    non_empty_fields = {
-        k: v for k, v in extraction_result.items() if v is not None and str(v).strip()
-    }
-    if not non_empty_fields:
+    if not parts:
         return "No meaningful information extracted"
 
-    return f"Extracted {len(non_empty_fields)} fields: {', '.join(non_empty_fields.keys())}"
-
-
-def get_available_schemas() -> list[str]:
-    """Get list of available schema names."""
-    return list(SCHEMA_REGISTRY.keys())
-
-
-def register_schema(name: str, schema_class: Type, prompt_template) -> None:
-    """
-    Register a new schema for extraction.
-
-    Args:
-        name: Name of the schema
-        schema_class: Pydantic schema class
-        prompt_template: Prompt template for extraction
-    """
-    SCHEMA_REGISTRY[name] = schema_class
-    PROMPT_REGISTRY[name] = prompt_template
-    logger.info(f"Registered new extraction schema: {name}")
+    return " | ".join(parts)
