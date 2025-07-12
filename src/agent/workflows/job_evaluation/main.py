@@ -14,7 +14,10 @@ from src.agent.tools.extraction.schema_extraction_tool import (
     validate_extraction_result,
 )
 from src.agent.workflows.job_evaluation.states import JobEvaluationState
-from src.core.job_evaluation import evaluate_job_against_criteria
+from src.core.job_evaluation import (
+    evaluate_job_against_criteria,
+    generate_recommendation_from_evaluation,
+)
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.utils.logging import get_logger
 
@@ -135,7 +138,7 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
 
     try:
         # Generate recommendation
-        recommendation, reasoning = _generate_recommendation_from_evaluation(
+        recommendation, reasoning = generate_recommendation_from_evaluation(
             evaluation_result
         )
 
@@ -151,38 +154,6 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
             "recommendation": "ERROR",
             "reasoning": f"Recommendation generation failed: {str(e)}",
         }
-
-
-def _generate_recommendation_from_evaluation(
-    evaluation_result: Dict[str, Any],
-) -> tuple[str, str]:
-    """Generate recommendation and reasoning from evaluation results."""
-    if not evaluation_result or "error" in evaluation_result:
-        return "ERROR", "Unable to evaluate job posting"
-
-    # Count passed criteria
-    passed_criteria = []
-    failed_criteria = []
-
-    for criterion, result in evaluation_result.items():
-        if isinstance(result, dict) and "pass" in result:
-            if result["pass"]:
-                passed_criteria.append(f"{criterion}: {result['reason']}")
-            else:
-                failed_criteria.append(f"{criterion}: {result['reason']}")
-
-    # Generate recommendation based on results
-    if not failed_criteria:
-        recommendation = "APPLY"
-        reasoning = f"All criteria passed: {'; '.join(passed_criteria)}"
-    else:
-        recommendation = "DO_NOT_APPLY"
-        if failed_criteria:
-            reasoning = f"Failed criteria: {'; '.join(failed_criteria)}"
-        else:
-            reasoning = "Job does not meet evaluation criteria"
-
-    return recommendation, reasoning
 
 
 _compiled_workflow: Optional[StateGraph] = None
