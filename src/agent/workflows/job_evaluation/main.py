@@ -102,15 +102,8 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
         # Evaluate against criteria
         evaluation_result = evaluate_job_against_criteria(extracted_info)
 
-        # Generate recommendation
-        recommendation, reasoning = generate_recommendation(evaluation_result)
-
-        logger.info(f"Job evaluation completed: {recommendation}")
-        return {
-            "evaluation_result": evaluation_result,
-            "recommendation": recommendation,
-            "reasoning": reasoning,
-        }
+        logger.info("Job evaluation completed successfully")
+        return {"evaluation_result": evaluation_result}
 
     except Exception as e:
         logger.error(f"Evaluation failed: {e}")
@@ -121,7 +114,48 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
         }
 
 
-def generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, str]:
+def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
+    """Generate recommendation based on evaluation results."""
+    logger.info("Generating recommendation")
+
+    # Skip recommendation if previous steps failed
+    if state.recommendation == "ERROR":
+        logger.info("Skipping recommendation due to previous error")
+        return {}
+
+    evaluation_result = state.evaluation_result
+
+    # Skip recommendation if evaluation failed
+    if not evaluation_result:
+        logger.warning("No evaluation result to generate recommendation from")
+        return {
+            "recommendation": "ERROR",
+            "reasoning": "No evaluation result available for recommendation",
+        }
+
+    try:
+        # Generate recommendation
+        recommendation, reasoning = _generate_recommendation_from_evaluation(
+            evaluation_result
+        )
+
+        logger.info(f"Recommendation generated: {recommendation}")
+        return {
+            "recommendation": recommendation,
+            "reasoning": reasoning,
+        }
+
+    except Exception as e:
+        logger.error(f"Recommendation generation failed: {e}")
+        return {
+            "recommendation": "ERROR",
+            "reasoning": f"Recommendation generation failed: {str(e)}",
+        }
+
+
+def _generate_recommendation_from_evaluation(
+    evaluation_result: Dict[str, Any],
+) -> tuple[str, str]:
     """Generate recommendation and reasoning from evaluation results."""
     if not evaluation_result or "error" in evaluation_result:
         return "ERROR", "Unable to evaluate job posting"
@@ -172,12 +206,14 @@ def get_job_evaluation_workflow() -> StateGraph:
         workflow.add_node("validate", validate_input)
         workflow.add_node("extract", extract_job_info)
         workflow.add_node("evaluate", evaluate_job)
+        workflow.add_node("recommend", generate_recommendation)
 
         # Define workflow flow
         workflow.add_edge(START, "validate")
         workflow.add_edge("validate", "extract")
         workflow.add_edge("extract", "evaluate")
-        workflow.add_edge("evaluate", END)
+        workflow.add_edge("evaluate", "recommend")
+        workflow.add_edge("recommend", END)
 
         _compiled_workflow = workflow.compile()
         logger.info("Job evaluation workflow compiled successfully")
