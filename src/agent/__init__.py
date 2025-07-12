@@ -1,33 +1,35 @@
 """
 Agent system for job search assistant.
 
-This module contains the redesigned agent infrastructure leveraging
-LangGraph's tool calling capabilities with structured outputs for
-type-safe, validated extraction and agent reasoning.
+This module contains the agent infrastructure that focuses on
+clean, maintainable workflows using LangGraph for orchestration.
 
-## Design Philosophy: Flexible Agent Architecture
+## Design Philosophy: Workflow Architecture
 
-This agent system is designed to support different agent/tool patterns depending on
-the specific use case:
+This agent system follows a streamlined approach:
 
-### Standard LangGraph Pattern (Recommended for new workflows):
-- **Tools** are simple functions or API calls (no LLM decision-making)
-- **Agents** are LLMs with reasoning that decide when/how to use tools
+### Current Architecture:
+- **Workflows** handle end-to-end processes using LangGraph StateGraph
+- **Tools** are simple functions that perform specific tasks (extraction, evaluation)
+- **Prompts** are organized by domain for reusability
 
-### Alternative Pattern (Used in some existing workflows):
-- **Tools** contain LLM logic for specialized tasks
-- **Agents** orchestrate workflows and coordinate tool usage
+### Key Components:
+- `workflows/` - LangGraph-based process orchestration
+- `tools/` - Reusable utility functions
+- `prompts/` - Domain-specific prompt templates
+- `agents/` - Reserved for future LLM-powered decision-making agents
+- `common/` - Reserved for shared utilities
 
-### Guidelines for New Development:
-- **Default**: Use the standard LangGraph pattern unless there's specific justification
-- **Domain-Specific**: Consider alternative patterns only for highly specialized use cases
-- **Documentation**: Always document deviations from standard patterns
+### Current Workflows:
+- **Job Evaluation**: Extract job info → Evaluate against criteria → Recommend action
 
-**Note**: The job evaluation workflow uses a non-standard pattern for specific reasons.
-See `src/agent/workflows/job_evaluation/` for detailed rationale and design decisions.
+### Future Growth:
+The structure is designed to support both:
+- **Workflow-as-Agent**: Fixed processes with LangGraph orchestration (current)
+- **Traditional Agents**: LLM-powered decision-making entities (future)
 
-The base agent infrastructure supports both patterns and remains extensible for
-future job search use cases while maintaining clean separation of concerns and type safety.
+This architecture prioritizes simplicity and maintainability while remaining
+extensible for future job search use cases.
 """
 
-__version__ = "2.0.0"  # Updated to reflect tool-calling architecture
+__version__ = "3.0.0"  # Current workflow-based architecture

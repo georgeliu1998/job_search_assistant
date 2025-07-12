@@ -1,288 +1,198 @@
 """
-Defines the job evaluation workflow using a StateGraph.
+Simplified job evaluation workflow using LangGraph.
 
-This module provides the complete job evaluation workflow implementation,
-including the public API function that serves as the main entry point.
+This workflow extracts job information and evaluates it against criteria
+in a simple, direct manner without unnecessary abstractions.
 """
 
 from typing import Any, Dict, Optional
 
-from langgraph.graph import END, StateGraph
+from langgraph.graph import END, START, StateGraph
 
-from src.agent.agents.evaluation.job_evaluation_agent import (
-    JobEvaluationAgent,
-    JobEvaluationInput,
+from src.agent.tools.extraction.schema_extraction_tool import (
+    extract_job_posting_fn,
+    validate_extraction_result_fn,
 )
-from src.agent.agents.extraction.job_extraction_agent import (
-    JobExtractionAgent,
-    JobExtractionInput,
-)
-from src.agent.workflows.job_evaluation.states import JobEvaluationWorkflowState
+from src.agent.workflows.job_evaluation.states import JobEvaluationState
+from src.core.job_evaluation import evaluate_job_against_criteria
 from src.llm.langfuse_handler import get_langfuse_handler
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class JobEvaluationWorkflow:
-    """
-    Manages the job evaluation process as a compiled LangGraph workflow.
+def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
+    """Extract structured information from job posting text."""
+    logger.info("Extracting job information")
 
-    This workflow uses specialized agents for extraction and evaluation,
-    providing a clean separation of concerns and reusable components.
-    """
+    job_text = state["job_posting_text"]
 
-    def __init__(self):
-        # Initialize the specialized agents
-        self.extraction_agent = JobExtractionAgent()
-        self.evaluation_agent = JobEvaluationAgent()
+    try:
+        # Extract structured information
+        extracted_info = extract_job_posting_fn(job_text)
 
-        # Build and compile the workflow
-        self.workflow = self._build_graph()
-        self.app = self.workflow.compile()
+        # Validate extraction
+        is_valid = validate_extraction_result_fn(extracted_info, "job_posting")
 
-    def _build_graph(self) -> StateGraph:
-        """Builds the StateGraph for the job evaluation workflow."""
-        workflow = StateGraph(JobEvaluationWorkflowState)
-
-        # Add nodes using adapter methods
-        workflow.add_node("extract", self._extraction_node)
-        workflow.add_node("evaluate", self._evaluation_node)
-
-        # Define edges - simplified flow (extraction includes validation)
-        workflow.set_entry_point("extract")
-        workflow.add_edge("extract", "evaluate")
-        workflow.add_edge("evaluate", END)
-
-        return workflow
-
-    def _extraction_node(self, state: JobEvaluationWorkflowState) -> dict:
-        """
-        Adapter between workflow state and extraction agent.
-
-        This method bridges the workflow state format with the agent's
-        typed input/output interface.
-        """
-        logger.info("Workflow node: extract - using JobExtractionAgent")
-
-        # Create agent input
-        agent_input = JobExtractionInput(
-            job_text=state["job_posting_text"], validation_enabled=True
-        )
-
-        # Execute the agent
-        result = self.extraction_agent(agent_input)
-
-        if result.success:
-            logger.info("Extraction successful")
-            return {
-                "extracted_info": result.data.extracted_info,
-                "is_valid": result.data.is_valid,
-                "messages": state["messages"]
-                + [
-                    {
-                        "role": "extraction_agent",
-                        "content": f"Successfully extracted job info (valid: {result.data.is_valid})",
-                        "metadata": result.metadata,
-                    }
-                ],
-            }
-        else:
-            logger.error(f"Extraction failed: {result.error}")
+        if not is_valid:
+            logger.warning("Extraction validation failed")
             return {
                 "extracted_info": None,
-                "is_valid": False,
-                "messages": state["messages"]
-                + [
-                    {
-                        "role": "extraction_agent",
-                        "error": result.error,
-                        "metadata": result.metadata,
-                    }
-                ],
-            }
-
-    def _evaluation_node(self, state: JobEvaluationWorkflowState) -> dict:
-        """
-        Adapter between workflow state and evaluation agent.
-
-        This method bridges the workflow state format with the agent's
-        typed input/output interface.
-        """
-        logger.info("Workflow node: evaluate - using JobEvaluationAgent")
-
-        # Check if we have extracted info to evaluate
-        if not state.get("extracted_info"):
-            logger.warning("No extracted info available for evaluation")
-            return {
-                "evaluation_result": None,
                 "recommendation": "ERROR",
-                "reasoning": "No extracted information available for evaluation",
-                "messages": state["messages"]
-                + [
-                    {
-                        "role": "evaluation_agent",
-                        "error": "No extracted info to evaluate",
-                    }
-                ],
+                "reasoning": "Failed to extract meaningful job information",
             }
 
-        # Create agent input
-        agent_input = JobEvaluationInput(extracted_info=state["extracted_info"])
+        logger.info("Job information extracted successfully")
+        return {"extracted_info": extracted_info}
 
-        # Execute the agent
-        result = self.evaluation_agent(agent_input)
-
-        if result.success:
-            logger.info(f"Evaluation successful: {result.data.recommendation}")
-            return {
-                "evaluation_result": result.data.evaluation_result,
-                "recommendation": result.data.recommendation,
-                "reasoning": result.data.reasoning,
-                "passed_criteria": result.data.passed_criteria,
-                "total_criteria": result.data.total_criteria,
-                "messages": state["messages"]
-                + [
-                    {
-                        "role": "evaluation_agent",
-                        "content": f"Evaluation completed: {result.data.recommendation}",
-                        "metadata": result.metadata,
-                    }
-                ],
-            }
-        else:
-            logger.error(f"Evaluation failed: {result.error}")
-            return {
-                "evaluation_result": None,
-                "recommendation": "ERROR",
-                "reasoning": f"Evaluation failed: {result.error}",
-                "messages": state["messages"]
-                + [
-                    {
-                        "role": "evaluation_agent",
-                        "error": result.error,
-                        "metadata": result.metadata,
-                    }
-                ],
-            }
-
-    def run(
-        self, job_posting_text: str, langfuse_handler: Optional[Any] = None
-    ) -> dict:
-        """
-        Executes the job evaluation workflow.
-
-        Args:
-            job_posting_text: The raw job posting text.
-            langfuse_handler: Optional Langfuse handler for tracing.
-
-        Returns:
-            The final state of the workflow.
-        """
-        logger.info("Starting JobEvaluationWorkflow run")
-        initial_state = {
-            "job_posting_text": job_posting_text,
+    except Exception as e:
+        logger.error(f"Extraction failed: {e}")
+        return {
             "extracted_info": None,
-            "evaluation_result": None,
-            "messages": [],
-            "langfuse_handler": langfuse_handler,
-            "workflow_version": "3.0",  # Updated version with new agents
-            "extraction_duration": None,
-            "evaluation_duration": None,
+            "recommendation": "ERROR",
+            "reasoning": f"Extraction failed: {str(e)}",
         }
 
-        config = {}
-        if langfuse_handler:
-            config = {"callbacks": [langfuse_handler]}
 
-        final_state = self.app.invoke(initial_state, config=config)
-        logger.info("JobEvaluationWorkflow run completed")
-        return final_state
+def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
+    """Evaluate extracted job information against criteria."""
+    logger.info("Evaluating job against criteria")
+
+    extracted_info = state["extracted_info"]
+
+    # Skip evaluation if extraction failed
+    if not extracted_info:
+        logger.warning("No extracted info to evaluate")
+        return {
+            "evaluation_result": None,
+            "recommendation": "ERROR",
+            "reasoning": "No job information available for evaluation",
+        }
+
+    try:
+        # Evaluate against criteria
+        evaluation_result = evaluate_job_against_criteria(extracted_info)
+
+        # Generate recommendation
+        recommendation, reasoning = _generate_recommendation(evaluation_result)
+
+        logger.info(f"Job evaluation completed: {recommendation}")
+        return {
+            "evaluation_result": evaluation_result,
+            "recommendation": recommendation,
+            "reasoning": reasoning,
+        }
+
+    except Exception as e:
+        logger.error(f"Evaluation failed: {e}")
+        return {
+            "evaluation_result": None,
+            "recommendation": "ERROR",
+            "reasoning": f"Evaluation failed: {str(e)}",
+        }
 
 
-def create_job_evaluation_workflow() -> JobEvaluationWorkflow:
-    """
-    Create a new job evaluation workflow instance.
+def _generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, str]:
+    """Generate recommendation and reasoning from evaluation results."""
+    if not evaluation_result or "error" in evaluation_result:
+        return "ERROR", "Unable to evaluate job posting"
 
-    Returns:
-        JobEvaluationWorkflow: New workflow instance
-    """
-    return JobEvaluationWorkflow()
+    # Count passed criteria
+    passed_criteria = []
+    failed_criteria = []
+
+    for criterion, result in evaluation_result.items():
+        if isinstance(result, dict) and "pass" in result:
+            if result["pass"]:
+                passed_criteria.append(f"{criterion}: {result['reason']}")
+            else:
+                failed_criteria.append(f"{criterion}: {result['reason']}")
+
+    # Generate recommendation based on results
+    if len(passed_criteria) == len(passed_criteria) + len(failed_criteria):
+        recommendation = "APPLY"
+        reasoning = f"All criteria passed: {'; '.join(passed_criteria)}"
+    else:
+        recommendation = "DO_NOT_APPLY"
+        if failed_criteria:
+            reasoning = f"Failed criteria: {'; '.join(failed_criteria)}"
+        else:
+            reasoning = "Job does not meet evaluation criteria"
+
+    return recommendation, reasoning
+
+
+def create_workflow() -> StateGraph:
+    """Create the job evaluation workflow."""
+    workflow = StateGraph(JobEvaluationState)
+
+    # Add nodes
+    workflow.add_node("extract", extract_job_info)
+    workflow.add_node("evaluate", evaluate_job)
+
+    # Add edges
+    workflow.add_edge(START, "extract")
+    workflow.add_edge("extract", "evaluate")
+    workflow.add_edge("evaluate", END)
+
+    return workflow
 
 
 def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
     """
-    Evaluates a job posting using the graph-based agent workflow.
-
-    This is the main public API for the job evaluation system. It provides
-    a clean interface to the underlying LangGraph workflow system.
+    Main entry point for job evaluation.
 
     Args:
-        job_posting_text: The raw job posting text to evaluate.
+        job_posting_text: The raw job posting text to evaluate
 
     Returns:
-        A dictionary with evaluation results in the format expected by the UI:
-        - recommendation: "APPLY", "DO_NOT_APPLY", or "ERROR"
-        - reasoning: Human-readable explanation of the recommendation
-        - extracted_info: Dictionary with structured job information
-        - evaluation_result: Dictionary with detailed evaluation criteria results
+        Dict with evaluation results in UI-expected format
     """
-    logger.info("Starting job evaluation with graph-based workflow.")
+    logger.info("Starting job evaluation")
 
     if not job_posting_text or not job_posting_text.strip():
-        logger.warning("Job posting text is empty.")
+        logger.warning("Empty job posting text")
         return {
             "recommendation": "ERROR",
-            "reasoning": "Job posting text was empty.",
+            "reasoning": "Job posting text was empty",
             "extracted_info": {},
             "evaluation_result": {},
         }
 
-    langfuse_handler = get_langfuse_handler()
-
     try:
-        workflow = JobEvaluationWorkflow()
-        final_state = workflow.run(job_posting_text, langfuse_handler)
+        # Create and run workflow
+        workflow = create_workflow()
+        app = workflow.compile()
 
-        # The new agent-based workflow provides recommendation directly
-        recommendation = final_state.get("recommendation", "ERROR")
-        reasoning = final_state.get("reasoning", "Unknown error occurred")
-        result = final_state.get("evaluation_result", {})
+        # Initial state
+        initial_state = JobEvaluationState(
+            job_posting_text=job_posting_text,
+            extracted_info=None,
+            evaluation_result=None,
+            recommendation=None,
+            reasoning=None,
+        )
 
-        if recommendation == "ERROR":
-            logger.error(f"Workflow completed with error: {reasoning}")
-            return {
-                "recommendation": "ERROR",
-                "reasoning": reasoning,
-                "extracted_info": final_state.get("extracted_info", {}),
-                "evaluation_result": result,
-            }
+        # Configure with Langfuse if available
+        langfuse_handler = get_langfuse_handler()
+        config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
 
-        # Convert extracted_info to dictionary format for UI compatibility
-        extracted_info_dict = {}
-        extracted_info = final_state.get("extracted_info")
-        if extracted_info:
-            if hasattr(extracted_info, "model_dump"):
-                extracted_info_dict = extracted_info.model_dump()
-            elif isinstance(extracted_info, dict):
-                extracted_info_dict = extracted_info
-            else:
-                extracted_info_dict = dict(extracted_info) if extracted_info else {}
+        # Run workflow
+        final_state = app.invoke(initial_state, config=config)
 
-        logger.info(f"Job evaluation completed with recommendation: {recommendation}")
-
+        # Return results in expected format
         return {
-            "recommendation": recommendation,
-            "reasoning": reasoning,
-            "extracted_info": extracted_info_dict,
-            "evaluation_result": result,
+            "recommendation": final_state.get("recommendation", "ERROR"),
+            "reasoning": final_state.get("reasoning", "Unknown error"),
+            "extracted_info": final_state.get("extracted_info", {}),
+            "evaluation_result": final_state.get("evaluation_result", {}),
         }
 
     except Exception as e:
-        logger.error(f"Job evaluation workflow failed: {e}", exc_info=True)
+        logger.error(f"Job evaluation failed: {e}")
         return {
             "recommendation": "ERROR",
-            "reasoning": f"An unexpected error occurred during the workflow: {e}",
+            "reasoning": f"Evaluation failed: {str(e)}",
             "extracted_info": {},
             "evaluation_result": {},
         }

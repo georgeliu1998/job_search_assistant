@@ -214,27 +214,21 @@ def sample_job_posting_texts():
 @pytest.fixture
 def workflow_state_factory():
     """Factory function for creating workflow states for testing."""
-    from src.agent.workflows.job_evaluation.states import JobEvaluationWorkflowState
+    from src.agent.workflows.job_evaluation.states import JobEvaluationState
 
     def create_state(
         job_posting_text="Test job posting",
         extracted_info=None,
         evaluation_result=None,
-        messages=None,
-        langfuse_handler=None,
-        workflow_version="3.0",
-        extraction_duration=None,
-        evaluation_duration=None,
+        recommendation=None,
+        reasoning=None,
     ):
-        return JobEvaluationWorkflowState(
+        return JobEvaluationState(
             job_posting_text=job_posting_text,
             extracted_info=extracted_info,
             evaluation_result=evaluation_result,
-            messages=messages or [],
-            langfuse_handler=langfuse_handler,
-            workflow_version=workflow_version,
-            extraction_duration=extraction_duration,
-            evaluation_duration=evaluation_duration,
+            recommendation=recommendation,
+            reasoning=reasoning,
         )
 
     return create_state

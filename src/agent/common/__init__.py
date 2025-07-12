@@ -1,13 +1,7 @@
 """
-Common utilities and base classes for the agent system.
+Common utilities for the agent system.
 
-This module contains foundational infrastructure shared across all agents,
-including base classes, common types, and utility functions.
+This module is reserved for future shared utilities.
 """
 
-from src.agent.common.base import Agent, AgentResult
-
-__all__ = [
-    "Agent",
-    "AgentResult",
-]
+__all__ = []
