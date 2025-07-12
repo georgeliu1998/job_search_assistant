@@ -21,9 +21,9 @@ class JobEvaluationState(BaseModel):
         use_enum_values=True,
     )
 
-    # Input
-    job_posting_text: str = Field(
-        ..., min_length=1, description="The job posting text to evaluate"
+    # Input - allow empty strings and None for proper error handling
+    job_posting_text: Optional[str] = Field(
+        default="", description="The job posting text to evaluate"
     )
 
     # Intermediate results

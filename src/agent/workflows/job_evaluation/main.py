@@ -1,8 +1,8 @@
 """
-Simplified job evaluation workflow using LangGraph.
+Job evaluation workflow using LangGraph.
 
-This workflow extracts job information and evaluates it against criteria
-in a simple, direct manner without unnecessary abstractions.
+This workflow provides a complete end-to-end job evaluation process
+with input validation, extraction, evaluation, and output formatting.
 """
 
 from typing import Any, Dict, Optional
@@ -21,9 +21,33 @@ from src.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
+def validate_input(state: JobEvaluationState) -> Dict[str, Any]:
+    """Validate job posting input and handle empty/invalid inputs."""
+    logger.info("Validating job posting input")
+
+    job_text = state.job_posting_text
+
+    if not job_text or not job_text.strip():
+        logger.warning("Empty job posting text provided")
+        return {
+            "recommendation": "ERROR",
+            "reasoning": "Job posting text was empty",
+            "extracted_info": {},
+            "evaluation_result": {},
+        }
+
+    logger.info("Job posting input validation passed")
+    return {}
+
+
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract structured information from job posting text."""
     logger.info("Extracting job information")
+
+    # Skip extraction if validation failed
+    if state.recommendation == "ERROR":
+        logger.info("Skipping extraction due to validation error")
+        return {}
 
     job_text = state.job_posting_text
 
@@ -58,6 +82,11 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
     """Evaluate extracted job information against criteria."""
     logger.info("Evaluating job against criteria")
 
+    # Skip evaluation if previous steps failed
+    if state.recommendation == "ERROR":
+        logger.info("Skipping evaluation due to previous error")
+        return {}
+
     extracted_info = state.extracted_info
 
     # Skip evaluation if extraction failed
@@ -74,7 +103,7 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
         evaluation_result = evaluate_job_against_criteria(extracted_info)
 
         # Generate recommendation
-        recommendation, reasoning = _generate_recommendation(evaluation_result)
+        recommendation, reasoning = generate_recommendation(evaluation_result)
 
         logger.info(f"Job evaluation completed: {recommendation}")
         return {
@@ -92,7 +121,7 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
         }
 
 
-def _generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, str]:
+def generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, str]:
     """Generate recommendation and reasoning from evaluation results."""
     if not evaluation_result or "error" in evaluation_result:
         return "ERROR", "Unable to evaluate job posting"
@@ -125,72 +154,94 @@ def _generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, st
 _compiled_workflow: Optional[StateGraph] = None
 
 
-def get_compiled_workflow() -> StateGraph:
+def get_job_evaluation_workflow() -> StateGraph:
     """
     Creates and compiles the job evaluation workflow, caching the compiled result
     for reuse.
+
+    Returns:
+        Compiled LangGraph workflow ready for execution
     """
     global _compiled_workflow
     if _compiled_workflow is None:
+        logger.info("Compiling job evaluation workflow")
+
         workflow = StateGraph(JobEvaluationState)
+
+        # Add workflow nodes
+        workflow.add_node("validate", validate_input)
         workflow.add_node("extract", extract_job_info)
         workflow.add_node("evaluate", evaluate_job)
-        workflow.add_edge(START, "extract")
+
+        # Define workflow flow
+        workflow.add_edge(START, "validate")
+        workflow.add_edge("validate", "extract")
         workflow.add_edge("extract", "evaluate")
         workflow.add_edge("evaluate", END)
+
         _compiled_workflow = workflow.compile()
+        logger.info("Job evaluation workflow compiled successfully")
+
     return _compiled_workflow
 
 
-def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
+def run_job_evaluation_workflow(
+    job_posting_text: str, config: Optional[Dict[str, Any]] = None
+) -> JobEvaluationState:
     """
-    Main entry point for job evaluation.
+    Convenience function to run the job evaluation workflow with automatic
+    Langfuse configuration.
 
     Args:
-        job_posting_text: The raw job posting text to evaluate
+        job_posting_text: The job posting text to evaluate
+        config: Optional additional configuration for workflow execution
 
     Returns:
-        Dict with evaluation results in UI-expected format
+        Final workflow state with all results
     """
-    logger.info("Starting job evaluation")
+    logger.info("Starting job evaluation workflow")
 
-    if not job_posting_text or not job_posting_text.strip():
-        logger.warning("Empty job posting text")
-        return {
-            "recommendation": "ERROR",
-            "reasoning": "Job posting text was empty",
-            "extracted_info": {},
-            "evaluation_result": {},
-        }
+    # Handle None input
+    if job_posting_text is None:
+        job_posting_text = ""
 
     try:
-        # Create and run workflow
-        workflow = get_compiled_workflow()
+        # Get compiled workflow
+        workflow = get_job_evaluation_workflow()
 
-        # Initial state
+        # Create initial state
         initial_state = JobEvaluationState(job_posting_text=job_posting_text)
 
-        # Configure with Langfuse if available
+        # Configure Langfuse if available
         langfuse_handler = get_langfuse_handler()
-        config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
+        execution_config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
+
+        # Merge with provided config
+        if config:
+            execution_config.update(config)
 
         # Run workflow
-        final_state = workflow.invoke(initial_state, config=config)
+        final_state_dict = workflow.invoke(initial_state, config=execution_config)
 
-        # Return results in expected format
-        # Note: LangGraph returns AddableValuesDict, so we use dict-style access
-        return {
-            "recommendation": final_state.get("recommendation", "ERROR"),
-            "reasoning": final_state.get("reasoning", "Unknown error"),
-            "extracted_info": final_state.get("extracted_info", {}),
-            "evaluation_result": final_state.get("evaluation_result", {}),
-        }
+        # Convert the AddableValuesDict to JobEvaluationState
+        final_state = JobEvaluationState(
+            job_posting_text=final_state_dict.get("job_posting_text", job_posting_text),
+            extracted_info=final_state_dict.get("extracted_info"),
+            evaluation_result=final_state_dict.get("evaluation_result"),
+            recommendation=final_state_dict.get("recommendation"),
+            reasoning=final_state_dict.get("reasoning"),
+        )
+
+        logger.info("Job evaluation workflow completed successfully")
+        return final_state
 
     except Exception as e:
-        logger.error(f"Job evaluation failed: {e}")
-        return {
-            "recommendation": "ERROR",
-            "reasoning": f"Evaluation failed: {str(e)}",
-            "extracted_info": {},
-            "evaluation_result": {},
-        }
+        logger.error(f"Job evaluation workflow failed: {e}")
+        # Return error state
+        return JobEvaluationState(
+            job_posting_text=job_posting_text,
+            recommendation="ERROR",
+            reasoning=f"Workflow execution failed: {str(e)}",
+            extracted_info={},
+            evaluation_result={},
+        )

@@ -4,7 +4,10 @@ Job Evaluation page for analyzing job postings
 
 import streamlit as st
 
-from src.agent.workflows.job_evaluation import evaluate_job_posting
+from src.agent.workflows.job_evaluation import (
+    JobEvaluationState,
+    run_job_evaluation_workflow,
+)
 from ui.components.environment_check import check_environment_setup
 from ui.components.job_results import display_job_evaluation_results
 
@@ -59,8 +62,16 @@ def render_job_evaluation_page():
                     "🔍 Analyzing job posting... This may take several seconds."
                 ):
                     try:
-                        # Call the job evaluation agent
-                        results = evaluate_job_posting(job_description)
+                        # Run the job evaluation workflow
+                        final_state = run_job_evaluation_workflow(job_description)
+
+                        # Convert workflow state to UI results format
+                        results = {
+                            "recommendation": final_state.recommendation,
+                            "reasoning": final_state.reasoning,
+                            "extracted_info": final_state.extracted_info or {},
+                            "evaluation_result": final_state.evaluation_result or {},
+                        }
 
                         # Display results
                         st.divider()

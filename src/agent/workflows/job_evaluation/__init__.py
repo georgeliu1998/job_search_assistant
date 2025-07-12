@@ -1,12 +1,20 @@
 """
-Simplified job evaluation workflow implementation.
+Job evaluation workflow implementation.
 
-This module provides a clean, straightforward workflow for evaluating job postings
+This module provides a complete workflow for evaluating job postings
 against user criteria using LangGraph for orchestration.
 """
 
-from src.agent.workflows.job_evaluation.main import evaluate_job_posting
+from src.agent.workflows.job_evaluation.main import (
+    generate_recommendation,
+    get_job_evaluation_workflow,
+    run_job_evaluation_workflow,
+)
+from src.agent.workflows.job_evaluation.states import JobEvaluationState
 
 __all__ = [
-    "evaluate_job_posting",
+    "generate_recommendation",
+    "get_job_evaluation_workflow",
+    "run_job_evaluation_workflow",
+    "JobEvaluationState",
 ]
