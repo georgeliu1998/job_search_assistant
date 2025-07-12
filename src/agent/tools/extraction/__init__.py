@@ -1,8 +1,8 @@
 """
 Extraction tools for structured data extraction.
 
-This module contains @tool decorated functions that provide LangGraph
-tool calling capabilities for extraction operations.
+This module contains functions for extracting structured data from text
+that can be used directly by workflows and other components.
 """
 
 from src.agent.tools.extraction.schema_extraction_tool import (

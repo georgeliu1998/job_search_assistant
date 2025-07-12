@@ -8,12 +8,12 @@ import pytest
 
 from src.agent.tools.extraction.schema_extraction_tool import (
     _extract_with_schema,
-    extract_job_posting_fn,
-    extract_structured_data_fn,
+    extract_job_posting,
+    extract_structured_data,
     get_available_schemas,
-    get_extraction_summary_fn,
+    get_extraction_summary,
     register_schema,
-    validate_extraction_result_fn,
+    validate_extraction_result,
 )
 from src.exceptions.llm import LLMProviderError
 from src.models.job import JobPostingExtractionSchema
@@ -35,7 +35,7 @@ class TestExtractStructuredData:
         }
         mock_extract_with_schema.return_value = expected_result
 
-        result = extract_structured_data_fn(
+        result = extract_structured_data(
             "Software Engineer at TechCorp, remote, $140k-$170k", "job_posting"
         )
 
@@ -44,18 +44,18 @@ class TestExtractStructuredData:
 
     def test_extract_structured_data_empty_text(self):
         """Test extraction with empty text."""
-        result = extract_structured_data_fn("", "job_posting")
+        result = extract_structured_data("", "job_posting")
         assert result == {}
 
     def test_extract_structured_data_whitespace_only(self):
         """Test extraction with whitespace-only text."""
-        result = extract_structured_data_fn("   \n\t  ", "job_posting")
+        result = extract_structured_data("   \n\t  ", "job_posting")
         assert result == {}
 
     def test_extract_structured_data_invalid_schema(self):
         """Test extraction with invalid schema name."""
         with pytest.raises(ValueError, match="Schema 'invalid_schema' not supported"):
-            extract_structured_data_fn("Some text", "invalid_schema")
+            extract_structured_data("Some text", "invalid_schema")
 
     def test_extract_structured_data_missing_prompt(self):
         """Test extraction when prompt template is missing."""
@@ -67,7 +67,7 @@ class TestExtractStructuredData:
 
         try:
             with pytest.raises(ValueError, match="No prompt template found"):
-                extract_structured_data_fn("Some text", "test_schema")
+                extract_structured_data("Some text", "test_schema")
         finally:
             # Restore original registry
             SCHEMA_REGISTRY.clear()
@@ -90,7 +90,7 @@ class TestExtractJobPosting:
         }
         mock_extract_with_schema.return_value = expected_result
 
-        result = extract_job_posting_fn(
+        result = extract_job_posting(
             "Software Engineer at TechCorp, remote, $140k-$170k"
         )
 
@@ -110,7 +110,7 @@ class TestExtractJobPosting:
         }
         mock_extract_with_schema.return_value = expected_result
 
-        result = extract_job_posting_fn("Software Engineer position available")
+        result = extract_job_posting("Software Engineer position available")
 
         assert result == expected_result
         assert result["title"] == "Software Engineer"
@@ -131,7 +131,7 @@ class TestValidateExtractionResult:
             "role_type": "ic",
         }
 
-        result = validate_extraction_result_fn(extraction_result, "job_posting")
+        result = validate_extraction_result(extraction_result, "job_posting")
         assert result is True
 
     def test_validate_job_posting_valid_minimal(self):
@@ -145,7 +145,7 @@ class TestValidateExtractionResult:
             "role_type": "unclear",
         }
 
-        result = validate_extraction_result_fn(extraction_result, "job_posting")
+        result = validate_extraction_result(extraction_result, "job_posting")
         assert result is True  # Has title and salary_max
 
     def test_validate_job_posting_invalid_insufficient_data(self):
@@ -159,7 +159,7 @@ class TestValidateExtractionResult:
             "role_type": "unclear",
         }
 
-        result = validate_extraction_result_fn(extraction_result, "job_posting")
+        result = validate_extraction_result(extraction_result, "job_posting")
         assert result is False
 
     def test_validate_job_posting_invalid_empty_strings(self):
@@ -173,23 +173,23 @@ class TestValidateExtractionResult:
             "role_type": "unclear",
         }
 
-        result = validate_extraction_result_fn(extraction_result, "job_posting")
+        result = validate_extraction_result(extraction_result, "job_posting")
         assert result is False
 
     def test_validate_extraction_result_empty_dict(self):
         """Test validation with empty extraction result."""
-        result = validate_extraction_result_fn({}, "job_posting")
+        result = validate_extraction_result({}, "job_posting")
         assert result is False
 
     def test_validate_extraction_result_none(self):
         """Test validation with None extraction result."""
-        result = validate_extraction_result_fn(None, "job_posting")
+        result = validate_extraction_result(None, "job_posting")
         assert result is False
 
     def test_validate_extraction_result_unknown_schema(self):
         """Test validation with unknown schema (falls back to generic validation)."""
         extraction_result = {"field1": "value1", "field2": "value2"}
-        result = validate_extraction_result_fn(extraction_result, "unknown_schema")
+        result = validate_extraction_result(extraction_result, "unknown_schema")
         assert result is True
 
 
@@ -207,7 +207,7 @@ class TestGetExtractionSummary:
             "role_type": "ic",
         }
 
-        result = get_extraction_summary_fn(extraction_result, "job_posting")
+        result = get_extraction_summary(extraction_result, "job_posting")
 
         assert "Title: Senior Software Engineer" in result
         assert "Company: TechCorp" in result
@@ -226,7 +226,7 @@ class TestGetExtractionSummary:
             "role_type": "unclear",
         }
 
-        result = get_extraction_summary_fn(extraction_result, "job_posting")
+        result = get_extraction_summary(extraction_result, "job_posting")
 
         assert "Title: Software Engineer" in result
         assert "Salary: Up to $150,000" in result
@@ -245,7 +245,7 @@ class TestGetExtractionSummary:
             "role_type": "ic",
         }
 
-        result = get_extraction_summary_fn(extraction_result, "job_posting")
+        result = get_extraction_summary(extraction_result, "job_posting")
 
         assert "Title: Software Engineer" in result
         assert "Company: TechCorp" in result
@@ -264,7 +264,7 @@ class TestGetExtractionSummary:
             "role_type": "manager",
         }
 
-        result = get_extraction_summary_fn(extraction_result, "job_posting")
+        result = get_extraction_summary(extraction_result, "job_posting")
 
         assert "Title: Engineering Manager" in result
         assert "Company: TechCorp" in result
@@ -275,7 +275,7 @@ class TestGetExtractionSummary:
     def test_get_extraction_summary_empty_data(self):
         """Test summary generation with empty data."""
         extraction_result = {}
-        result = get_extraction_summary_fn(extraction_result, "job_posting")
+        result = get_extraction_summary(extraction_result, "job_posting")
         assert result == "No data extracted"
 
     def test_get_extraction_summary_no_meaningful_data(self):
@@ -289,13 +289,13 @@ class TestGetExtractionSummary:
             "role_type": "unclear",
         }
 
-        result = get_extraction_summary_fn(extraction_result, "job_posting")
+        result = get_extraction_summary(extraction_result, "job_posting")
         assert result == "No meaningful information extracted"
 
     def test_get_extraction_summary_unknown_schema(self):
         """Test summary generation for unknown schema."""
         extraction_result = {"field1": "value1", "field2": "value2"}
-        result = get_extraction_summary_fn(extraction_result, "unknown_schema")
+        result = get_extraction_summary(extraction_result, "unknown_schema")
         assert "Extracted 2 fields" in result
         assert "field1, field2" in result
 

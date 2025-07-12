@@ -10,8 +10,8 @@ from typing import Any, Dict, Optional
 from langgraph.graph import END, START, StateGraph
 
 from src.agent.tools.extraction.schema_extraction_tool import (
-    extract_job_posting_fn,
-    validate_extraction_result_fn,
+    extract_job_posting,
+    validate_extraction_result,
 )
 from src.agent.workflows.job_evaluation.states import JobEvaluationState
 from src.core.job_evaluation import evaluate_job_against_criteria
@@ -29,10 +29,10 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
 
     try:
         # Extract structured information
-        extracted_info = extract_job_posting_fn(job_text)
+        extracted_info = extract_job_posting(job_text)
 
         # Validate extraction
-        is_valid = validate_extraction_result_fn(extracted_info, "job_posting")
+        is_valid = validate_extraction_result(extracted_info, "job_posting")
 
         if not is_valid:
             logger.warning("Extraction validation failed")

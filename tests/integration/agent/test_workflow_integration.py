@@ -18,7 +18,7 @@ class TestEvaluateJobPosting:
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
+        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
     @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
     def test_evaluate_job_posting_should_apply(
@@ -57,7 +57,7 @@ class TestEvaluateJobPosting:
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
+        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
     @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
     def test_evaluate_job_posting_should_not_apply(
@@ -94,7 +94,7 @@ class TestEvaluateJobPosting:
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
+        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
     @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
     def test_evaluate_job_posting_mixed_results(
@@ -169,7 +169,7 @@ class TestEvaluateJobPosting:
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
+        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
     def test_evaluate_job_posting_extraction_failure(
         self, mock_validate, mock_extract_schema
@@ -186,7 +186,7 @@ class TestEvaluateJobPosting:
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result_fn"
+        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
     def test_evaluate_job_posting_invalid_extraction(
         self, mock_validate, mock_extract_schema
