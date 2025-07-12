@@ -155,10 +155,10 @@ class TestEvaluateJobPosting:
         assert result["extracted_info"] == {}
         assert result["evaluation_result"] == {}
 
-    @patch("src.agent.workflows.job_evaluation.main.create_workflow")
-    def test_evaluate_job_posting_workflow_exception(self, mock_create_workflow):
+    @patch("src.agent.workflows.job_evaluation.main.get_compiled_workflow")
+    def test_evaluate_job_posting_workflow_exception(self, mock_get_compiled_workflow):
         """Test evaluation when workflow creation fails."""
-        mock_create_workflow.side_effect = Exception("Workflow creation failed")
+        mock_get_compiled_workflow.side_effect = Exception("Workflow creation failed")
 
         result = evaluate_job_posting("Some job posting")
 

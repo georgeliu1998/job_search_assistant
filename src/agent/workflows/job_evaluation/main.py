@@ -25,7 +25,7 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract structured information from job posting text."""
     logger.info("Extracting job information")
 
-    job_text = state["job_posting_text"]
+    job_text = state.job_posting_text
 
     try:
         # Extract structured information
@@ -58,7 +58,7 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
     """Evaluate extracted job information against criteria."""
     logger.info("Evaluating job against criteria")
 
-    extracted_info = state["extracted_info"]
+    extracted_info = state.extracted_info
 
     # Skip evaluation if extraction failed
     if not extracted_info:
@@ -168,13 +168,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
         app = get_compiled_workflow()
 
         # Initial state
-        initial_state = JobEvaluationState(
-            job_posting_text=job_posting_text,
-            extracted_info=None,
-            evaluation_result=None,
-            recommendation=None,
-            reasoning=None,
-        )
+        initial_state = JobEvaluationState(job_posting_text=job_posting_text)
 
         # Configure with Langfuse if available
         langfuse_handler = get_langfuse_handler()
@@ -184,6 +178,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
         final_state = app.invoke(initial_state, config=config)
 
         # Return results in expected format
+        # Note: LangGraph returns AddableValuesDict, so we use dict-style access
         return {
             "recommendation": final_state.get("recommendation", "ERROR"),
             "reasoning": final_state.get("reasoning", "Unknown error"),
