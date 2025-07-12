@@ -122,20 +122,24 @@ def _generate_recommendation(evaluation_result: Dict[str, Any]) -> tuple[str, st
     return recommendation, reasoning
 
 
-def create_workflow() -> StateGraph:
-    """Create the job evaluation workflow."""
-    workflow = StateGraph(JobEvaluationState)
+_compiled_workflow: Optional[StateGraph] = None
 
-    # Add nodes
-    workflow.add_node("extract", extract_job_info)
-    workflow.add_node("evaluate", evaluate_job)
 
-    # Add edges
-    workflow.add_edge(START, "extract")
-    workflow.add_edge("extract", "evaluate")
-    workflow.add_edge("evaluate", END)
-
-    return workflow
+def get_compiled_workflow() -> StateGraph:
+    """
+    Creates and compiles the job evaluation workflow, caching the compiled result
+    for reuse.
+    """
+    global _compiled_workflow
+    if _compiled_workflow is None:
+        workflow = StateGraph(JobEvaluationState)
+        workflow.add_node("extract", extract_job_info)
+        workflow.add_node("evaluate", evaluate_job)
+        workflow.add_edge(START, "extract")
+        workflow.add_edge("extract", "evaluate")
+        workflow.add_edge("evaluate", END)
+        _compiled_workflow = workflow.compile()
+    return _compiled_workflow
 
 
 def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
@@ -161,8 +165,7 @@ def evaluate_job_posting(job_posting_text: str) -> Dict[str, Any]:
 
     try:
         # Create and run workflow
-        workflow = create_workflow()
-        app = workflow.compile()
+        app = get_compiled_workflow()
 
         # Initial state
         initial_state = JobEvaluationState(
