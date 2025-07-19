@@ -4,13 +4,23 @@ Welcome to the Job Search Assistant documentation. This guide will help you unde
 
 ## Contents
 
-1. [Architecture Overview](architecture.md)
-2. [Installation Guide](installation.md)
-3. [User Guide](user_guide.md)
-4. [Development Guide](development.md)
-5. [API Reference](api_reference.md)
+### Getting Started
+- [Installation Guide](installation.md)
+- [User Guide](user_guide.md)
 
-## Architecture Overview
+### Architecture & Design
+- [Architecture Overview](architecture.md)
+- [System Design](design/)
+  - [Configuration Management](design/configuration.md)
+  - [Agent Infrastructure](design/agent-infrastructure.md)
+  - [Job Evaluation Design](design/job-evaluation-design.md)
+  - [Future Workflow Design](design/future-workflows.md)
+
+### Development
+- [Development Guide](development.md)
+- [API Reference](api_reference.md)
+
+## Quick Overview
 
 The Job Search Assistant is built with a modular architecture to support both current features and future extensions:
 
@@ -19,7 +29,7 @@ The Job Search Assistant is built with a modular architecture to support both cu
 - **Agent Framework**: LangGraph-based workflow agents
 - **Streamlit UI**: User interface for interacting with the system
 
-For more details, see the [Architecture Overview](architecture.md).
+For detailed architecture information, see the [Architecture Overview](architecture.md) and [Design Decisions](design/) sections.
 
 ## Getting Started
 
