@@ -1,7 +1,5 @@
 # Job Search Assistant Documentation
 
-[← Back to Project](../README.md)
-
 Welcome to the Job Search Assistant documentation. This guide will help you understand the architecture, features, and how to use and contribute to the project.
 
 ## Contents
