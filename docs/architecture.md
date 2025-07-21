@@ -59,8 +59,8 @@ The Job Search Assistant follows a layered architecture pattern designed for mod
 
 ### 1. User Interface Layer
 - **Streamlit UI**: Interactive web interface for job evaluation
-- **Web Pages**: Static documentation and guides
-- **API**: RESTful endpoints for programmatic access
+- **Documentation**: Static GitHub Pages documentation
+- **Future**: RESTful API endpoints for programmatic access
 
 ### 2. Workflow Orchestration Layer
 - **LangGraph Workflows**: Complex multi-step AI processes

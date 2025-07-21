@@ -6,7 +6,6 @@ Welcome to the Job Search Assistant documentation. This guide will help you unde
 
 ### Getting Started
 - [Installation Guide](installation.md)
-- [User Guide](user_guide.md)
 
 ### Architecture & Design
 - [Architecture Overview](architecture.md)
@@ -14,11 +13,6 @@ Welcome to the Job Search Assistant documentation. This guide will help you unde
   - [Configuration Management](design/configuration.md)
   - [Agent Infrastructure](design/agent-infrastructure.md)
   - [Job Evaluation Design](design/job-evaluation-design.md)
-  - [Future Workflow Design](design/future-workflows.md)
-
-### Development
-- [Development Guide](development.md)
-- [API Reference](api_reference.md)
 
 ## Quick Overview
 
@@ -33,11 +27,11 @@ For detailed architecture information, see the [Architecture Overview](architect
 
 ## Getting Started
 
-Please refer to the [Installation Guide](installation.md) and [User Guide](user_guide.md) to get started with the Job Search Assistant.
+Please refer to the [Installation Guide](installation.md) to get started with the Job Search Assistant.
 
 ## Contributing
 
-We welcome contributions! Please see the [Development Guide](development.md) for information on how to contribute to the project.
+We welcome contributions! Please see the main [README.md](../README.md#contributing) for information on how to contribute to the project.
 
 ## License
 

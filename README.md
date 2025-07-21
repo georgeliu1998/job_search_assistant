@@ -39,24 +39,14 @@ uv sync  # Installs Python 3.11 + all dependencies automatically
 
 Create a `.env` file in the project root:
 ```bash
-# Copy this template and fill in your actual values
-cat > .env << 'EOF'
 # Required: Anthropic API key for AI functionality
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
 # Optional: Application environment (dev, stage, prod)
 APP_ENV=dev
-
-# Optional: Fireworks AI API key (alternative LLM provider)
-FIREWORKS_API_KEY=your_fireworks_api_key_here
-
-# Optional: Langfuse observability (for monitoring LLM interactions)
-LANGFUSE_PUBLIC_KEY=your_langfuse_public_key
-LANGFUSE_SECRET_KEY=your_langfuse_secret_key
-EOF
 ```
 
-Then edit `.env` with your actual API keys.
+For complete setup including optional services (Langfuse, Fireworks), see the [detailed installation guide](docs/installation.md).
 
 3. **Run the application**
 ```bash
@@ -64,18 +54,6 @@ uv run streamlit run ui/app.py
 ```
 
 4. **Open your browser** to `http://localhost:8501` and start evaluating jobs!
-
-## Environment Variables
-
-The application uses the following environment variables:
-
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude models | - |
-| `APP_ENV` | No | Application environment | `dev` |
-| `FIREWORKS_API_KEY` | No | Fireworks AI API key (alternative provider) | - |
-| `LANGFUSE_PUBLIC_KEY` | No | Langfuse public key for observability | - |
-| `LANGFUSE_SECRET_KEY` | No | Langfuse secret key for observability | - |
 
 ## Configuration
 
@@ -89,6 +67,8 @@ Key configuration areas:
 - **LLM Settings**: Model selection, temperature, token limits
 - **Evaluation Criteria**: Salary thresholds, remote work requirements
 - **Observability**: Langfuse integration for monitoring
+
+For detailed configuration information, see the [configuration management design](docs/design/configuration.md).
 
 ## Development
 
@@ -142,26 +122,6 @@ job_search_assistant/
 ├── tests/                 # Test suite
 └── docs/                  # Documentation
 ```
-
-## API Keys Setup
-
-### Getting an Anthropic API Key
-1. Visit [Anthropic Console](https://console.anthropic.com/)
-2. Create an account and generate an API key
-3. Set the environment variable:
-   ```bash
-   export ANTHROPIC_API_KEY="your_key_here"
-   ```
-
-### Optional: Langfuse Observability
-For monitoring and debugging LLM interactions:
-1. Sign up at [Langfuse](https://langfuse.com/)
-2. Get your public and secret keys
-3. Set environment variables:
-   ```bash
-   export LANGFUSE_PUBLIC_KEY="your_public_key"
-   export LANGFUSE_SECRET_KEY="your_secret_key"
-   ```
 
 ## Contributing
 
