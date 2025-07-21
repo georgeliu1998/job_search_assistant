@@ -1,5 +1,7 @@
 # Architecture Overview
 
+[← Back to Documentation](README.md)
+
 ## System Architecture
 
 The Job Search Assistant follows a layered architecture pattern designed for modularity, extensibility, and maintainability. The system is built around AI-powered workflows that process job-related information and provide intelligent recommendations.

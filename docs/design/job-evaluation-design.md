@@ -1,5 +1,7 @@
 # Job Evaluation Design
 
+[← Back to Documentation](../README.md)
+
 ## Overview
 
 The job evaluation feature is implemented as a LangGraph workflow rather than a simple agent. This design choice enables complex multi-step processing, robust error handling, and future extensibility while maintaining clear separation of concerns.

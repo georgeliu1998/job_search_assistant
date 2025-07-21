@@ -1,5 +1,7 @@
 # Installation Guide
 
+[← Back to Documentation](README.md)
+
 ## Prerequisites
 
 ### System Requirements

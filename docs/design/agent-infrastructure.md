@@ -1,5 +1,7 @@
 # Agent Infrastructure Design
 
+[← Back to Documentation](../README.md)
+
 ## Overview
 
 The Job Search Assistant uses LangGraph as the foundation for its agent infrastructure, providing a flexible framework for building complex AI-powered workflows. The design separates concerns between agents, tools, and workflows to enable modular, testable, and extensible AI processes.

@@ -1,5 +1,7 @@
 # Configuration Management Design
 
+[← Back to Documentation](../README.md)
+
 ## Overview
 
 The Job Search Assistant uses a TOML-based configuration system that supports environment-specific overrides, type-safe loading, and centralized management of all application settings.

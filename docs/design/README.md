@@ -1,5 +1,7 @@
 # Design Decisions
 
+[← Back to Documentation](../README.md)
+
 This section documents the key design decisions, architectural choices, and implementation rationale for the Job Search Assistant project.
 
 ## Overview
