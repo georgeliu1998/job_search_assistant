@@ -18,8 +18,8 @@ Agents are the core AI components that:
 - Maintain conversation state and memory
 
 **Current Implementation**:
-- Job evaluation agents for specific extraction tasks
-- Future: Resume customization agents, interview preparation agents
+- **Currently empty** - Reserved for future agent implementations
+- **Future Plans**: Resume customization agents, interview preparation agents, complex decision-making agents
 
 ### 2. Tools (`src/agent/tools/`)
 **Purpose**: Reusable functions that agents can call to perform specific actions
@@ -30,20 +30,21 @@ Tools provide:
 - **Utility Tools**: Common operations like data validation, formatting
 
 **Current Tools**:
-- `schema_extraction_tool.py`: Extracts job information from text
+- `schema_extraction_tool.py`: Extracts job information from text using LLM
 - Future: Resume parsing tools, LinkedIn integration tools
 
 ### 3. Workflows (`src/agent/workflows/`)
 **Purpose**: Orchestrate complex multi-step processes using LangGraph
 
 Workflows:
-- Coordinate multiple agents and tools
+- Coordinate multiple tools and business logic functions
 - Manage state transitions
 - Handle error conditions and recovery
 - Provide end-to-end process management
+- **Currently the primary implementation approach**
 
 **Current Workflows**:
-- `job_evaluation/`: Complete job evaluation process
+- `job_evaluation/`: Complete job evaluation process using workflow functions
 
 ### 4. Prompts (`src/agent/prompts/`)
 **Purpose**: Centralized prompt management and versioning
@@ -64,31 +65,45 @@ Prompts:
 4. **Extensibility**: Easy to add new nodes and modify workflows
 5. **Testing**: Excellent support for unit and integration testing
 
-### Separation of Concerns
+### Current Approach: Workflows vs. Agents
 
-#### Agents vs. Tools
-- **Agents**: Make decisions, maintain context, handle complex logic
-- **Tools**: Perform specific, stateless operations
+The current implementation uses a **workflow-first approach**:
 
-#### Workflows vs. Agents
-- **Workflows**: Orchestrate multiple steps, manage state transitions
-- **Agents**: Focus on single, well-defined tasks
+#### Workflows (Current Implementation)
+- **Orchestrate** multiple deterministic steps
+- **Manage** state transitions explicitly
+- **Handle** error conditions gracefully
+- **Provide** full visibility into each step
+- **Easier** to test and debug
+
+#### Tools vs. Agents
+- **Tools**: Perform specific, stateless operations (current implementation)
+- **Agents**: Would make decisions, maintain context, handle complex logic (future)
 
 #### Prompts vs. Code
-- **Prompts**: Define behavior and personality
-- **Code**: Handle logic, data processing, and integration
+- **Prompts**: Define LLM behavior for extraction and analysis
+- **Code**: Handle orchestration, validation, and business logic (current approach)
+
+### Why Workflows First?
+
+1. **Predictability**: Deterministic flow is easier to test and debug
+2. **Transparency**: Each step is explicit and observable
+3. **Control**: Full control over state transitions and error handling
+4. **Simplicity**: Less complexity than autonomous agent decision-making
+
+Future agent implementations will build on this workflow foundation.
 
 ## Current Implementation
 
 ### Job Evaluation Workflow
 
-The job evaluation process demonstrates the agent infrastructure:
+The job evaluation process demonstrates the current infrastructure approach using **workflows and tools** rather than agents:
 
 ```python
 # Workflow definition in src/agent/workflows/job_evaluation/main.py
 workflow = StateGraph(JobEvaluationState)
 
-# Add workflow nodes
+# Add workflow nodes (these are functions, not agents)
 workflow.add_node("validate", validate_input)
 workflow.add_node("extract", extract_job_info)
 workflow.add_node("evaluate", evaluate_job)
@@ -118,14 +133,17 @@ class JobEvaluationState(BaseModel):
 
 ### Tool Integration
 
-Tools are called by workflow nodes:
+Workflow functions call tools directly:
 
 ```python
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
+    # Call extraction tool function
     extracted_info = extract_job_posting(job_text)
     is_valid = validate_extraction_result(extracted_info, "job_posting")
     return {"extracted_info": extracted_info}
 ```
+
+**Note**: This is a **workflow-first approach** where business logic is implemented as workflow functions that orchestrate tools, rather than using autonomous agents.
 
 ## Benefits of This Design
 
