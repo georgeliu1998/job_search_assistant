@@ -1,16 +1,22 @@
 # Job Search Assistant Documentation
 
+[← Back to Project](../README.md)
+
 Welcome to the Job Search Assistant documentation. This guide will help you understand the architecture, features, and how to use and contribute to the project.
 
 ## Contents
 
-1. [Architecture Overview](architecture.md)
-2. [Installation Guide](installation.md)
-3. [User Guide](user_guide.md)
-4. [Development Guide](development.md)
-5. [API Reference](api_reference.md)
+### Getting Started
+- [Installation Guide](installation.md)
 
-## Architecture Overview
+### Architecture & Design
+- [Architecture Overview](architecture.md)
+- [System Design](design/)
+  - [Configuration Management](design/configuration.md)
+  - [Agent Infrastructure](design/agent-infrastructure.md)
+  - [Job Evaluation Design](design/job-evaluation-design.md)
+
+## Quick Overview
 
 The Job Search Assistant is built with a modular architecture to support both current features and future extensions:
 
@@ -19,15 +25,15 @@ The Job Search Assistant is built with a modular architecture to support both cu
 - **Agent Framework**: LangGraph-based workflow agents
 - **Streamlit UI**: User interface for interacting with the system
 
-For more details, see the [Architecture Overview](architecture.md).
+For detailed architecture information, see the [Architecture Overview](architecture.md) and [Design Decisions](design/) sections.
 
 ## Getting Started
 
-Please refer to the [Installation Guide](installation.md) and [User Guide](user_guide.md) to get started with the Job Search Assistant.
+Please refer to the [Installation Guide](installation.md) to get started with the Job Search Assistant.
 
 ## Contributing
 
-We welcome contributions! Please see the [Development Guide](development.md) for information on how to contribute to the project.
+We welcome contributions! Please see the main [README.md](../README.md#contributing) for information on how to contribute to the project.
 
 ## License
 
