@@ -141,6 +141,3 @@ min_salary = config.evaluation_criteria.min_salary
 - Sensitive values stored in environment variables
 - No secrets committed to version control
 - Clear separation of sensitive vs. non-sensitive configuration
-- Web-based configuration editor
-- Configuration validation feedback
-- Environment-specific configuration preview

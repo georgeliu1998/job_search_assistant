@@ -97,53 +97,7 @@ Future agent implementations will build on this workflow foundation.
 
 ### Job Evaluation Workflow
 
-The job evaluation process demonstrates the current infrastructure approach using **workflows and tools** rather than agents:
-
-```python
-# Workflow definition in src/agent/workflows/job_evaluation/main.py
-workflow = StateGraph(JobEvaluationState)
-
-# Add workflow nodes (these are functions, not agents)
-workflow.add_node("validate", validate_input)
-workflow.add_node("extract", extract_job_info)
-workflow.add_node("evaluate", evaluate_job)
-workflow.add_node("recommend", generate_recommendation)
-
-# Define workflow flow
-workflow.add_edge(START, "validate")
-workflow.add_edge("validate", "extract")
-workflow.add_edge("extract", "evaluate")
-workflow.add_edge("evaluate", "recommend")
-workflow.add_edge("recommend", END)
-```
-
-### State Management
-
-Each workflow uses a Pydantic state model:
-
-```python
-# src/agent/workflows/job_evaluation/states.py
-class JobEvaluationState(BaseModel):
-    job_posting_text: str
-    extracted_info: Optional[Dict[str, Any]] = None
-    evaluation_result: Optional[Dict[str, Any]] = None
-    recommendation: Optional[str] = None
-    reasoning: Optional[str] = None
-```
-
-### Tool Integration
-
-Workflow functions call tools directly:
-
-```python
-def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
-    # Call extraction tool function
-    extracted_info = extract_job_posting(job_text)
-    is_valid = validate_extraction_result(extracted_info, "job_posting")
-    return {"extracted_info": extracted_info}
-```
-
-**Note**: This is a **workflow-first approach** where business logic is implemented as workflow functions that orchestrate tools, rather than using autonomous agents.
+The job evaluation process demonstrates the current infrastructure approach using **workflows and tools** rather than agents. For a detailed breakdown of this workflow, please see the [Job Evaluation Design](job-evaluation-design.md) document.
 
 ## Benefits of This Design
 

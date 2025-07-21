@@ -4,7 +4,7 @@
 
 ## Overview
 
-The job evaluation feature is implemented as a LangGraph workflow rather than a simple agent. This design choice enables complex multi-step processing, robust error handling, and future extensibility while maintaining clear separation of concerns.
+The job evaluation feature is implemented as a LangGraph workflow with deterministic business logic functions rather than autonomous agents. This design choice enables complex multi-step processing, robust error handling, and future extensibility while maintaining clear separation of concerns.
 
 ## Why a Workflow Instead of a Simple Agent?
 
@@ -18,7 +18,9 @@ Job evaluation involves several distinct steps that benefit from explicit orches
 4. **Recommendation Generation**: Synthesize results into actionable advice
 
 Each step has different requirements:
-- Different LLM models (extraction vs. evaluation)
+- **Extraction**: Uses LLM for structured data extraction
+- **Evaluation**: Uses business logic against configuration criteria
+- **Recommendation**: Uses business logic to synthesize results
 - Different error handling strategies
 - Different validation needs
 
@@ -90,14 +92,37 @@ workflow.add_edge("recommend", END)
 - Handles extraction failures gracefully
 
 #### 3. Criteria Evaluation (`evaluate_job`)
-- Applies business logic against extracted information
-- Checks salary, remote work, experience level, skills
-- Generates detailed evaluation results
+- Calls `evaluate_job_against_criteria` from core business logic
+- Checks salary against minimum requirements (from config)
+- Validates remote work policy requirements
+- Evaluates title seniority level for IC roles
+- Generates detailed pass/fail results for each criterion
 
 #### 4. Recommendation Generation (`generate_recommendation`)
-- Synthesizes evaluation results into actionable advice
-- Provides reasoning for the recommendation
+- Calls `generate_recommendation_from_evaluation` from core business logic
+- Analyzes pass/fail results from evaluation step
+- Returns "APPLY" if all criteria pass, "DO_NOT_APPLY" if any fail
+- Provides detailed reasoning explaining which criteria passed/failed
 - Formats output for user consumption
+
+### Current Evaluation Criteria
+
+The evaluation step (`evaluate_job_against_criteria`) implements these specific business rules:
+
+1. **Salary Check**:
+   - Compares `salary_max` from extracted info against `config.evaluation_criteria.min_salary`
+   - Fails if salary is not specified or below minimum threshold
+
+2. **Remote Work Policy**:
+   - Checks if `location_policy` contains "remote"
+   - Passes only if position explicitly allows remote work
+
+3. **IC Title Level** (for Individual Contributor roles):
+   - For roles identified as IC/Individual Contributor
+   - Checks if job title contains required seniority levels from `config.evaluation_criteria.ic_title_requirements`
+   - Typical requirements: ["lead", "staff", "principal", "senior staff"]
+
+Each criterion returns a pass/fail result with detailed reasoning, enabling transparent decision-making.
 
 ## Design Benefits
 
@@ -125,100 +150,3 @@ Robust error handling at each step:
 - Continue processing with partial data
 - Provide meaningful error messages
 - Support retry mechanisms
-
-## Comparison: Workflow vs. Simple Agent
-
-### Simple Agent Approach
-```python
-def evaluate_job_agent(job_text: str) -> Dict:
-    # All logic in one function
-    # Hard to test individual steps
-    # Difficult error handling
-    # No intermediate state visibility
-    pass
-```
-
-**Problems:**
-- Monolithic function hard to test
-- Error handling mixed with business logic
-- No visibility into intermediate steps
-- Difficult to extend or modify
-
-### Workflow Approach
-```python
-# Each step is a separate, testable function
-def validate_input(state: JobEvaluationState) -> Dict:
-    # Focused on validation only
-    pass
-
-def extract_job_info(state: JobEvaluationState) -> Dict:
-    # Focused on extraction only
-    pass
-
-def evaluate_job(state: JobEvaluationState) -> Dict:
-    # Focused on evaluation only
-    pass
-
-def generate_recommendation(state: JobEvaluationState) -> Dict:
-    # Focused on recommendation only
-    pass
-```
-
-**Benefits:**
-- Each step is focused and testable
-- Clear error handling per step
-- Full visibility into intermediate state
-- Easy to extend and modify
-
-## Future Enhancements
-
-### 1. Conditional Workflows
-Add decision points based on job characteristics:
-- Different evaluation paths for different job types
-- Conditional extraction based on job format
-- Adaptive recommendation strategies
-
-### 2. Parallel Processing
-Process multiple aspects simultaneously:
-- Extract job info and user preferences in parallel
-- Evaluate multiple criteria simultaneously
-- Generate multiple recommendation types
-
-### 3. Feedback Loops
-Add self-improving capabilities:
-- Learn from user feedback on recommendations
-- Adapt extraction based on success rates
-- Refine evaluation criteria based on outcomes
-
-### 4. Integration Points
-Connect with external systems:
-- LinkedIn job data integration
-- Resume matching capabilities
-- Application tracking integration
-
-## Best Practices Applied
-
-### 1. Single Responsibility
-Each workflow node has one clear purpose:
-- `validate_input`: Only validates input
-- `extract_job_info`: Only extracts information
-- `evaluate_job`: Only applies evaluation criteria
-- `generate_recommendation`: Only generates recommendations
-
-### 2. Error Handling
-Each step handles its own errors:
-- Validation errors don't affect extraction
-- Extraction errors don't affect evaluation
-- Evaluation errors don't affect recommendation generation
-
-### 3. State Management
-Clear state transitions:
-- Each step adds to state without modifying previous steps
-- State is validated at each transition
-- Optional fields allow gradual data accumulation
-
-### 4. Observability
-Comprehensive logging and monitoring:
-- Each step logs its inputs and outputs
-- Error conditions are clearly logged
-- Performance metrics are tracked per step
