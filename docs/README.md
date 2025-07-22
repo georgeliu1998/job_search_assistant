@@ -33,7 +33,7 @@ Please refer to the [Installation Guide](installation.md) to get started with th
 
 ## Contributing
 
-We welcome contributions! Please see the main [README.md](../README.md) for information on how to contribute to the project.
+We welcome contributions! Please see the main [README.md](https://github.com/georgeliu1998/job_search_assistant/blob/main/README.md) for information on how to contribute to the project.
 
 ## License
 

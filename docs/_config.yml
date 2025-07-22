@@ -1,0 +1,18 @@
+# GitHub Pages Jekyll Configuration
+title: ""
+description: Job Search Assistant Documentation
+baseurl: "/job_search_assistant"
+url: "https://georgeliu1998.github.io"
+
+# Theme settings
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Remove the site title from the header
+minima:
+  header_pages: []
+
+# Custom settings to minimize header content
+show_excerpts: false
