@@ -128,3 +128,11 @@ Thumbs.db
 # Project specific
 # Add any project specific files to ignore here
 job_search_assistant.txt
+
+# Jekyll (docs local development) - auto-generated files
+docs/_site/
+docs/.jekyll-metadata
+docs/Gemfile.lock
+
+# Ruby version management (local to each developer)
+.ruby-version
