@@ -1,0 +1,9 @@
+# Minimal Jekyll configuration for local testing
+title: Job Search Assistant
+baseurl: "/job_search_assistant"
+url: "https://georgeliu1998.github.io"
+repository: "georgeliu1998/job_search_assistant"
+
+# Minimal build settings
+markdown: kramdown
+theme: minima
