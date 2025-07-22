@@ -25,6 +25,7 @@ The Job Search Assistant is built with a modular architecture to support both cu
 - **Agent Framework**: LangGraph-based workflow agents
 - **Streamlit UI**: User interface for interacting with the system
 
+
 For detailed architecture information, see the [Architecture Overview](architecture.md) and [System Design](design/) sections.
 
 ## Getting Started
