@@ -6,7 +6,7 @@ This guide explains how to test documentation changes locally before deploying t
 
 1. **Start the development server:**
    ```bash
-   ./scripts/serve-docs.sh
+   ../scripts/serve-docs.sh
    ```
 
 2. **Open your browser to:**
@@ -38,7 +38,7 @@ bundle exec jekyll serve --incremental --livereload
 
 | Command | Description |
 |---------|-------------|
-| `./scripts/serve-docs.sh` | Start development server with auto-reload |
+| `../scripts/serve-docs.sh` | Start development server with auto-reload |
 | `bundle exec jekyll serve` | Start basic development server |
 | `bundle exec jekyll serve --incremental` | Faster builds for large sites |
 | `bundle exec jekyll serve --livereload` | Auto-refresh browser on changes |
@@ -57,9 +57,8 @@ bundle exec jekyll serve --incremental --livereload
 docs/
 ├── _config.yml           # Jekyll configuration
 ├── Gemfile              # Ruby dependencies
-├── serve.sh             # Convenience script
-├── index.md             # Homepage
-├── README.md            # Documentation index
+├── LOCAL_DEVELOPMENT.md  # This guide
+├── README.md            # Documentation index (homepage)
 ├── architecture.md      # Architecture overview
 ├── installation.md      # Installation guide
 └── design/              # Design documentation
@@ -67,7 +66,21 @@ docs/
     ├── configuration.md
     ├── job-evaluation-design.md
     └── agent-infrastructure.md
+
+# Auto-generated (not committed to git):
+├── _site/               # Built site output
+├── .jekyll-metadata     # Jekyll build cache
+└── Gemfile.lock         # Ruby dependency lock file
 ```
+
+## Auto-Generated Files
+
+Jekyll automatically generates several files when building the site:
+- **`_site/`** - The built website (HTML, CSS, JS)
+- **`.jekyll-metadata`** - Build cache for faster subsequent builds
+- **`Gemfile.lock`** - Ruby dependency versions
+
+These files are automatically created every time you run Jekyll and are ignored by git. You can safely delete them anytime - they'll be regenerated on the next build.
 
 ## GitHub Pages Compatibility
 
