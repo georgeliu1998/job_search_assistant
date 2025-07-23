@@ -74,6 +74,52 @@ enabled = false
 host = "https://us.cloud.langfuse.com"
 ```
 
+## TOML Structure and Access Patterns
+
+### Understanding TOML-to-Python Mapping
+
+The TOML configuration structure translates to Python data structures in specific ways:
+
+#### 1. Nested Sections → Pydantic Models (Attribute Access)
+```toml
+[evaluation_criteria]
+min_salary = 100000
+remote_required = true
+```
+Becomes a Pydantic model accessible via **attributes**:
+```python
+config.evaluation_criteria.min_salary        # ✅ Works
+config.evaluation_criteria.remote_required   # ✅ Works
+```
+
+#### 2. Table Arrays → Dictionaries (Dictionary Access)
+```toml
+[llm_profiles.anthropic_extraction]
+provider = "anthropic"
+model = "claude-3-5-haiku-20241022"
+
+[llm_profiles.another_profile]
+provider = "openai"
+model = "gpt-4"
+```
+Creates a **dictionary** of profile configurations:
+```python
+config.llm_profiles["anthropic_extraction"]  # ✅ Dictionary access required
+config.llm_profiles.anthropic_extraction     # ❌ AttributeError: 'dict' has no attribute
+
+# Each profile is then a Pydantic model:
+profile = config.llm_profiles["anthropic_extraction"]
+profile.provider  # ✅ Attribute access works on the individual profile
+profile.model     # ✅ Attribute access works on the individual profile
+```
+
+### Why This Design?
+
+- **Dynamic Profile Names**: LLM profiles can have arbitrary names (e.g., "anthropic_extraction", "openai_chat")
+- **Type Safety**: Each profile is validated as an `LLMProfileConfig` Pydantic model
+- **Flexibility**: Easy to add new profiles without code changes
+- **Helper Methods**: Use `config.get_llm_profile(name)` for validated access with better error messages
+
 ## Configuration Loading Strategy
 
 ### 1. Base Configuration
@@ -110,14 +156,16 @@ Pydantic models in `src/config/models.py` define:
 
 ### Usage Pattern
 ```python
-from src.config.manager import get_config
+from src.config.manager import config
 
-# Load configuration for current environment
-config = get_config()
-
-# Access typed configuration values
-llm_profile = config.llm_profiles.anthropic_extraction
+# Access typed configuration values directly
+llm_profile = config.llm_profiles["anthropic_extraction"]  # Dictionary access for profiles
 min_salary = config.evaluation_criteria.min_salary
+
+# The config proxy provides lazy loading - configuration is loaded automatically
+# on first access and cached for subsequent uses
+agent_profile_name = config.agents.job_evaluation_extraction
+agent_profile = config.get_llm_profile(agent_profile_name)  # Helper method handles dict access
 ```
 
 ## Benefits of This Design

@@ -146,7 +146,7 @@ uv run python -c "import streamlit, langgraph, anthropic; print('All dependencie
 ### 2. Test Configuration
 ```bash
 # Test configuration loading
-uv run python -c "from src.config.manager import get_config; print('Configuration loaded successfully!')"
+uv run python -c "from src.config.manager import config; print(f'Configuration loaded successfully! App: {config.general.name}')"
 ```
 
 ### 3. Test LLM Connection
