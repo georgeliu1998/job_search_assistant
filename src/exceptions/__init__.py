@@ -12,7 +12,13 @@ from src.exceptions.config import (
     ConfigValidationError,
     EnvironmentError,
 )
-from src.exceptions.llm import LLMError, LLMProviderError, LLMResponseError
+from src.exceptions.llm import (
+    LLMConfigurationError,
+    LLMError,
+    LLMObservabilityError,
+    LLMProviderError,
+    LLMResponseError,
+)
 
 __all__ = [
     # Base exceptions
@@ -26,4 +32,6 @@ __all__ = [
     "LLMError",
     "LLMProviderError",
     "LLMResponseError",
+    "LLMConfigurationError",
+    "LLMObservabilityError",
 ]
