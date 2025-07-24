@@ -255,6 +255,7 @@ class TestConfigIntegration:
             {
                 "APP_ENV": "dev",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",
+                "GOOGLE_API_KEY": "test-google-key",
                 "LANGFUSE_PUBLIC_KEY": "test_public",
                 "LANGFUSE_SECRET_KEY": "test_secret",
             },
