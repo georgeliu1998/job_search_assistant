@@ -5,7 +5,7 @@ Unit tests for Langfuse handler functionality.
 import os
 from unittest.mock import MagicMock, patch
 
-from src.llm.langfuse_handler import (
+from src.llm.observability import (
     get_langfuse_handler,
     is_langfuse_enabled,
     reset_langfuse_handler,
@@ -31,7 +31,7 @@ class TestGetLangfuseHandler:
         handler = get_langfuse_handler(enabled=True, public_key="", secret_key="")
         assert handler is None
 
-    @patch("src.llm.langfuse_handler.CallbackHandler")
+    @patch("src.llm.observability.langfuse.CallbackHandler")
     def test_successful_initialization(self, mock_callback_handler):
         """Test successful handler initialization."""
         mock_handler = MagicMock()
@@ -51,7 +51,7 @@ class TestGetLangfuseHandler:
             host="https://test.langfuse.com",
         )
 
-    @patch("src.llm.langfuse_handler.CallbackHandler")
+    @patch("src.llm.observability.langfuse.CallbackHandler")
     def test_initialization_failure(self, mock_callback_handler):
         """Test handling of initialization failures."""
         mock_callback_handler.side_effect = Exception("Connection failed")
@@ -67,7 +67,7 @@ class TestGetLangfuseHandler:
         handler = get_langfuse_handler(enabled=False)
         assert handler is None
 
-    @patch("src.llm.langfuse_handler.CallbackHandler")
+    @patch("src.llm.observability.langfuse.CallbackHandler")
     def test_singleton_behavior(self, mock_callback_handler):
         """Test that handler is only initialized once and reused."""
         mock_handler = MagicMock()
@@ -96,7 +96,7 @@ class TestGetLangfuseHandler:
         # Should not have called CallbackHandler again
         assert mock_callback_handler.call_count == 1
 
-    @patch("src.llm.langfuse_handler.CallbackHandler")
+    @patch("src.llm.observability.langfuse.CallbackHandler")
     def test_singleton_behavior_disabled(self, mock_callback_handler):
         """Test singleton behavior when handler is disabled."""
         # First call should return None
@@ -117,7 +117,7 @@ class TestResetLangfuseHandler:
         """Reset handler before each test."""
         reset_langfuse_handler()
 
-    @patch("src.llm.langfuse_handler.CallbackHandler")
+    @patch("src.llm.observability.langfuse.CallbackHandler")
     def test_reset_allows_reinitialization(self, mock_callback_handler):
         """Test that reset allows handler to be reinitialized."""
         mock_handler1 = MagicMock()

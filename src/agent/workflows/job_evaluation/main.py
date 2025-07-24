@@ -18,7 +18,7 @@ from src.core.job_evaluation import (
     evaluate_job_against_criteria,
     generate_recommendation_from_evaluation,
 )
-from src.llm.langfuse_handler import get_langfuse_handler
+from src.llm.observability import get_langfuse_handler
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
