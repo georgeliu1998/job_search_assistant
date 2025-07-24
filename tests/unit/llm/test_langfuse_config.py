@@ -91,6 +91,7 @@ class TestLangfuseConfig:
             {
                 "APP_ENV": "prod",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for prod environment
+                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
             },
         ):
             test_config = config.reload()

@@ -68,6 +68,9 @@ class TestGoogleClientInitialization:
             GoogleClient(config)
 
     @patch.dict(os.environ, {}, clear=True)
+    @patch.dict(
+        os.environ, {"APP_ENV": "stage"}
+    )  # Use stage environment to skip validation
     def test_missing_api_key_raises_error(self):
         """Test that missing API key raises LLMProviderError."""
         config = LLMProfileConfig(
@@ -240,7 +243,7 @@ class TestGoogleClientSingleton:
 class TestGoogleClientInvoke:
     """Test the invoke method functionality."""
 
-    def setUp(self):
+    def setup_method(self):
         """Set up test fixtures."""
         self.config = LLMProfileConfig(
             provider="google", model="gemini-2.5-pro", api_key="test-key"
