@@ -20,7 +20,16 @@ logger = get_logger(__name__)
 
 
 def _get_extraction_client() -> AnthropicClient:
-    """Get the LLM client for extraction operations."""
+    """
+    Get the singleton LLM client for extraction operations.
+
+    Returns the same AnthropicClient instance for identical configurations,
+    improving resource efficiency by reusing connections and avoiding
+    redundant client initialization.
+
+    Returns:
+        AnthropicClient: Singleton instance configured for extraction
+    """
     profile_name = config.agents.job_evaluation_extraction
     profile = config.get_llm_profile(profile_name)
     return AnthropicClient(profile)

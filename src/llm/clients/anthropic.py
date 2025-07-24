@@ -10,14 +10,21 @@ from langchain_anthropic import ChatAnthropic
 from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError, LLMResponseError
 from src.llm.common.base import BaseLLMClient
+from src.utils.singleton import singleton
 
 
+@singleton
 class AnthropicClient(BaseLLMClient):
     """
-    Anthropic LLM client implementation.
+    Singleton Anthropic LLM client implementation.
 
     This client wraps the LangChain ChatAnthropic client and provides
-    the standardized interface defined by BaseLLMClient.
+    the standardized interface defined by BaseLLMClient. The singleton
+    pattern ensures that multiple calls with the same configuration
+    return the same instance, improving resource efficiency.
+
+    One instance is created per unique configuration, allowing for
+    different models, temperatures, or other settings to coexist.
     """
 
     def __init__(self, config: LLMProfileConfig):

@@ -138,6 +138,30 @@ class LLMProfileConfig(BaseModel):
 
         return v
 
+    def __hash__(self) -> int:
+        """Make LLMProfileConfig hashable for use in singleton pattern."""
+        return hash(
+            (
+                self.provider,
+                self.model,
+                self.temperature,
+                self.max_tokens,
+                self.api_key,
+            )
+        )
+
+    def __eq__(self, other) -> bool:
+        """Define equality for LLMProfileConfig objects."""
+        if not isinstance(other, LLMProfileConfig):
+            return False
+        return (
+            self.provider == other.provider
+            and self.model == other.model
+            and self.temperature == other.temperature
+            and self.max_tokens == other.max_tokens
+            and self.api_key == other.api_key
+        )
+
 
 class LangfuseConfig(BaseModel):
     """Langfuse observability configuration."""
