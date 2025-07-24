@@ -50,7 +50,7 @@ def _extract_with_schema(
     prompt_content = prompt_template.format(job_text=text)
     messages = [HumanMessage(content=prompt_content)]
 
-    # Use langfuse manager for configuration
+    # Get context-aware tracing configuration
     config_dict = langfuse_manager.get_config()
 
     # Extract structured information

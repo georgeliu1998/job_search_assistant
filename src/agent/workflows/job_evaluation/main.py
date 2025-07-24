@@ -219,7 +219,7 @@ def run_job_evaluation_workflow(
         # Create initial state
         initial_state = JobEvaluationState(job_posting_text=job_posting_text)
 
-        # Configure Langfuse for workflow-level tracing
+        # Configure context-aware Langfuse tracing
         execution_config = langfuse_manager.get_workflow_config(config)
 
         # Run workflow

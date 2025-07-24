@@ -1,7 +1,7 @@
 """
 Langfuse observability manager for LLM tracing.
 
-Provides a clean interface for Langfuse integration optimized for
+Provides a context-aware interface for Langfuse integration with
 LangChain and LangGraph workflows.
 """
 
@@ -22,10 +22,10 @@ _workflow_context: contextvars.ContextVar[bool] = contextvars.ContextVar(
 
 class LangfuseManager:
     """
-    Simplified manager for Langfuse observability integration.
+    Context-aware manager for Langfuse observability integration.
 
-    Optimized for LangChain/LangGraph workflows following official
-    Langfuse integration patterns with context-aware tracing.
+    Provides intelligent tracing for LangChain/LangGraph workflows with
+    automatic duplicate trace prevention and workflow-aware configuration.
     """
 
     def __init__(self):
@@ -49,7 +49,7 @@ class LangfuseManager:
 
         if self._handler is None:
             try:
-                # Direct instantiation as shown in Langfuse docs
+                # Create handler using environment variables
                 self._handler = CallbackHandler()
                 self.logger.info("Langfuse CallbackHandler initialized")
             except Exception as e:
