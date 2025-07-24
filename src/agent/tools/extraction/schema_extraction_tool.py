@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.prompts.extraction.job_posting import JOB_POSTING_EXTRACTION_PROMPT
 from src.config import config
-from src.llm.clients.anthropic import AnthropicClient
+from src.llm import get_llm_client_by_profile_name
 from src.llm.observability import langfuse_manager
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
@@ -19,20 +19,26 @@ from src.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def _get_extraction_client() -> AnthropicClient:
+def _get_extraction_client():
     """
-    Get the singleton LLM client for extraction operations.
+    Get the LLM client for extraction operations using the factory pattern.
 
-    Returns the same AnthropicClient instance for identical configurations,
-    improving resource efficiency by reusing connections and avoiding
-    redundant client initialization.
+    Uses the factory pattern to create the appropriate client based on the
+    configured provider. The factory ensures singleton behavior, so multiple
+    calls with the same configuration return the same instance, improving
+    resource efficiency by reusing connections and avoiding redundant client
+    initialization.
 
     Returns:
-        AnthropicClient: Singleton instance configured for extraction
+        BaseLLMClient: Singleton instance configured for extraction
+
+    Example:
+        # This will create an AnthropicClient if the profile is configured for Anthropic,
+        # or a GoogleClient if configured for Google, etc.
+        client = _get_extraction_client()
     """
     profile_name = config.agents.job_evaluation_extraction
-    profile = config.get_llm_profile(profile_name)
-    return AnthropicClient(profile)
+    return get_llm_client_by_profile_name(profile_name)
 
 
 def _extract_with_schema(

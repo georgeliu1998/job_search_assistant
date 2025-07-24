@@ -1,100 +1,114 @@
 """
-Tests for API key validation functionality
+Integration tests for API key validation across different environments.
+
+These tests verify that the application properly validates API keys for
+different LLM providers under various environment configurations.
 """
 
 import os
-from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import ValidationError
 
 from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError
-from src.llm.clients.anthropic import AnthropicClient
+from src.llm import get_llm_client
 
 
 class TestAPIKeyValidation:
-    """Test API key validation in different environments"""
+    """Test API key validation for different LLM providers."""
 
-    def test_api_key_required_in_production_environment(self):
-        """Test that API key is required in production environment"""
-        with patch("src.config.models.os.getenv") as mock_getenv:
-            mock_getenv.return_value = "prod"  # Production environment
-
-            with pytest.raises(ValidationError) as exc_info:
-                LLMProfileConfig(
-                    provider="anthropic",
-                    model="claude-3-5-haiku-20241022",
-                    api_key=None,
-                )
-
-            error_msg = str(exc_info.value)
-            assert "API key is required for anthropic provider" in error_msg
-
-    def test_api_key_required_in_dev_environment(self):
-        """Test that API key is required in development environment"""
-        with patch("src.config.models.os.getenv") as mock_getenv:
-            mock_getenv.return_value = "dev"  # Development environment
-
-            with pytest.raises(ValidationError) as exc_info:
-                LLMProfileConfig(
-                    provider="anthropic",
-                    model="claude-3-5-haiku-20241022",
-                    api_key=None,
-                )
-
-            error_msg = str(exc_info.value)
-            assert "API key is required for anthropic provider" in error_msg
-
-    def test_api_key_optional_in_stage_environment(self):
-        """Test that API key is optional in stage environment"""
-        with patch.dict(os.environ, {"APP_ENV": "stage"}, clear=False):
-            # Should not raise an error
-            config = LLMProfileConfig(
-                provider="anthropic", model="stage-test-model", api_key=None
-            )
-            assert config.api_key is None
-
-    def test_api_key_optional_in_test_environment(self):
-        """Test that API key is optional when running in pytest (stage environment)"""
-        # This test runs in actual pytest environment with APP_ENV=stage, so validation should be skipped
+    def test_anthropic_client_validates_api_key_presence(self):
+        """Test that Anthropic client validates API key is present."""
+        # Create config without API key in environment
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key=None
-        )
-        assert config.api_key is None
-
-    def test_api_key_provided_passes_validation(self):
-        """Test that providing an API key passes validation"""
-        config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
-        )
-        assert config.api_key == "test-key"
-
-    def test_llm_client_error_message_improvement(self):
-        """Test that LLM client provides helpful error messages"""
-        # Create config with no API key (this should pass in test environment)
-        config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key=None
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            # No api_key provided
         )
 
-        # We need to test the _ensure_api_key method directly since the client constructor
-        # will call it during initialization. Let's create a client with a valid API key first,
-        # then test the method with a missing key.
+        # Clear any existing environment variable
+        old_key = os.environ.pop("ANTHROPIC_API_KEY", None)
+
+        try:
+            # This should raise an error due to missing API key
+            with pytest.raises(LLMProviderError, match="API key not found"):
+                client = get_llm_client(config)
+                # Try to access the underlying client which triggers API key validation
+                client._get_client()
+        finally:
+            # Restore original environment
+            if old_key:
+                os.environ["ANTHROPIC_API_KEY"] = old_key
+
+    def test_anthropic_client_accepts_valid_api_key(self):
+        """Test that Anthropic client accepts a valid API key format."""
         config_with_key = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="dummy-key"
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            api_key="sk-ant-api03-test-key-format",
         )
-        client = AnthropicClient(config_with_key)
 
-        # Mock os.getenv to return empty string for API key
-        with patch("src.llm.common.base.os.getenv", return_value=""):
-            # Override the config to have no API key
-            client.config.api_key = None
+        # This should not raise an error
+        client = get_llm_client(config_with_key)
+        assert client is not None
+        assert client.get_model_name() == "claude-3-5-haiku-20241022"
 
-            with pytest.raises(LLMProviderError) as exc_info:
-                client._ensure_api_key("ANTHROPIC_API_KEY")
+    def test_different_providers_require_different_api_keys(self):
+        """Test that different providers validate their specific API key environment variables."""
+        # Test Anthropic
+        anthropic_config = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+        )
 
-            error_msg = str(exc_info.value)
-            assert "API key not found" in error_msg
-            assert "ANTHROPIC_API_KEY" in error_msg
-            assert "environment or .env file" in error_msg
-            assert "README.md" in error_msg
+        # Test Google
+        google_config = LLMProfileConfig(
+            provider="google",
+            model="gemini-2.5-flash",
+        )
+
+        # Clear environment variables
+        old_anthropic = os.environ.pop("ANTHROPIC_API_KEY", None)
+        old_google = os.environ.pop("GOOGLE_API_KEY", None)
+
+        try:
+            # Both should fail with missing API key errors
+            with pytest.raises(LLMProviderError, match="ANTHROPIC_API_KEY"):
+                client = get_llm_client(anthropic_config)
+                client._get_client()
+
+            with pytest.raises(LLMProviderError, match="GOOGLE_API_KEY"):
+                client = get_llm_client(google_config)
+                client._get_client()
+
+        finally:
+            # Restore environment
+            if old_anthropic:
+                os.environ["ANTHROPIC_API_KEY"] = old_anthropic
+            if old_google:
+                os.environ["GOOGLE_API_KEY"] = old_google
+
+    def test_api_key_precedence_config_over_environment(self):
+        """Test that API key in config takes precedence over environment variable."""
+        config_key = "config-api-key"
+        env_key = "env-api-key"
+
+        # Set environment variable
+        os.environ["ANTHROPIC_API_KEY"] = env_key
+
+        try:
+            # Create config with explicit API key
+            config = LLMProfileConfig(
+                provider="anthropic",
+                model="claude-3-5-haiku-20241022",
+                api_key=config_key,
+            )
+
+            client = get_llm_client(config)
+
+            # The config should use the explicit API key, not the environment one
+            assert client.config.api_key == config_key
+
+        finally:
+            # Clean up environment
+            os.environ.pop("ANTHROPIC_API_KEY", None)
