@@ -12,6 +12,7 @@ from langchain_core.messages import HumanMessage
 from src.agent.prompts.extraction.job_posting import JOB_POSTING_EXTRACTION_PROMPT
 from src.config import config
 from src.llm.clients.anthropic import AnthropicClient
+from src.llm.observability import langfuse_manager
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
 
@@ -38,7 +39,7 @@ def _extract_with_schema(
         text: Text to extract from
         schema_class: Pydantic schema class to use
         prompt_template: Prompt template for extraction
-        langfuse_handler: Optional Langfuse handler for tracing
+        langfuse_handler: Optional Langfuse handler for tracing (deprecated, use config instead)
 
     Returns:
         Dict containing extracted data
@@ -51,18 +52,18 @@ def _extract_with_schema(
     prompt_content = prompt_template.format(job_text=text)
     messages = [HumanMessage(content=prompt_content)]
 
-    # Configure with Langfuse if available
-    config_dict = {}
+    # Use new langfuse manager API with backward compatibility
     if langfuse_handler:
+        # Legacy parameter support for tests
         config_dict = {"callbacks": [langfuse_handler]}
+    else:
+        # Use new manager API
+        config_dict = langfuse_manager.get_config()
 
     # Extract structured information
     logger.info(f"Extracting structured data using schema: {schema_class.__name__}")
 
-    if config_dict:
-        result = structured_llm.invoke(messages, config=config_dict)
-    else:
-        result = structured_llm.invoke(messages)
+    result = structured_llm.invoke(messages, config=config_dict)
 
     # Convert to dict for tool return
     result_dict = result.model_dump() if hasattr(result, "model_dump") else dict(result)

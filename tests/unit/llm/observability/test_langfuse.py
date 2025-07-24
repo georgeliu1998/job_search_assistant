@@ -5,175 +5,223 @@ Unit tests for Langfuse handler functionality.
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from src.llm.observability import (
+    LangfuseManager,
     get_langfuse_handler,
     is_langfuse_enabled,
+    langfuse_manager,
     reset_langfuse_handler,
 )
 
 
-class TestGetLangfuseHandler:
-    """Test get_langfuse_handler function."""
+class TestLangfuseManager:
+    """Test the LangfuseManager class."""
 
     def setup_method(self):
-        """Reset handler before each test."""
-        reset_langfuse_handler()
-
-    def test_disabled_tracing(self):
-        """Test that disabled tracing returns None."""
-        # Use direct parameter to disable
-        handler = get_langfuse_handler(enabled=False)
-        assert handler is None
-
-    def test_missing_credentials(self):
-        """Test that missing credentials returns None."""
-        # Use direct parameters with missing credentials (empty strings)
-        handler = get_langfuse_handler(enabled=True, public_key="", secret_key="")
-        assert handler is None
+        """Setup for each test."""
+        # Create a fresh manager instance for testing
+        self.manager = LangfuseManager()
+        self.manager.reset()
 
     @patch("src.llm.observability.langfuse.CallbackHandler")
-    def test_successful_initialization(self, mock_callback_handler):
-        """Test successful handler initialization."""
+    def test_get_handler_when_enabled(self, mock_callback_handler):
+        """Test get_handler when Langfuse is enabled and configured."""
         mock_handler = MagicMock()
         mock_callback_handler.return_value = mock_handler
 
-        # Use direct parameters to ensure valid configuration
-        handler = get_langfuse_handler(
-            enabled=True,
-            public_key="test_public",
-            secret_key="test_secret",
-            host="https://test.langfuse.com",
-        )
-        assert handler is mock_handler
-        mock_callback_handler.assert_called_once_with(
-            public_key="test_public",
-            secret_key="test_secret",
-            host="https://test.langfuse.com",
-        )
+        # Mock the config to be enabled and valid
+        with patch.object(self.manager, "is_enabled", return_value=True):
+            handler = self.manager.get_handler()
+
+            assert handler is mock_handler
+            mock_callback_handler.assert_called_once_with()
+
+    def test_get_handler_when_disabled(self):
+        """Test get_handler when Langfuse is disabled."""
+        # Mock the config to be disabled
+        with patch.object(self.manager, "is_enabled", return_value=False):
+            handler = self.manager.get_handler()
+
+            assert handler is None
 
     @patch("src.llm.observability.langfuse.CallbackHandler")
-    def test_initialization_failure(self, mock_callback_handler):
-        """Test handling of initialization failures."""
+    def test_get_handler_initialization_failure(self, mock_callback_handler):
+        """Test get_handler when CallbackHandler initialization fails."""
         mock_callback_handler.side_effect = Exception("Connection failed")
 
-        handler = get_langfuse_handler(
-            enabled=True, public_key="test_public", secret_key="test_secret"
-        )
-        assert handler is None
+        with patch.object(self.manager, "is_enabled", return_value=True):
+            handler = self.manager.get_handler()
 
-    def test_direct_parameter_override(self):
-        """Test that direct parameters override configs."""
-        # Disable via direct parameter even if configs might enable it
-        handler = get_langfuse_handler(enabled=False)
-        assert handler is None
+            assert handler is None
 
     @patch("src.llm.observability.langfuse.CallbackHandler")
-    def test_singleton_behavior(self, mock_callback_handler):
-        """Test that handler is only initialized once and reused."""
+    def test_get_handler_caching(self, mock_callback_handler):
+        """Test that handler is cached and reused."""
         mock_handler = MagicMock()
         mock_callback_handler.return_value = mock_handler
 
-        # First call should initialize
-        handler1 = get_langfuse_handler(
-            enabled=True, public_key="test_public", secret_key="test_secret"
-        )
-        assert handler1 is mock_handler
-        assert mock_callback_handler.call_count == 1
+        with patch.object(self.manager, "is_enabled", return_value=True):
+            # First call should initialize
+            handler1 = self.manager.get_handler()
+            assert handler1 is mock_handler
+            assert mock_callback_handler.call_count == 1
 
-        # Second call should reuse the same instance
-        handler2 = get_langfuse_handler()
-        assert handler2 is handler1
-        assert handler2 is mock_handler
-        # Should not have called CallbackHandler again
-        assert mock_callback_handler.call_count == 1
+            # Second call should reuse cached handler
+            handler2 = self.manager.get_handler()
+            assert handler2 is handler1
+            assert mock_callback_handler.call_count == 1
 
-        # Third call with different parameters should still reuse
-        handler3 = get_langfuse_handler(
-            public_key="different_key", secret_key="different_secret"
-        )
-        assert handler3 is handler1
-        assert handler3 is mock_handler
-        # Should not have called CallbackHandler again
-        assert mock_callback_handler.call_count == 1
+    def test_get_config_with_handler(self):
+        """Test get_config when handler is available."""
+        mock_handler = MagicMock()
 
-    @patch("src.llm.observability.langfuse.CallbackHandler")
-    def test_singleton_behavior_disabled(self, mock_callback_handler):
-        """Test singleton behavior when handler is disabled."""
-        # First call should return None
-        handler1 = get_langfuse_handler(enabled=False)
-        assert handler1 is None
-        assert mock_callback_handler.call_count == 0
+        with patch.object(self.manager, "get_handler", return_value=mock_handler):
+            config = self.manager.get_config()
 
-        # Second call should also return None without initializing
-        handler2 = get_langfuse_handler()
-        assert handler2 is None
-        assert mock_callback_handler.call_count == 0
+            expected = {"callbacks": [mock_handler]}
+            assert config == expected
 
+    def test_get_config_without_handler(self):
+        """Test get_config when handler is not available."""
+        with patch.object(self.manager, "get_handler", return_value=None):
+            config = self.manager.get_config()
 
-class TestResetLangfuseHandler:
-    """Test reset_langfuse_handler function."""
+            assert config == {}
 
-    def setup_method(self):
-        """Reset handler before each test."""
-        reset_langfuse_handler()
+    def test_get_config_with_additional_config(self):
+        """Test get_config with additional configuration."""
+        mock_handler = MagicMock()
+        additional_config = {"temperature": 0.5, "max_tokens": 100}
 
-    @patch("src.llm.observability.langfuse.CallbackHandler")
-    def test_reset_allows_reinitialization(self, mock_callback_handler):
-        """Test that reset allows handler to be reinitialized."""
-        mock_handler1 = MagicMock()
-        mock_handler2 = MagicMock()
-        mock_callback_handler.side_effect = [mock_handler1, mock_handler2]
+        with patch.object(self.manager, "get_handler", return_value=mock_handler):
+            config = self.manager.get_config(additional_config)
 
-        # First initialization
-        handler1 = get_langfuse_handler(
-            enabled=True, public_key="test_public", secret_key="test_secret"
-        )
-        assert handler1 is mock_handler1
-        assert mock_callback_handler.call_count == 1
+            expected = {
+                "callbacks": [mock_handler],
+                "temperature": 0.5,
+                "max_tokens": 100,
+            }
+            assert config == expected
 
-        # Reset the handler
-        reset_langfuse_handler()
+    def test_reset(self):
+        """Test reset functionality."""
+        # Set up a handler first
+        with patch(
+            "src.llm.observability.langfuse.CallbackHandler"
+        ) as mock_callback_handler:
+            mock_handler = MagicMock()
+            mock_callback_handler.return_value = mock_handler
 
-        # Second initialization should create a new instance
-        handler2 = get_langfuse_handler(
-            enabled=True, public_key="test_public2", secret_key="test_secret2"
-        )
-        assert handler2 is mock_handler2
-        assert handler2 is not handler1
-        assert mock_callback_handler.call_count == 2
+            with patch.object(self.manager, "is_enabled", return_value=True):
+                # Get handler to initialize it
+                handler1 = self.manager.get_handler()
+                assert handler1 is mock_handler
 
+                # Reset should clear the cached handler
+                self.manager.reset()
 
-class TestHelperFunctions:
-    """Test helper functions."""
+                # Next call should create a new handler
+                handler2 = self.manager.get_handler()
+                assert handler2 is mock_handler
+                # Should have been called twice now
+                assert mock_callback_handler.call_count == 2
 
-    def setup_method(self):
-        """Reset handler before each test."""
-        reset_langfuse_handler()
-
-    def test_is_langfuse_enabled(self, mock_api_keys):
-        """Test is_langfuse_enabled function with centralized configs."""
-        # This will test the actual configs configuration
-        # In stage environment, langfuse should be disabled by default
-        enabled = is_langfuse_enabled()
-        # Since we're in stage environment, it should be False
+    def test_is_enabled_integration(self, mock_api_keys):
+        """Test is_enabled with real config integration."""
+        # In stage environment with mocked keys, should be disabled by default
+        enabled = self.manager.is_enabled()
         assert enabled is False
 
-    def test_is_langfuse_enabled_with_environment_override(self):
-        """Test is_langfuse_enabled with environment variable override."""
+
+class TestGlobalLangfuseManager:
+    """Test the global langfuse_manager instance."""
+
+    def setup_method(self):
+        """Reset global manager before each test."""
+        langfuse_manager.reset()
+
+    @patch("src.llm.observability.langfuse.CallbackHandler")
+    def test_global_manager_singleton_behavior(self, mock_callback_handler):
+        """Test that global manager behaves as singleton."""
+        mock_handler = MagicMock()
+        mock_callback_handler.return_value = mock_handler
+
+        with patch.object(langfuse_manager, "is_enabled", return_value=True):
+            # Multiple calls should return the same handler
+            handler1 = langfuse_manager.get_handler()
+            handler2 = langfuse_manager.get_handler()
+
+            assert handler1 is handler2
+            assert handler1 is mock_handler
+            assert mock_callback_handler.call_count == 1
+
+
+class TestBackwardCompatibilityFunctions:
+    """Test backward compatibility functions."""
+
+    def setup_method(self):
+        """Reset handler before each test."""
+        reset_langfuse_handler()
+
+    @patch("src.llm.observability.langfuse.CallbackHandler")
+    def test_get_langfuse_handler_function(self, mock_callback_handler):
+        """Test the backward compatibility get_langfuse_handler function."""
+        mock_handler = MagicMock()
+        mock_callback_handler.return_value = mock_handler
+
+        with patch.object(langfuse_manager, "is_enabled", return_value=True):
+            handler = get_langfuse_handler()
+            assert handler is mock_handler
+
+    def test_get_langfuse_handler_disabled(self):
+        """Test get_langfuse_handler when disabled."""
+        with patch.object(langfuse_manager, "is_enabled", return_value=False):
+            handler = get_langfuse_handler()
+            assert handler is None
+
+    def test_is_langfuse_enabled_function(self, mock_api_keys):
+        """Test the backward compatibility is_langfuse_enabled function."""
+        # In stage environment, should be disabled by default
+        enabled = is_langfuse_enabled()
+        assert enabled is False
+
+    def test_reset_langfuse_handler_function(self):
+        """Test the backward compatibility reset_langfuse_handler function."""
+        # This should not raise any errors
+        reset_langfuse_handler()
+
+
+class TestConfigIntegration:
+    """Test integration with the configuration system."""
+
+    def test_langfuse_enabled_in_dev_environment(self):
+        """Test that Langfuse can be enabled in development environment."""
         with patch.dict(
             os.environ,
             {
                 "APP_ENV": "dev",
-                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
+                "ANTHROPIC_API_KEY": "test-anthropic-key",
                 "LANGFUSE_PUBLIC_KEY": "test_public",
                 "LANGFUSE_SECRET_KEY": "test_secret",
             },
         ):
-            # Reload configs to pick up environment changes
             from src.config import config
 
             config.reload()
 
-            # In dev environment with valid keys, should be enabled
-            enabled = is_langfuse_enabled()
+            manager = LangfuseManager()
+            enabled = manager.is_enabled()
             assert enabled is True
+
+    def test_langfuse_disabled_in_stage_environment(self):
+        """Test that Langfuse is disabled in stage environment."""
+        with patch.dict(os.environ, {"APP_ENV": "stage"}):
+            from src.config import config
+
+            config.reload()
+
+            manager = LangfuseManager()
+            enabled = manager.is_enabled()
+            assert enabled is False

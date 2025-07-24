@@ -18,7 +18,7 @@ from src.core.job_evaluation import (
     evaluate_job_against_criteria,
     generate_recommendation_from_evaluation,
 )
-from src.llm.observability import get_langfuse_handler
+from src.llm.observability import langfuse_manager
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -219,13 +219,8 @@ def run_job_evaluation_workflow(
         # Create initial state
         initial_state = JobEvaluationState(job_posting_text=job_posting_text)
 
-        # Configure Langfuse if available
-        langfuse_handler = get_langfuse_handler()
-        execution_config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
-
-        # Merge with provided config
-        if config:
-            execution_config.update(config)
+        # Configure Langfuse with simplified API
+        execution_config = langfuse_manager.get_config(config)
 
         # Run workflow
         final_state_dict = workflow.invoke(initial_state, config=execution_config)
