@@ -14,7 +14,13 @@ from src.exceptions.config import (
     ConfigValidationError,
     EnvironmentError,
 )
-from src.exceptions.llm import LLMError, LLMProviderError, LLMResponseError
+from src.exceptions.llm import (
+    LLMConfigurationError,
+    LLMError,
+    LLMObservabilityError,
+    LLMProviderError,
+    LLMResponseError,
+)
 
 
 class TestJobSearchAssistantError:
@@ -222,11 +228,23 @@ class TestLLMError:
     def test_llm_provider_error(self):
         """Test LLMProviderError subclass."""
         message = "API key invalid"
-        details = {"provider": "anthropic", "key_length": 0}
-        error = LLMProviderError(message, details)
+        provider = "anthropic"
+        error_code = "AUTH_001"
+        details = {"key_length": 0}
+        error = LLMProviderError(
+            message, provider=provider, error_code=error_code, details=details
+        )
 
         assert error.message == message
-        assert error.details == details
+        assert error.provider == provider
+        assert error.error_code == error_code
+        # Enhanced details should include original details plus provider and error_code
+        expected_details = {
+            "key_length": 0,
+            "provider": provider,
+            "error_code": error_code,
+        }
+        assert error.details == expected_details
         assert isinstance(error, LLMError)
         assert isinstance(error, LLMProviderError)
         assert isinstance(error, JobSearchAssistantError)
@@ -234,13 +252,42 @@ class TestLLMError:
     def test_llm_response_error(self):
         """Test LLMResponseError subclass."""
         message = "Response parsing failed"
-        details = {"response_length": 0, "expected_format": "json"}
-        error = LLMResponseError(message, details)
+        response_data = "invalid json here"
+        details = {"expected_format": "json"}
+        error = LLMResponseError(message, response_data=response_data, details=details)
+
+        assert error.message == message
+        assert error.response_data == response_data
+        # Enhanced details should include original details plus response_data
+        expected_details = {"expected_format": "json", "response_data": response_data}
+        assert error.details == expected_details
+        assert isinstance(error, LLMError)
+        assert isinstance(error, LLMResponseError)
+        assert isinstance(error, JobSearchAssistantError)
+
+    def test_llm_configuration_error(self):
+        """Test LLMConfigurationError subclass."""
+        message = "Invalid configuration"
+        config_key = "temperature"
+        error = LLMConfigurationError(message, config_key=config_key)
+
+        assert error.message == message
+        assert error.config_key == config_key
+        assert error.details == {"config_key": config_key}
+        assert isinstance(error, LLMError)
+        assert isinstance(error, LLMConfigurationError)
+        assert isinstance(error, JobSearchAssistantError)
+
+    def test_llm_observability_error(self):
+        """Test LLMObservabilityError subclass."""
+        message = "Observability system failure"
+        details = {"system": "langfuse", "error_type": "connection"}
+        error = LLMObservabilityError(message, details)
 
         assert error.message == message
         assert error.details == details
         assert isinstance(error, LLMError)
-        assert isinstance(error, LLMResponseError)
+        assert isinstance(error, LLMObservabilityError)
         assert isinstance(error, JobSearchAssistantError)
 
     def test_llm_error_subclasses_can_be_caught_as_llm_error(self):
@@ -252,6 +299,14 @@ class TestLLMError:
         # Test LLMResponseError
         with pytest.raises(LLMError):
             raise LLMResponseError("response error")
+
+        # Test LLMConfigurationError
+        with pytest.raises(LLMError):
+            raise LLMConfigurationError("config error")
+
+        # Test LLMObservabilityError
+        with pytest.raises(LLMError):
+            raise LLMObservabilityError("observability error")
 
     def test_llm_error_subclasses_can_be_caught_as_base_error(self):
         """Test that LLM error subclasses can be caught as JobSearchAssistantError."""
@@ -266,6 +321,14 @@ class TestLLMError:
         # Test LLMResponseError
         with pytest.raises(JobSearchAssistantError):
             raise LLMResponseError("response error")
+
+        # Test LLMConfigurationError
+        with pytest.raises(JobSearchAssistantError):
+            raise LLMConfigurationError("config error")
+
+        # Test LLMObservabilityError
+        with pytest.raises(JobSearchAssistantError):
+            raise LLMObservabilityError("observability error")
 
 
 class TestExceptionInteroperability:
@@ -282,6 +345,8 @@ class TestExceptionInteroperability:
             LLMError("llm error"),
             LLMProviderError("provider error"),
             LLMResponseError("response error"),
+            LLMConfigurationError("config error"),
+            LLMObservabilityError("observability error"),
         ]
 
         for exception in exceptions_to_test:
@@ -326,13 +391,16 @@ class TestExceptionInteroperability:
         original_details = {"error_code": "E001", "timestamp": "2024-01-01T00:00:00Z"}
 
         # Create specific exception with details
-        specific_error = LLMProviderError("Specific error", original_details)
+        specific_error = LLMProviderError("Specific error", details=original_details)
 
-        # Catch as base type and verify details are preserved
+        # Catch as base type and verify details are preserved (enhanced behavior includes original details)
         try:
             raise specific_error
         except JobSearchAssistantError as caught_error:
-            assert caught_error.details == original_details
+            # The enhanced exception includes the original details
+            assert all(key in caught_error.details for key in original_details.keys())
+            assert caught_error.details["error_code"] == original_details["error_code"]
+            assert caught_error.details["timestamp"] == original_details["timestamp"]
             assert caught_error.message == "Specific error"
             assert isinstance(caught_error, LLMProviderError)
 
@@ -359,7 +427,7 @@ class TestExceptionStringRepresentations:
         exceptions = [
             JobSearchAssistantError("Base error", details),
             LLMError("LLM error", details),
-            LLMProviderError("Provider error", details),
+            LLMProviderError("Provider error", details=details),
         ]
 
         expected_str = f"Base error (Details: {details})"
@@ -368,6 +436,7 @@ class TestExceptionStringRepresentations:
         expected_str = f"LLM error (Details: {details})"
         assert str(exceptions[1]) == expected_str
 
+        # LLMProviderError with just details (no provider or error_code)
         expected_str = f"Provider error (Details: {details})"
         assert str(exceptions[2]) == expected_str
 
