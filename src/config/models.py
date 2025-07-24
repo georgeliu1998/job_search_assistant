@@ -79,14 +79,19 @@ class LLMProfileConfig(BaseModel):
             "claude-3-5-haiku-latest",
             "claude-3-haiku-20240307",
             "claude-sonnet-4-20250514",
-        }
+        },
+        "google": {
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+        },
     }
 
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
         """Validate that provider is supported."""
-        valid_providers = {"anthropic"}
+        valid_providers = {"anthropic", "google"}
         if v.lower() not in valid_providers:
             raise ValueError(f"Provider must be one of: {', '.join(valid_providers)}")
         return v.lower()
