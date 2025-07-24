@@ -99,7 +99,62 @@ class TestLangfuseManager:
             }
             assert config == expected
 
-    def test_reset(self):
+    @patch("src.llm.observability.langfuse._workflow_context")
+    def test_get_config_in_workflow_context(self, mock_context):
+        """Test get_config skips tracing when in workflow context."""
+        mock_context.get.return_value = True
+
+        with patch.object(self.manager, "get_handler") as mock_get_handler:
+            config = self.manager.get_config()
+
+            # Should return empty config and not call get_handler
+            assert config == {}
+            mock_get_handler.assert_not_called()
+
+    @patch("src.llm.observability.langfuse._workflow_context")
+    def test_get_config_force_tracing_in_workflow_context(self, mock_context):
+        """Test get_config with force_tracing=True includes tracing even in workflow context."""
+        mock_context.get.return_value = True
+        mock_handler = MagicMock()
+
+        with patch.object(self.manager, "get_handler", return_value=mock_handler):
+            config = self.manager.get_config(force_tracing=True)
+
+            expected = {"callbacks": [mock_handler]}
+            assert config == expected
+
+    @patch("src.llm.observability.langfuse._workflow_context")
+    def test_get_workflow_config(self, mock_context):
+        """Test get_workflow_config sets context and includes tracing."""
+        mock_handler = MagicMock()
+
+        with patch.object(self.manager, "get_handler", return_value=mock_handler):
+            config = self.manager.get_workflow_config()
+
+            # Should set workflow context
+            mock_context.set.assert_called_with(True)
+
+            # Should include handler
+            expected = {"callbacks": [mock_handler]}
+            assert config == expected
+
+    @patch("src.llm.observability.langfuse._workflow_context")
+    def test_get_workflow_config_with_additional_config(self, mock_context):
+        """Test get_workflow_config with additional configuration."""
+        mock_handler = MagicMock()
+        additional_config = {"temperature": 0.7}
+
+        with patch.object(self.manager, "get_handler", return_value=mock_handler):
+            config = self.manager.get_workflow_config(additional_config)
+
+            expected = {
+                "callbacks": [mock_handler],
+                "temperature": 0.7,
+            }
+            assert config == expected
+
+    @patch("src.llm.observability.langfuse._workflow_context")
+    def test_reset(self, mock_context):
         """Test reset functionality."""
         # Set up a handler first
         with patch(
@@ -113,8 +168,9 @@ class TestLangfuseManager:
                 handler1 = self.manager.get_handler()
                 assert handler1 is mock_handler
 
-                # Reset should clear the cached handler
+                # Reset should clear the cached handler and context
                 self.manager.reset()
+                mock_context.set.assert_called_with(False)
 
                 # Next call should create a new handler
                 handler2 = self.manager.get_handler()
@@ -172,6 +228,21 @@ class TestGlobalLangfuseManager:
 
             assert handler is None
             assert config == {}
+
+    @patch("src.llm.observability.langfuse._workflow_context")
+    def test_global_manager_workflow_config(self, mock_context):
+        """Test global manager get_workflow_config."""
+        mock_handler = MagicMock()
+
+        with patch.object(langfuse_manager, "get_handler", return_value=mock_handler):
+            config = langfuse_manager.get_workflow_config({"custom": "value"})
+
+            mock_context.set.assert_called_with(True)
+            expected = {
+                "callbacks": [mock_handler],
+                "custom": "value",
+            }
+            assert config == expected
 
 
 class TestConfigIntegration:
