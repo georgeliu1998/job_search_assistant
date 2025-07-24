@@ -18,6 +18,13 @@ model = "claude-3-5-haiku-20241022"
 temperature = 0.0
 max_tokens = 512
 
+# Future Gemini profile example (commented out until implementation)
+# [llm_profiles.gemini_generation]
+# provider = "gemini"
+# model = "gemini-1.5-pro"
+# temperature = 0.2
+# max_tokens = 1024
+
 # Agent task to LLM profile mapping
 [agents]
 job_evaluation_extraction = "anthropic_extraction"
@@ -28,7 +35,19 @@ min_salary = 100000
 remote_required = true
 ic_title_requirements = ["lead", "staff", "principal", "senior staff"]
 
+# Enhanced observability configuration
+[observability]
+enabled = true                    # Global observability toggle
+auto_inject = true               # Automatic injection into LLM calls
+collect_metrics = true           # Internal performance metrics
+
 [observability.langfuse]
-enabled = false
+enabled = false                  # Langfuse-specific toggle
 host = "https://us.cloud.langfuse.com"
+trace_level = "full"            # "full", "basic", "none"
 # public_key and secret_key loaded from environment variables
+
+[observability.metrics]
+track_performance = true         # Response times, durations
+track_token_usage = true        # Token consumption
+track_errors = true             # Error rates and types
