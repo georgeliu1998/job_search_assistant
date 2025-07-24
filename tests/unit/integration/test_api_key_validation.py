@@ -86,7 +86,7 @@ class TestAPIKeyValidation:
         client = AnthropicClient(config_with_key)
 
         # Mock os.getenv to return empty string for API key
-        with patch("src.llm.clients.base.os.getenv", return_value=""):
+        with patch("src.llm.common.base.os.getenv", return_value=""):
             # Override the config to have no API key
             client.config.api_key = None
 

@@ -6,7 +6,7 @@ providers through a common base class and provider-specific implementations.
 """
 
 from src.llm.clients.anthropic import AnthropicClient
-from src.llm.clients.base import BaseLLMClient
+from src.llm.common.base import BaseLLMClient
 from src.llm.langfuse_handler import (
     get_langfuse_handler,
     is_langfuse_enabled,

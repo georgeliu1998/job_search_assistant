@@ -5,7 +5,7 @@ This module contains the base client class and provider-specific implementations
 """
 
 from src.llm.clients.anthropic import AnthropicClient
-from src.llm.clients.base import BaseLLMClient
+from src.llm.common.base import BaseLLMClient
 
 __all__ = [
     "BaseLLMClient",

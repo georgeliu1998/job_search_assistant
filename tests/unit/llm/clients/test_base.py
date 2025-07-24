@@ -7,7 +7,7 @@ import pytest
 
 from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError
-from src.llm.clients.base import BaseLLMClient
+from src.llm.common.base import BaseLLMClient
 
 
 class ConcreteLLMClient(BaseLLMClient):
