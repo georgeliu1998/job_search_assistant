@@ -7,16 +7,10 @@ providers through a common base class and provider-specific implementations.
 
 from src.llm.clients.anthropic import AnthropicClient
 from src.llm.common.base import BaseLLMClient
-from src.llm.observability import (
-    get_langfuse_handler,
-    is_langfuse_enabled,
-    reset_langfuse_handler,
-)
+from src.llm.observability import langfuse_manager
 
 __all__ = [
     "BaseLLMClient",
     "AnthropicClient",
-    "get_langfuse_handler",
-    "is_langfuse_enabled",
-    "reset_langfuse_handler",
+    "langfuse_manager",
 ]

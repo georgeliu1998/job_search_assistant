@@ -1,5 +1,5 @@
 """
-Unit tests for Langfuse handler functionality.
+Unit tests for Langfuse manager functionality.
 """
 
 import os
@@ -7,13 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.llm.observability import (
-    LangfuseManager,
-    get_langfuse_handler,
-    is_langfuse_enabled,
-    langfuse_manager,
-    reset_langfuse_handler,
-)
+from src.llm.observability import LangfuseManager, langfuse_manager
 
 
 class TestLangfuseManager:
@@ -157,40 +151,27 @@ class TestGlobalLangfuseManager:
             assert handler1 is mock_handler
             assert mock_callback_handler.call_count == 1
 
-
-class TestBackwardCompatibilityFunctions:
-    """Test backward compatibility functions."""
-
-    def setup_method(self):
-        """Reset handler before each test."""
-        reset_langfuse_handler()
-
-    @patch("src.llm.observability.langfuse.CallbackHandler")
-    def test_get_langfuse_handler_function(self, mock_callback_handler):
-        """Test the backward compatibility get_langfuse_handler function."""
+    def test_global_manager_get_config(self):
+        """Test that global manager get_config works correctly."""
         mock_handler = MagicMock()
-        mock_callback_handler.return_value = mock_handler
 
-        with patch.object(langfuse_manager, "is_enabled", return_value=True):
-            handler = get_langfuse_handler()
-            assert handler is mock_handler
+        with patch.object(langfuse_manager, "get_handler", return_value=mock_handler):
+            config = langfuse_manager.get_config({"temperature": 0.7})
 
-    def test_get_langfuse_handler_disabled(self):
-        """Test get_langfuse_handler when disabled."""
+            expected = {
+                "callbacks": [mock_handler],
+                "temperature": 0.7,
+            }
+            assert config == expected
+
+    def test_global_manager_when_disabled(self):
+        """Test global manager behavior when disabled."""
         with patch.object(langfuse_manager, "is_enabled", return_value=False):
-            handler = get_langfuse_handler()
+            handler = langfuse_manager.get_handler()
+            config = langfuse_manager.get_config()
+
             assert handler is None
-
-    def test_is_langfuse_enabled_function(self, mock_api_keys):
-        """Test the backward compatibility is_langfuse_enabled function."""
-        # In stage environment, should be disabled by default
-        enabled = is_langfuse_enabled()
-        assert enabled is False
-
-    def test_reset_langfuse_handler_function(self):
-        """Test the backward compatibility reset_langfuse_handler function."""
-        # This should not raise any errors
-        reset_langfuse_handler()
+            assert config == {}
 
 
 class TestConfigIntegration:
@@ -225,3 +206,39 @@ class TestConfigIntegration:
             manager = LangfuseManager()
             enabled = manager.is_enabled()
             assert enabled is False
+
+
+class TestLangfuseManagerEdgeCases:
+    """Test edge cases and error scenarios."""
+
+    def setup_method(self):
+        """Setup for each test."""
+        self.manager = LangfuseManager()
+        self.manager.reset()
+
+    def test_multiple_resets(self):
+        """Test that multiple resets don't cause issues."""
+        self.manager.reset()
+        self.manager.reset()
+        self.manager.reset()
+
+        # Should still work normally
+        with patch.object(self.manager, "is_enabled", return_value=False):
+            handler = self.manager.get_handler()
+            assert handler is None
+
+    def test_get_config_with_none_additional_config(self):
+        """Test get_config with None as additional_config."""
+        with patch.object(self.manager, "get_handler", return_value=None):
+            config = self.manager.get_config(None)
+            assert config == {}
+
+    def test_get_config_with_empty_additional_config(self):
+        """Test get_config with empty dict as additional_config."""
+        mock_handler = MagicMock()
+
+        with patch.object(self.manager, "get_handler", return_value=mock_handler):
+            config = self.manager.get_config({})
+
+            expected = {"callbacks": [mock_handler]}
+            assert config == expected

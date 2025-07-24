@@ -272,9 +272,10 @@ class TestExtractWithSchema:
         assert result == mock_result.model_dump.return_value
         mock_structured_llm.invoke.assert_called_once()
 
+    @patch("src.llm.observability.langfuse_manager.get_config")
     @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
-    def test_extract_with_schema_with_langfuse(self, mock_get_client):
-        """Test extraction with Langfuse handler."""
+    def test_extract_with_schema_with_langfuse(self, mock_get_client, mock_get_config):
+        """Test extraction with Langfuse manager integration."""
         from src.agent.prompts.extraction.job_posting import (
             JOB_POSTING_EXTRACTION_PROMPT,
         )
@@ -291,23 +292,24 @@ class TestExtractWithSchema:
         mock_anthropic_client.with_structured_output.return_value = mock_structured_llm
         mock_structured_llm.invoke.return_value = mock_result
 
-        # Mock Langfuse handler
+        # Mock Langfuse manager config
         mock_langfuse_handler = Mock()
+        mock_config = {"callbacks": [mock_langfuse_handler]}
+        mock_get_config.return_value = mock_config
 
         result = _extract_with_schema(
             "Software Engineer position",
             JobPostingExtractionSchema,
             JOB_POSTING_EXTRACTION_PROMPT,
-            langfuse_handler=mock_langfuse_handler,
         )
 
         assert result == mock_result.model_dump.return_value
-        # Verify that invoke was called with config containing callbacks
+        # Verify that langfuse manager get_config was called
+        mock_get_config.assert_called_once()
+        # Verify that invoke was called with the config from langfuse manager
         mock_structured_llm.invoke.assert_called_once()
         call_args = mock_structured_llm.invoke.call_args
-        assert "config" in call_args.kwargs
-        assert "callbacks" in call_args.kwargs["config"]
-        assert call_args.kwargs["config"]["callbacks"] == [mock_langfuse_handler]
+        assert call_args.kwargs["config"] == mock_config
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
     def test_extract_with_schema_client_error(self, mock_get_client):

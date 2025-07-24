@@ -30,7 +30,6 @@ def _extract_with_schema(
     text: str,
     schema_class: Type,
     prompt_template,
-    langfuse_handler: Optional[object] = None,
 ) -> Dict[str, Any]:
     """
     Internal function to extract data using a specific schema.
@@ -39,7 +38,6 @@ def _extract_with_schema(
         text: Text to extract from
         schema_class: Pydantic schema class to use
         prompt_template: Prompt template for extraction
-        langfuse_handler: Optional Langfuse handler for tracing (deprecated, use config instead)
 
     Returns:
         Dict containing extracted data
@@ -52,13 +50,8 @@ def _extract_with_schema(
     prompt_content = prompt_template.format(job_text=text)
     messages = [HumanMessage(content=prompt_content)]
 
-    # Use new langfuse manager API with backward compatibility
-    if langfuse_handler:
-        # Legacy parameter support for tests
-        config_dict = {"callbacks": [langfuse_handler]}
-    else:
-        # Use new manager API
-        config_dict = langfuse_manager.get_config()
+    # Use langfuse manager for configuration
+    config_dict = langfuse_manager.get_config()
 
     # Extract structured information
     logger.info(f"Extracting structured data using schema: {schema_class.__name__}")

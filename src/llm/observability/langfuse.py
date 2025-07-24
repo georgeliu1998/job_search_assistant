@@ -101,21 +101,5 @@ class GlobalLangfuseManager(LangfuseManager):
     pass
 
 
-# Global instance
+# Global instance for application use
 langfuse_manager = GlobalLangfuseManager()
-
-
-# Backward compatibility functions
-def get_langfuse_handler() -> Optional[CallbackHandler]:
-    """Get the Langfuse callback handler."""
-    return langfuse_manager.get_handler()
-
-
-def is_langfuse_enabled() -> bool:
-    """Check if Langfuse is enabled."""
-    return langfuse_manager.is_enabled()
-
-
-def reset_langfuse_handler() -> None:
-    """Reset the Langfuse handler."""
-    langfuse_manager.reset()
