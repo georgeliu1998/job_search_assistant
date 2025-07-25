@@ -11,25 +11,40 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.prompts.extraction.job_posting import JOB_POSTING_EXTRACTION_PROMPT
 from src.config import config
-from src.llm.clients.anthropic import AnthropicClient
+from src.llm import get_llm_client_by_profile_name
+from src.llm.observability import langfuse_manager
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def _get_extraction_client() -> AnthropicClient:
-    """Get the LLM client for extraction operations."""
+def _get_extraction_client():
+    """
+    Get the LLM client for extraction operations using the factory pattern.
+
+    Uses the factory pattern to create the appropriate client based on the
+    configured provider. The factory ensures singleton behavior, so multiple
+    calls with the same configuration return the same instance, improving
+    resource efficiency by reusing connections and avoiding redundant client
+    initialization.
+
+    Returns:
+        BaseLLMClient: Singleton instance configured for extraction
+
+    Example:
+        # This will create an AnthropicClient if the profile is configured for Anthropic,
+        # or a GoogleClient if configured for Google, etc.
+        client = _get_extraction_client()
+    """
     profile_name = config.agents.job_evaluation_extraction
-    profile = config.get_llm_profile(profile_name)
-    return AnthropicClient(profile)
+    return get_llm_client_by_profile_name(profile_name)
 
 
 def _extract_with_schema(
     text: str,
     schema_class: Type,
     prompt_template,
-    langfuse_handler: Optional[object] = None,
 ) -> Dict[str, Any]:
     """
     Internal function to extract data using a specific schema.
@@ -38,7 +53,6 @@ def _extract_with_schema(
         text: Text to extract from
         schema_class: Pydantic schema class to use
         prompt_template: Prompt template for extraction
-        langfuse_handler: Optional Langfuse handler for tracing
 
     Returns:
         Dict containing extracted data
@@ -51,18 +65,13 @@ def _extract_with_schema(
     prompt_content = prompt_template.format(job_text=text)
     messages = [HumanMessage(content=prompt_content)]
 
-    # Configure with Langfuse if available
-    config_dict = {}
-    if langfuse_handler:
-        config_dict = {"callbacks": [langfuse_handler]}
+    # Get context-aware tracing configuration
+    config_dict = langfuse_manager.get_config()
 
     # Extract structured information
     logger.info(f"Extracting structured data using schema: {schema_class.__name__}")
 
-    if config_dict:
-        result = structured_llm.invoke(messages, config=config_dict)
-    else:
-        result = structured_llm.invoke(messages)
+    result = structured_llm.invoke(messages, config=config_dict)
 
     # Convert to dict for tool return
     result_dict = result.model_dump() if hasattr(result, "model_dump") else dict(result)

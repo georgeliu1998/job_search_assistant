@@ -190,6 +190,8 @@ class ConfigLoader:
                     profile_config["api_key"] = os.getenv("ANTHROPIC_API_KEY")
                 elif provider == "fireworks":
                     profile_config["api_key"] = os.getenv("FIREWORKS_API_KEY")
+                elif provider == "google":
+                    profile_config["api_key"] = os.getenv("GOOGLE_API_KEY")
 
         return config
 

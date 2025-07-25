@@ -456,3 +456,126 @@ class TestAnthropicClientIntegration:
                 max_tokens=2000,
                 api_key="test-key",
             )
+
+
+class TestAnthropicClientSingleton:
+    """Test singleton behavior of AnthropicClient."""
+
+    def test_same_config_returns_same_instance(self):
+        """Test that creating clients with identical configs returns the same instance."""
+        config = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            temperature=0.7,
+            max_tokens=1000,
+            api_key="test-key",
+        )
+
+        client1 = AnthropicClient(config)
+        client2 = AnthropicClient(config)
+
+        # Should be the exact same instance
+        assert client1 is client2
+        assert id(client1) == id(client2)
+
+    def test_different_configs_create_different_instances(self):
+        """Test that different configurations create different instances."""
+        config1 = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            temperature=0.7,
+            max_tokens=1000,
+            api_key="test-key-1",
+        )
+
+        config2 = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            temperature=0.5,  # Different temperature
+            max_tokens=1000,
+            api_key="test-key-1",
+        )
+
+        client1 = AnthropicClient(config1)
+        client2 = AnthropicClient(config2)
+
+        # Should be different instances
+        assert client1 is not client2
+        assert id(client1) != id(client2)
+        assert client1.config.temperature == 0.7
+        assert client2.config.temperature == 0.5
+
+    def test_different_models_create_different_instances(self):
+        """Test that different models create different instances."""
+        config1 = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            api_key="test-key",
+        )
+
+        config2 = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-haiku-20240307",  # Different model
+            api_key="test-key",
+        )
+
+        client1 = AnthropicClient(config1)
+        client2 = AnthropicClient(config2)
+
+        # Should be different instances
+        assert client1 is not client2
+        assert client1.get_model_name() == "claude-3-5-haiku-20241022"
+        assert client2.get_model_name() == "claude-3-haiku-20240307"
+
+    def test_singleton_reload_functionality(self):
+        """Test that reload_singleton creates a new instance."""
+        config = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            api_key="test-key",
+        )
+
+        client1 = AnthropicClient(config)
+
+        # Reload with same config should create new instance
+        client2 = client1.reload_singleton(config)
+
+        # Should be different instances
+        assert client1 is not client2
+        assert id(client1) != id(client2)
+        # But should have same configuration
+        assert client1.config.model == client2.config.model
+        assert client1.config.provider == client2.config.provider
+
+    def test_singleton_with_schema_extraction_pattern(self):
+        """Test singleton behavior with the actual usage pattern from schema extraction."""
+        # Simulate the pattern used in schema_extraction_tool.py
+        config = LLMProfileConfig(
+            provider="anthropic",
+            model="claude-3-5-haiku-20241022",
+            api_key="test-key",
+        )
+
+        # Multiple calls like in _get_extraction_client()
+        client1 = AnthropicClient(config)
+        client2 = AnthropicClient(config)
+        client3 = AnthropicClient(config)
+
+        # All should be the same instance
+        assert client1 is client2 is client3
+        assert id(client1) == id(client2) == id(client3)
+
+        # Verify they share the same underlying ChatAnthropic client
+        with patch("src.llm.clients.anthropic.ChatAnthropic") as mock_chat_anthropic:
+            mock_chat_instance = MagicMock()
+            mock_chat_anthropic.return_value = mock_chat_instance
+
+            # Initialize the underlying client on first use
+            underlying1 = client1._get_client()
+            underlying2 = client2._get_client()
+            underlying3 = client3._get_client()
+
+            # All should return the same underlying client
+            assert underlying1 is underlying2 is underlying3
+            # ChatAnthropic should only be called once
+            mock_chat_anthropic.assert_called_once()

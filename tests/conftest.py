@@ -52,6 +52,7 @@ def mock_api_keys(monkeypatch):
     """Mock API keys for testing"""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
     monkeypatch.setenv("FIREWORKS_API_KEY", "test-fireworks-key")
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-google-key")
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "test-langfuse-public")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "test-langfuse-secret")
 

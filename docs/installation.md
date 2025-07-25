@@ -152,7 +152,7 @@ uv run python -c "from src.config.manager import config; print(f'Configuration l
 ### 3. Test LLM Connection
 ```bash
 # Test Anthropic API connection
-uv run python -c "from src.llm.clients.anthropic import get_anthropic_client; print('LLM connection successful!')"
+uv run python -c "from src.llm import get_supported_providers; print(f'LLM factory ready with providers: {get_supported_providers()}')"
 ```
 
 ## Troubleshooting

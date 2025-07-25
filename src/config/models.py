@@ -79,14 +79,19 @@ class LLMProfileConfig(BaseModel):
             "claude-3-5-haiku-latest",
             "claude-3-haiku-20240307",
             "claude-sonnet-4-20250514",
-        }
+        },
+        "google": {
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+        },
     }
 
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
         """Validate that provider is supported."""
-        valid_providers = {"anthropic"}
+        valid_providers = {"anthropic", "google"}
         if v.lower() not in valid_providers:
             raise ValueError(f"Provider must be one of: {', '.join(valid_providers)}")
         return v.lower()
@@ -137,6 +142,30 @@ class LLMProfileConfig(BaseModel):
             )
 
         return v
+
+    def __hash__(self) -> int:
+        """Make LLMProfileConfig hashable for use in singleton pattern."""
+        return hash(
+            (
+                self.provider,
+                self.model,
+                self.temperature,
+                self.max_tokens,
+                self.api_key,
+            )
+        )
+
+    def __eq__(self, other) -> bool:
+        """Define equality for LLMProfileConfig objects."""
+        if not isinstance(other, LLMProfileConfig):
+            return False
+        return (
+            self.provider == other.provider
+            and self.model == other.model
+            and self.temperature == other.temperature
+            and self.max_tokens == other.max_tokens
+            and self.api_key == other.api_key
+        )
 
 
 class LangfuseConfig(BaseModel):

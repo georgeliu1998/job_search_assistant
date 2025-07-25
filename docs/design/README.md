@@ -19,6 +19,12 @@ Details the LangGraph-based agent framework, including the separation of concern
 ### [Job Evaluation Design](job-evaluation-design.md)
 Describes why job evaluation is implemented as a workflow rather than a simple agent, and how this design supports future enhancements.
 
+### [Observability & Tracing](observability-tracing.md)
+Explains the context-aware Langfuse tracing system, including how to eliminate duplicate traces and monitor AI workflows effectively.
+
+### [LLM Factory Pattern](llm-factory-pattern.md)
+Documents the factory pattern implementation for multi-provider LLM support, including provider registration mechanisms, usage patterns, and extension strategies.
+
 ## Design Principles
 
 Our design decisions are guided by these principles:

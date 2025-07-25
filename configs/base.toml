@@ -18,6 +18,12 @@ model = "claude-3-5-haiku-20241022"
 temperature = 0.0
 max_tokens = 512
 
+[llm_profiles.google_extraction]
+provider = "google"
+model = "gemini-2.5-flash"
+temperature = 0.0
+max_tokens = 512
+
 # Agent task to LLM profile mapping
 [agents]
 job_evaluation_extraction = "anthropic_extraction"

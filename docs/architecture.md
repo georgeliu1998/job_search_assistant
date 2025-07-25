@@ -131,7 +131,7 @@ The Job Search Assistant follows a layered architecture pattern designed for mod
 
 ### AI/ML Stack
 - **Anthropic Claude**: Primary LLM for AI tasks
-- **Langfuse**: LLM observability and monitoring
+- **Langfuse**: Context-aware LLM observability and tracing (see [Tracing Documentation](design/observability-tracing.md))
 - **Structured Output**: JSON schema extraction and validation
 
 ### Development Tools

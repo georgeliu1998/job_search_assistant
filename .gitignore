@@ -136,3 +136,6 @@ docs/Gemfile.lock
 
 # Ruby version management (local to each developer)
 .ruby-version
+
+# Implementation plan
+PLAN.md
