@@ -55,7 +55,6 @@ class BaseLLMClient(ABC):
         """
         raise NotImplementedError("Subclasses must implement the 'invoke' method.")
 
-    @abstractmethod
     def get_model_name(self) -> str:
         """
         Get the model identifier for this client.
@@ -63,7 +62,7 @@ class BaseLLMClient(ABC):
         Returns:
             String identifier for the model being used
         """
-        pass
+        return self.config.model
 
     def _get_client(self) -> Any:
         """

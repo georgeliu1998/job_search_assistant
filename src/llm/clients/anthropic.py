@@ -72,10 +72,6 @@ class AnthropicClient(BaseLLMClient):
         except Exception as e:
             raise LLMProviderError(f"Failed to initialize Anthropic client: {e}")
 
-    def get_model_name(self) -> str:
-        """Get the model identifier for this client."""
-        return self.config.model
-
     def invoke(self, messages: List[Any], config: dict = None) -> Any:
         """
         Send messages to the LLM and get a response.

@@ -368,17 +368,13 @@ class TestBaseLLMClientAbstractMethods:
         ):
             client.invoke([])
 
-    def test_abstract_get_model_name_not_implemented(self):
-        """Test that abstract get_model_name method returns None when not implemented."""
+    def test_get_model_name_base_implementation(self):
+        """Test that base class get_model_name implementation returns config.model."""
 
-        # Create a class that doesn't implement get_model_name properly
-        class IncompleteClient(BaseLLMClient):
+        # Create a class that uses the base implementation
+        class ConcreteClient(BaseLLMClient):
             def invoke(self, messages, config=None):
                 return "response"
-
-            def get_model_name(self):
-                # Call the parent's abstract method which uses 'pass'
-                return super().get_model_name()
 
             def _initialize_client(self):
                 return Mock()
@@ -387,11 +383,11 @@ class TestBaseLLMClientAbstractMethods:
             provider="anthropic", model="test-model", api_key="test-key"
         )
 
-        client = IncompleteClient(config)
+        client = ConcreteClient(config)
 
-        # get_model_name should return None (from 'pass' in base class)
+        # get_model_name should return the model from config
         result = client.get_model_name()
-        assert result is None
+        assert result == "test-model"
 
     def test_abstract_initialize_client_not_implemented(self):
         """Test that abstract _initialize_client method raises NotImplementedError."""
