@@ -6,6 +6,7 @@ Welcome to the Job Search Assistant documentation. This guide will help you unde
 
 ### Getting Started
 - [Installation Guide](installation.md)
+- [Tracing Quick Reference](tracing-quick-reference.md)
 
 ### Architecture & Design
 - [Architecture Overview](architecture.md)
@@ -13,6 +14,7 @@ Welcome to the Job Search Assistant documentation. This guide will help you unde
   - [Configuration Management](design/configuration.md)
   - [Agent Infrastructure](design/agent-infrastructure.md)
   - [Job Evaluation Design](design/job-evaluation-design.md)
+  - [Observability & Tracing](design/observability-tracing.md)
 
 ## Quick Overview
 

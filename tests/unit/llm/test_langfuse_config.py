@@ -49,6 +49,7 @@ class TestLangfuseConfig:
             {
                 "APP_ENV": "dev",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
+                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
                 "LANGFUSE_PUBLIC_KEY": "test_public_key",
                 "LANGFUSE_SECRET_KEY": "test_secret_key",
             },
@@ -67,6 +68,7 @@ class TestLangfuseConfig:
             {
                 "APP_ENV": "dev",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
+                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
             },
         ):
             test_config = config.reload()
@@ -91,6 +93,7 @@ class TestLangfuseConfig:
             {
                 "APP_ENV": "prod",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for prod environment
+                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
             },
         ):
             test_config = config.reload()

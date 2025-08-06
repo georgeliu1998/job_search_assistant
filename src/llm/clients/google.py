@@ -1,11 +1,11 @@
 """
-Anthropic LLM client implementation using LangChain.
+Google LLM client implementation using LangChain.
 """
 
 import time
 from typing import Any, List
 
-from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError, LLMResponseError
@@ -14,11 +14,11 @@ from src.utils.singleton import singleton
 
 
 @singleton
-class AnthropicClient(BaseLLMClient):
+class GoogleClient(BaseLLMClient):
     """
-    Singleton Anthropic LLM client implementation.
+    Singleton Google LLM client implementation.
 
-    This client wraps the LangChain ChatAnthropic client and provides
+    This client wraps the LangChain ChatGoogleGenerativeAI client and provides
     the standardized interface defined by BaseLLMClient. The singleton
     pattern ensures that multiple calls with the same configuration
     return the same instance, improving resource efficiency.
@@ -29,7 +29,7 @@ class AnthropicClient(BaseLLMClient):
 
     def __init__(self, config: LLMProfileConfig):
         """
-        Initialize the Anthropic client.
+        Initialize the Google client.
 
         Args:
             config: LLM profile configuration
@@ -39,38 +39,36 @@ class AnthropicClient(BaseLLMClient):
         """
         super().__init__(config)
 
-        # Validate that this is an Anthropic config
-        if config.provider != "anthropic":
-            raise LLMProviderError(
-                f"Expected anthropic provider, got: {config.provider}"
-            )
+        # Validate that this is a Google config
+        if config.provider != "google":
+            raise LLMProviderError(f"Expected google provider, got: {config.provider}")
 
         # Use the generic API key management from base class
-        self._ensure_api_key("ANTHROPIC_API_KEY", "Enter your Anthropic API key: ")
+        self._ensure_api_key("GOOGLE_API_KEY", "Enter your Google API key: ")
 
-    def _initialize_client(self) -> ChatAnthropic:
+    def _initialize_client(self) -> ChatGoogleGenerativeAI:
         """
-        Create and return the underlying ChatAnthropic client instance.
+        Create and return the underlying ChatGoogleGenerativeAI client instance.
 
         Returns:
-            Configured ChatAnthropic instance
+            Configured ChatGoogleGenerativeAI instance
 
         Raises:
             LLMProviderError: If client initialization fails
         """
         try:
-            client = ChatAnthropic(
+            client = ChatGoogleGenerativeAI(
                 model=self.config.model,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
-                api_key=self.config.api_key,
+                google_api_key=self.config.api_key,
             )
             self.logger.debug(
-                f"Initialized Anthropic client with model: {self.config.model}"
+                f"Initialized Google client with model: {self.config.model}"
             )
             return client
         except Exception as e:
-            raise LLMProviderError(f"Failed to initialize Anthropic client: {e}")
+            raise LLMProviderError(f"Failed to initialize Google client: {e}")
 
     def invoke(self, messages: List[Any], config: dict = None) -> Any:
         """
@@ -105,9 +103,13 @@ class AnthropicClient(BaseLLMClient):
 
         except Exception as e:
             self._log_error(e, messages)
-            if "rate limit" in str(e).lower():
-                raise LLMProviderError(f"Rate limit exceeded: {e}")
-            elif "api key" in str(e).lower():
+            if "quota" in str(e).lower() or "rate limit" in str(e).lower():
+                raise LLMProviderError(f"Rate limit or quota exceeded: {e}")
+            elif "api key" in str(e).lower() or "authentication" in str(e).lower():
                 raise LLMProviderError(f"API key error: {e}")
+            elif "model" in str(e).lower() and "not found" in str(e).lower():
+                raise LLMProviderError(f"Model not available: {e}")
+            elif "safety" in str(e).lower():
+                raise LLMProviderError(f"Content blocked by safety filters: {e}")
             else:
-                raise LLMProviderError(f"Anthropic API error: {e}")
+                raise LLMProviderError(f"Google API error: {e}")
