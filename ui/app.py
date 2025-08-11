@@ -26,6 +26,7 @@ logger = get_app_logger()
 # Import UI modules
 from ui.components.environment_check import render_environment_warning
 from ui.pages.home import render_home_page
+from ui.pages.interview_prep import render_interview_prep_page
 from ui.pages.job_evaluation import render_job_evaluation_page
 from ui.pages.resume_customization import render_resume_customization_page
 from ui.pages.settings import render_settings_page
@@ -59,6 +60,8 @@ elif st.session_state.current_page == "🎯 Job Evaluation":
     render_job_evaluation_page()
 elif st.session_state.current_page == "📝 Resume Customization":
     render_resume_customization_page()
+elif st.session_state.current_page == "🧭 Interview Preparation":
+    render_interview_prep_page()
 elif st.session_state.current_page == "⚙️ Settings":
     render_settings_page()
 

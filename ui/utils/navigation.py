@@ -16,11 +16,18 @@ def render_sidebar():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Select a feature",
-        ["🏠 Home", "🎯 Job Evaluation", "📝 Resume Customization", "⚙️ Settings"],
+        [
+            "🏠 Home",
+            "🎯 Job Evaluation",
+            "📝 Resume Customization",
+            "🧭 Interview Preparation",
+            "⚙️ Settings",
+        ],
         index=[
             "🏠 Home",
             "🎯 Job Evaluation",
             "📝 Resume Customization",
+            "🧭 Interview Preparation",
             "⚙️ Settings",
         ].index(st.session_state.current_page),
     )

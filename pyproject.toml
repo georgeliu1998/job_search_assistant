@@ -17,6 +17,10 @@ dependencies = [
     "pytest>=8.3.5",
     "python-dotenv>=1.0.0",
     "streamlit>=1.45.1",
+    "ddgs>=6.1.0",
+    "httpx>=0.27.0",
+    "presidio-analyzer>=2.2.0",
+    "presidio-anonymizer>=2.2.0",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +34,10 @@ dev = [
     "jupyter>=1.0.0",
     "ipykernel>=6.0.0",
 ]
+presidio = [
+    # spaCy English language model for Presidio NLP-based PII detection
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -38,6 +46,10 @@ build-backend = "hatchling.build"
 # Configure hatchling to include all packages from src directory
 [tool.hatch.build.targets.wheel]
 packages = ["find:"]
+
+# Allow direct URL references for spaCy models
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

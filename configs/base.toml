@@ -24,9 +24,25 @@ model = "gemini-2.5-flash"
 temperature = 0.0
 max_tokens = 512
 
+[llm_profiles.google_interview_research]
+provider = "google"
+model = "gemini-2.5-pro"
+temperature = 0.2
+max_tokens = 1024
+
+[llm_profiles.google_interview_generation]
+provider = "google"
+model = "gemini-2.5-pro"
+temperature = 0.7
+max_tokens = 1024
+
 # Agent task to LLM profile mapping
 [agents]
 job_evaluation_extraction = "anthropic_extraction"
+interview_research = "google_interview_research"
+interview_question_generation = "anthropic_extraction"
+interview_answer_generation = "anthropic_extraction"
+interview_compilation = "google_interview_generation"
 
 # Business logic parameters for job evaluation
 [evaluation_criteria]
