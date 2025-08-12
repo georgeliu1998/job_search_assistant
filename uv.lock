@@ -1166,9 +1166,9 @@ presidio = [
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
-    { name = "ddgs", specifier = ">=6.1.0" },
+    { name = "ddgs", specifier = ">=9.5.2" },
     { name = "en-core-web-sm", marker = "extra == 'presidio'", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
-    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
     { name = "jupyter", marker = "extra == 'dev'", specifier = ">=1.0.0" },
@@ -1179,8 +1179,8 @@ requires-dist = [
     { name = "langgraph", specifier = ">=0.4.5" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
-    { name = "presidio-analyzer", specifier = ">=2.2.0" },
-    { name = "presidio-anonymizer", specifier = ">=2.2.0" },
+    { name = "presidio-analyzer", specifier = ">=2.2.359" },
+    { name = "presidio-anonymizer", specifier = ">=2.2.359" },
     { name = "pydantic", specifier = ">=2.11.5" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
