@@ -36,13 +36,19 @@ model = "gemini-2.5-pro"
 temperature = 0.7
 max_tokens = 1024
 
+[llm_profiles.anthropic_interview_generation]
+provider = "anthropic"
+model = "claude-3-5-haiku-20241022"
+temperature = 0.7
+max_tokens = 1024
+
 # Agent task to LLM profile mapping
 [agents]
 job_evaluation_extraction = "anthropic_extraction"
 interview_research = "google_interview_research"
-interview_question_generation = "anthropic_extraction"
-interview_answer_generation = "anthropic_extraction"
-interview_compilation = "google_interview_generation"
+interview_question_generation = "anthropic_interview_generation"
+interview_answer_generation = "anthropic_interview_generation"
+interview_compilation = "anthropic_interview_generation"
 
 # Business logic parameters for job evaluation
 [evaluation_criteria]

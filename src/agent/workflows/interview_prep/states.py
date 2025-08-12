@@ -29,6 +29,9 @@ class InterviewPrepState(BaseDataModel):
     interview_details: InterviewDetails = Field(
         ..., description="Interview specifications"
     )
+    num_questions: int = Field(
+        default=10, description="Number of interview questions to generate"
+    )
 
     # CRITICAL: Error handling for workflow short-circuiting
     error: Optional[str] = Field(default=None, description="Workflow error message")

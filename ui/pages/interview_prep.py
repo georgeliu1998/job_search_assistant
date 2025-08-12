@@ -79,6 +79,17 @@ def render_interview_prep_page():
         else:
             interviewer_count = 1
 
+    # Question customization
+    st.subheader("⚙️ Customization Options")
+
+    num_questions = st.number_input(
+        "Number of Questions",
+        min_value=1,
+        max_value=50,
+        value=10,
+        help="How many interview questions would you like to generate?",
+    )
+
     st.subheader("📄 Required Information")
 
     job_description = st.text_area(
@@ -129,6 +140,7 @@ def render_interview_prep_page():
                 company=company,
                 role=role,
                 interviewer_count=interviewer_count,
+                num_questions=num_questions,
             )
 
     # Display results
@@ -145,6 +157,7 @@ def generate_interview_guide(
     company: Optional[str],
     role: Optional[str],
     interviewer_count: int,
+    num_questions: int,
 ):
     """Generate the interview preparation guide."""
     with st.spinner("🔍 Processing your information..."):
@@ -164,6 +177,7 @@ def generate_interview_guide(
                 job_description=job_description,
                 resume_text=resume_text,
                 interview_details=interview_details,
+                num_questions=num_questions,
             )
 
             # Show PII redaction preview first
@@ -263,7 +277,7 @@ def display_interview_guide():
     # Questions and answers
     if guide.qa_pairs:
         st.subheader(
-            f"❓ Interview Questions & Answers ({len(guide.qa_pairs)} questions)"
+            f"❓ Interview Questions & Answers ({len(guide.qa_pairs)} questions generated)"
         )
 
         # Filter options

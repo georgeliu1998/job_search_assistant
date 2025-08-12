@@ -16,17 +16,21 @@ Interview Format: {interview_format}
 Company: {company}
 Role: {role}
 
-Generate 8-12 interview questions that are:
+CRITICAL REQUIREMENT: You MUST generate EXACTLY {num_questions} interview questions. No more, no less. Count your questions to ensure you have exactly {num_questions}.
+
+Generate exactly {num_questions} interview questions that are:
 1. Relevant to the specific interview type and role
 2. Appropriate for the experience level indicated in the resume
 3. Mix of behavioral, technical, and situational questions
 4. Include rationale for why each question is relevant
 
-Format each question as:
+Format each question EXACTLY as shown below:
 Question: [The actual question]
 Category: [general/behavioral/technical/culture/situational]
 Difficulty: [easy/medium/hard]
 Rationale: [Why this question is relevant]
+
+REMEMBER: You must provide exactly {num_questions} questions in the format above. Double-check your count before submitting your response.
 
 ---"""
 
@@ -64,6 +68,7 @@ def create_question_system_prompt(state: InterviewPrepState) -> str:
         interview_format=interview_format,
         company=state.interview_details.company or "Not specified",
         role=state.interview_details.role or "Not specified",
+        num_questions=state.num_questions,
     )
 
 

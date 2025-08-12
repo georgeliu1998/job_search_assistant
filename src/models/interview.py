@@ -133,6 +133,9 @@ class QAPair(BaseDataModel):
 class InterviewGuide(BaseDataModel):
     """Complete interview preparation guide."""
 
+    num_questions: int = Field(
+        default=10, description="Number of questions requested for this guide"
+    )
     research_summary: Optional[str] = Field(
         None, description="Company/role research summary"
     )

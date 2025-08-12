@@ -139,18 +139,53 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
         # Create user prompt with context
         user_prompt = create_question_user_prompt(state)
 
-        # Generate questions using LLM
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt),
-        ]
+        # Generate questions with retry logic
+        questions = []
+        max_retries = 2
 
-        response = llm_client.invoke(messages)
+        for attempt in range(max_retries + 1):
+            # Generate questions using LLM
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_prompt),
+            ]
 
-        # Parse response into structured questions
-        questions = _parse_questions_response(response.content, state)
+            response = llm_client.invoke(messages)
 
-        logger.info(f"Generated {len(questions)} interview questions")
+            # Log the raw LLM response for debugging
+            logger.info(
+                f"Attempt {attempt + 1}: LLM response length: {len(response.content)} characters"
+            )
+            logger.debug(f"Raw LLM response:\n{response.content}")
+
+            # Parse response into structured questions
+            questions = _parse_questions_response(response.content, state)
+
+            logger.info(
+                f"Attempt {attempt + 1}: Generated {len(questions)} interview questions (requested: {state.num_questions})"
+            )
+
+            # Check if we got the right number of questions
+            if len(questions) == state.num_questions:
+                logger.info(
+                    f"Successfully generated exactly {state.num_questions} questions on attempt {attempt + 1}"
+                )
+                break
+            elif len(questions) > state.num_questions:
+                # If we got too many, truncate to the requested number
+                logger.warning(
+                    f"Got {len(questions)} questions, truncating to {state.num_questions}"
+                )
+                questions = questions[: state.num_questions]
+                break
+            elif attempt < max_retries:
+                logger.warning(
+                    f"Got only {len(questions)} questions, retrying... (attempt {attempt + 1}/{max_retries + 1})"
+                )
+            else:
+                logger.error(
+                    f"Failed to generate {state.num_questions} questions after {max_retries + 1} attempts. Got {len(questions)} questions."
+                )
         return {
             "qa_pairs": [
                 QAPair(
@@ -243,6 +278,7 @@ def compile_guide(state: InterviewPrepState) -> Dict[str, Any]:
 
         # Create final interview guide
         interview_guide = InterviewGuide(
+            num_questions=state.num_questions,
             research_summary=research_summary,
             qa_pairs=state.qa_pairs or [],
             preparation_tips=preparation_tips,
@@ -290,18 +326,29 @@ def _parse_questions_response(
     lines = response.strip().split("\n")
     current_question = {}
 
-    for line in lines:
+    logger.debug(f"Parsing {len(lines)} lines from LLM response")
+
+    for i, line in enumerate(lines):
         line = line.strip()
+
+        # Skip empty lines
+        if not line:
+            continue
 
         # Handle both "Question:" and "1. Question:" formats
         if line.startswith("Question:") or (
             line
             and "Question:" in line
-            and any(line.startswith(str(i) + ".") for i in range(1, 20))
+            and any(
+                line.startswith(str(i) + ".") for i in range(1, 50)
+            )  # Increased range for more questions
         ):
             if current_question.get("question"):
                 # Save previous question
                 questions.append(_create_question_item(current_question))
+                logger.debug(
+                    f"Parsed question {len(questions)}: {current_question.get('question', '')[:50]}..."
+                )
 
             # Extract question text after "Question:"
             if "Question:" in line:
@@ -329,7 +376,11 @@ def _parse_questions_response(
     # Add last question
     if current_question.get("question"):
         questions.append(_create_question_item(current_question))
+        logger.debug(
+            f"Parsed final question {len(questions)}: {current_question.get('question', '')[:50]}..."
+        )
 
+    logger.info(f"Successfully parsed {len(questions)} questions from LLM response")
     return questions
 
 
