@@ -6,7 +6,10 @@ from typing import Optional
 import streamlit as st
 
 from src.agent.tools.interview.pii_redaction import pii_pipeline
-from src.agent.workflows.interview_prep.main import get_interview_prep_workflow
+from src.agent.workflows.interview_prep.main import (
+    get_interview_prep_workflow,
+    run_interview_prep_workflow,
+)
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.models.interview import (
     DifficultyLevel,
@@ -216,14 +219,12 @@ def process_interview_workflow(initial_state: InterviewPrepState):
     status_text = st.empty()
 
     try:
-        # Get workflow
-        workflow = get_interview_prep_workflow()
-
         # Execute workflow with progress updates
         status_text.text("🔒 Validating and redacting personal information...")
         progress_bar.progress(20)
 
-        result = workflow.invoke(initial_state)
+        # Run with context-aware Langfuse tracing
+        result = run_interview_prep_workflow(initial_state)
 
         # Handle workflow errors - result is a LangGraph state dict
         if result.get("error"):

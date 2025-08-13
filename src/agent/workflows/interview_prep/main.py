@@ -1,7 +1,7 @@
 """Main workflow for interview preparation with sequential nodes."""
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
@@ -19,6 +19,7 @@ from src.agent.tools.interview.research import research_tool
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.config import config
 from src.llm.common.factory import get_llm_client_by_profile_name
+from src.llm.observability import langfuse_manager
 from src.models.interview import (
     AnswerItem,
     AnswerStyle,
@@ -150,7 +151,9 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
                 HumanMessage(content=user_prompt),
             ]
 
-            response = llm_client.invoke(messages)
+            # Context-aware tracing configuration for individual LLM calls
+            config_dict = langfuse_manager.get_config()
+            response = llm_client.invoke(messages, config=config_dict)
 
             # Log the raw LLM response for debugging
             logger.info(
@@ -228,6 +231,9 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
 
         updated_qa_pairs = []
 
+        # Context-aware tracing configuration (computed once per batch)
+        config_dict = langfuse_manager.get_config()
+
         for qa_pair in state.qa_pairs:
             # Create prompts for each question
             system_prompt = create_answer_system_prompt(state)
@@ -238,7 +244,7 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
                 HumanMessage(content=user_prompt),
             ]
 
-            response = llm_client.invoke(messages)
+            response = llm_client.invoke(messages, config=config_dict)
 
             # Parse and create answer
             answer_content = response.content
@@ -500,3 +506,34 @@ def _generate_preparation_tips(state: InterviewPrepState) -> List[str]:
         )
 
     return tips
+
+
+def run_interview_prep_workflow(
+    initial_state: InterviewPrepState, config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """Run the interview preparation workflow with Langfuse tracing.
+
+    Args:
+        initial_state: The initial workflow state
+        config: Optional additional configuration for workflow execution
+
+    Returns:
+        Final workflow state as a dict
+    """
+    logger.info("Starting interview preparation workflow")
+
+    try:
+        workflow = get_interview_prep_workflow()
+
+        # Configure context-aware Langfuse tracing for the workflow
+        execution_config = langfuse_manager.get_workflow_config(config)
+
+        # Run workflow
+        final_state_dict = workflow.invoke(initial_state, config=execution_config)
+
+        logger.info("Interview preparation workflow completed successfully")
+        return final_state_dict
+
+    except Exception as e:
+        logger.error(f"Interview preparation workflow failed: {e}")
+        return {"error": f"Workflow execution failed: {str(e)}"}
