@@ -35,6 +35,10 @@ def render_interview_prep_page():
         st.session_state.interview_guide = None
     if "prep_state" not in st.session_state:
         st.session_state.prep_state = None
+    if "pii_approved" not in st.session_state:
+        st.session_state.pii_approved = False
+    if "pending_workflow_state" not in st.session_state:
+        st.session_state.pending_workflow_state = None
 
     # Input section
     st.subheader("📝 Interview Details")
@@ -134,6 +138,11 @@ def render_interview_prep_page():
         if not job_description or not resume_text:
             st.error("Please provide both job description and resume content.")
         else:
+            # Reset previous state
+            st.session_state.pii_approved = False
+            st.session_state.pending_workflow_state = None
+            st.session_state.prep_state = None
+
             generate_interview_guide(
                 job_description=job_description,
                 resume_text=resume_text,
@@ -145,6 +154,18 @@ def render_interview_prep_page():
                 interviewer_count=interviewer_count,
                 num_questions=num_questions,
             )
+
+    # Check if PII is approved and we have a pending workflow to run
+    if st.session_state.pii_approved and st.session_state.pending_workflow_state:
+        # Add visual separator
+        st.markdown("---")
+        st.subheader("🚀 Generating Your Interview Guide")
+
+        # Run the workflow outside the expander context
+        process_interview_workflow(st.session_state.pending_workflow_state)
+        # Clear the pending state
+        st.session_state.pii_approved = False
+        st.session_state.pending_workflow_state = None
 
     # Display results
     if st.session_state.prep_state:
@@ -163,88 +184,133 @@ def generate_interview_guide(
     num_questions: int,
 ):
     """Generate the interview preparation guide."""
-    with st.spinner("🔍 Processing your information..."):
-        try:
-            # Create interview details
-            interview_details = InterviewDetails(
-                type=InterviewType(interview_type),
-                format=InterviewFormat(interview_format),
-                is_panel=is_panel,
-                company=company or None,
-                role=role or None,
-                interviewer_count=interviewer_count,
-            )
+    try:
+        # Create interview details
+        interview_details = InterviewDetails(
+            type=InterviewType(interview_type),
+            format=InterviewFormat(interview_format),
+            is_panel=is_panel,
+            company=company or None,
+            role=role or None,
+            interviewer_count=interviewer_count,
+        )
 
-            # Create initial state
-            initial_state = InterviewPrepState(
-                job_description=job_description,
-                resume_text=resume_text,
-                interview_details=interview_details,
-                num_questions=num_questions,
-            )
+        # Create initial state
+        initial_state = InterviewPrepState(
+            job_description=job_description,
+            resume_text=resume_text,
+            interview_details=interview_details,
+            num_questions=num_questions,
+        )
 
-            # Show PII redaction preview first
-            st.subheader("🔒 Privacy Review")
-            with st.expander("Review Redacted Resume", expanded=False):
-                redaction_result = pii_pipeline.redact_resume(resume_text)
+        # Show PII redaction preview first
+        st.subheader("🔒 Privacy Review")
+        with st.expander("Review Redacted Resume", expanded=False):
+            redaction_result = pii_pipeline.redact_resume(resume_text)
 
-                if not redaction_result.complete:
-                    st.warning("⚠️ PII redaction needs manual review")
-                    st.text_area(
-                        "Redacted Resume (Please Review)",
-                        redaction_result.redacted_resume_text,
-                        height=200,
-                        key="redaction_preview",
-                    )
+            if not redaction_result.complete:
+                st.warning("⚠️ PII redaction needs manual review")
+                st.text_area(
+                    "Redacted Resume (Please Review)",
+                    redaction_result.redacted_resume_text,
+                    height=200,
+                    key="redaction_preview",
+                )
 
-                    if st.button("✅ Approve and Continue"):
-                        process_interview_workflow(initial_state)
-                else:
-                    st.success("✅ Resume successfully redacted")
-                    st.text_area(
-                        "Redacted Resume",
-                        redaction_result.redacted_resume_text,
-                        height=150,
-                        key="redaction_success",
-                    )
-                    process_interview_workflow(initial_state)
+                if st.button("✅ Approve and Continue"):
+                    st.session_state.pii_approved = True
+                    st.session_state.pending_workflow_state = initial_state
+                    st.rerun()
+            else:
+                st.success("✅ Resume successfully redacted")
+                st.text_area(
+                    "Redacted Resume",
+                    redaction_result.redacted_resume_text,
+                    height=150,
+                    key="redaction_success",
+                )
+                # Auto-approve if redaction is complete
+                st.session_state.pii_approved = True
+                st.session_state.pending_workflow_state = initial_state
 
-        except Exception as e:
-            st.error(f"Error generating interview guide: {str(e)}")
+    except Exception as e:
+        st.error(f"Error generating interview guide: {str(e)}")
 
 
 def process_interview_workflow(initial_state: InterviewPrepState):
     """Process the interview preparation workflow."""
+    import threading
+    import time
+    from concurrent.futures import Future, ThreadPoolExecutor
+
+    # Create progress indicators
     progress_bar = st.progress(0)
     status_text = st.empty()
 
+    # Progress steps with corresponding messages
+    progress_steps = [
+        (10, "🔒 Validating and redacting personal information..."),
+        (25, "🔍 Researching company and role..."),
+        (50, "❓ Generating interview questions..."),
+        (75, "💡 Creating personalized answers..."),
+        (90, "📋 Compiling your interview guide..."),
+        (100, "✅ Finalizing your interview guide..."),
+    ]
+
     try:
-        # Execute workflow with progress updates
-        status_text.text("🔒 Validating and redacting personal information...")
-        progress_bar.progress(20)
+        # Start the workflow in a separate thread
+        workflow_future: Future = None
+        result = None
+        error = None
 
-        # Run with context-aware Langfuse tracing
-        result = run_interview_prep_workflow(initial_state)
+        def run_workflow():
+            nonlocal result, error
+            try:
+                result = run_interview_prep_workflow(initial_state)
+            except Exception as e:
+                error = e
 
-        # Handle workflow errors - result is a LangGraph state dict
-        if result.get("error"):
+        # Start workflow execution
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            workflow_future = executor.submit(run_workflow)
+
+            # Update progress while workflow is running
+            current_step = 0
+            while current_step < len(progress_steps) and not workflow_future.done():
+                progress_value, progress_message = progress_steps[current_step]
+                status_text.text(progress_message)
+                progress_bar.progress(progress_value)
+
+                # Wait a bit before next update, but check if workflow is done
+                for _ in range(
+                    10
+                ):  # Check every 0.5 seconds for 5 seconds total per step
+                    if workflow_future.done():
+                        break
+                    time.sleep(0.5)
+
+                current_step += 1
+
+            # Wait for workflow to complete
+            workflow_future.result()  # This will raise any exception that occurred
+
+        # Check for errors
+        if error:
+            raise error
+
+        if result and result.get("error"):
             st.error(f"Workflow error: {result['error']}")
             return
 
-        status_text.text("🔍 Researching company and role...")
-        progress_bar.progress(40)
-
-        status_text.text("❓ Generating interview questions...")
-        progress_bar.progress(60)
-
-        status_text.text("💡 Creating personalized answers...")
-        progress_bar.progress(80)
-
-        status_text.text("📋 Compiling your interview guide...")
+        # Final progress update
+        status_text.text("✅ Interview guide generated successfully!")
         progress_bar.progress(100)
 
         # Store results
         st.session_state.prep_state = result
+
+        # Brief pause to show completion
+        time.sleep(0.5)
 
         # Clear progress indicators
         progress_bar.empty()

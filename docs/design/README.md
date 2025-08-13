@@ -25,6 +25,9 @@ Explains the context-aware Langfuse tracing system, including how to eliminate d
 ### [LLM Factory Pattern](llm-factory-pattern.md)
 Documents the factory pattern implementation for multi-provider LLM support, including provider registration mechanisms, usage patterns, and extension strategies.
 
+### [Interview Preparation Progress Flow](interview-prep-progress-flow.md)
+Describes the design and implementation of the real-time progress update system for the Interview Preparation feature, including session state management and threading-based UI updates.
+
 ## Design Principles
 
 Our design decisions are guided by these principles:
