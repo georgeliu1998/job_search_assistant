@@ -39,8 +39,9 @@ uv sync  # Installs Python 3.11 + all dependencies automatically
 
 Create a `.env` file in the project root:
 ```bash
-# Required: Anthropic API key for AI functionality
+# Required: API keys for AI functionality
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 
 # Optional: Application environment (dev, stage, prod)
 APP_ENV=dev

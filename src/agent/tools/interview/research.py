@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List, Optional
 
 import httpx
-from ddgs import DDGS
+from langchain_tavily import TavilySearch
 
 from src.models.interview import ResearchCitation
 
@@ -17,7 +17,7 @@ class ResearchWithCitations:
 
     def __init__(self):
         """Initialize the research tool."""
-        self.search = DDGS()
+        self.search = TavilySearch(max_results=5)
         self.client = httpx.Client(timeout=10.0)
 
     def research_company_and_role(
@@ -41,26 +41,28 @@ class ResearchWithCitations:
 
         citations = []
         try:
-            # Perform search with DuckDuckGo
-            results = self.search.text(search_query, max_results=5)
+            # Perform search with Tavily
+            results = self.search.invoke(search_query)
 
             for result in results:
                 try:
                     # Verify link accessibility
-                    reliability_score = self._check_link_reliability(result["href"])
+                    reliability_score = self._check_link_reliability(result["url"])
 
                     citation = ResearchCitation(
-                        url=result["href"],
-                        title=result["title"],
+                        url=result["url"],
+                        title=result.get("title", ""),
                         accessed_at=datetime.now(),
                         reliability_score=reliability_score,
                         content_snippet=(
-                            result["body"][:200] if result.get("body") else ""
+                            result.get("content", "")[:200]
+                            if result.get("content")
+                            else ""
                         ),
                     )
                     citations.append(citation)
                     logger.info(
-                        f"Added citation: {result['title']} (score: {reliability_score})"
+                        f"Added citation: {result.get('title', 'No title')} (score: {reliability_score})"
                     )
 
                 except Exception as e:
@@ -84,19 +86,23 @@ class ResearchWithCitations:
             search_query = f"{topic} interview questions preparation tips"
 
             try:
-                results = self.search.text(search_query, max_results=3)
+                # Create a new TavilySearch instance for fewer results per topic
+                topic_search = TavilySearch(max_results=3)
+                results = topic_search.invoke(search_query)
 
                 for result in results:
                     try:
-                        reliability_score = self._check_link_reliability(result["href"])
+                        reliability_score = self._check_link_reliability(result["url"])
 
                         citation = ResearchCitation(
-                            url=result["href"],
-                            title=result["title"],
+                            url=result["url"],
+                            title=result.get("title", ""),
                             accessed_at=datetime.now(),
                             reliability_score=reliability_score,
                             content_snippet=(
-                                result["body"][:200] if result.get("body") else ""
+                                result.get("content", "")[:200]
+                                if result.get("content")
+                                else ""
                             ),
                         )
                         all_citations.append(citation)
