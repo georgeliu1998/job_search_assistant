@@ -28,13 +28,13 @@ max_tokens = 512
 provider = "google"
 model = "gemini-2.5-pro"
 temperature = 0.2
-max_tokens = 1024
+max_tokens = 4096
 
 [llm_profiles.google_interview_generation]
 provider = "google"
 model = "gemini-2.5-pro"
 temperature = 0.7
-max_tokens = 1024
+max_tokens = 8192
 
 [llm_profiles.anthropic_interview_generation]
 provider = "anthropic"
@@ -46,9 +46,9 @@ max_tokens = 1024
 [agents]
 job_evaluation_extraction = "anthropic_extraction"
 interview_research = "google_interview_research"
-interview_question_generation = "anthropic_interview_generation"
-interview_answer_generation = "anthropic_interview_generation"
-interview_compilation = "anthropic_interview_generation"
+interview_question_generation = "google_interview_research"
+interview_answer_generation = "google_interview_generation"
+interview_compilation = "google_interview_generation"
 
 # Business logic parameters for job evaluation
 [evaluation_criteria]
