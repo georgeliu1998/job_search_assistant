@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
 
 from src.models.base import BaseDataModel
 
@@ -27,6 +27,49 @@ class InterviewFormat(str, Enum):
     IN_PERSON = "in_person"
 
 
+class QuestionCategory(str, Enum):
+    """Interview question categorization."""
+
+    GENERAL = "general"
+    BEHAVIORAL = "behavioral"
+    TECHNICAL = "technical"
+    CULTURE = "culture"
+    SITUATIONAL = "situational"
+
+
+# Question mix configurations for different interview types
+QUESTION_MIXES: Dict[InterviewType, Dict[QuestionCategory, int]] = {
+    InterviewType.HR_SCREEN: {
+        QuestionCategory.GENERAL: 2,
+        QuestionCategory.BEHAVIORAL: 3,
+        QuestionCategory.TECHNICAL: 0,
+        QuestionCategory.CULTURE: 3,
+        QuestionCategory.SITUATIONAL: 0,
+    },
+    InterviewType.HIRING_MANAGER: {
+        QuestionCategory.GENERAL: 2,
+        QuestionCategory.BEHAVIORAL: 3,
+        QuestionCategory.TECHNICAL: 3,
+        QuestionCategory.CULTURE: 0,
+        QuestionCategory.SITUATIONAL: 2,
+    },
+    InterviewType.PEER: {
+        QuestionCategory.GENERAL: 0,
+        QuestionCategory.BEHAVIORAL: 0,
+        QuestionCategory.TECHNICAL: 4,
+        QuestionCategory.CULTURE: 0,
+        QuestionCategory.SITUATIONAL: 2,
+    },
+}
+
+# Default durations for different interview types (in minutes)
+DEFAULT_DURATIONS: Dict[InterviewType, int] = {
+    InterviewType.HR_SCREEN: 30,
+    InterviewType.HIRING_MANAGER: 60,
+    InterviewType.PEER: 60,
+}
+
+
 class InterviewDetails(BaseDataModel):
     """Interview specifications and context."""
 
@@ -34,17 +77,43 @@ class InterviewDetails(BaseDataModel):
     format: InterviewFormat = Field(
         default=InterviewFormat.INDIVIDUAL, description="Interview format"
     )
-    is_panel: bool = Field(
-        default=False, description="Convenience flag for panel interviews"
-    )
     company: Optional[str] = Field(None, description="Company name")
     role: Optional[str] = Field(None, description="Role being interviewed for")
-    duration_minutes: Optional[int] = Field(
-        None, description="Expected interview duration"
+    duration: Optional[int] = Field(
+        None, description="Expected interview duration in minutes"
     )
-    interviewer_count: Optional[int] = Field(
-        default=1, description="Number of interviewers"
+    question_mix: Dict[QuestionCategory, int] = Field(
+        default_factory=dict, description="Question distribution by category"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_defaults(cls, data):
+        """Auto-populate question_mix and duration from defaults based on interview type."""
+        if isinstance(data, dict):
+            interview_type = data.get("type")
+
+            if interview_type:
+                # Ensure interview_type is an InterviewType enum
+                if isinstance(interview_type, str):
+                    interview_type = InterviewType(interview_type)
+                elif hasattr(interview_type, "value"):
+                    interview_type = InterviewType(interview_type.value)
+
+                # Set default question_mix if not provided or empty
+                if not data.get("question_mix"):
+                    data["question_mix"] = QUESTION_MIXES.get(interview_type, {}).copy()
+
+                # Set default duration if not provided
+                if data.get("duration") is None:
+                    data["duration"] = DEFAULT_DURATIONS.get(interview_type)
+
+        return data
+
+    @property
+    def total_questions(self) -> int:
+        """Get total number of questions from question mix."""
+        return sum(self.question_mix.values())
 
 
 class ResearchCitation(BaseDataModel):
@@ -70,16 +139,6 @@ class PIIRedactionResult(BaseDataModel):
     redaction_log: List[str] = Field(
         default_factory=list, description="Log of redaction operations"
     )
-
-
-class QuestionCategory(str, Enum):
-    """Interview question categorization."""
-
-    GENERAL = "general"
-    BEHAVIORAL = "behavioral"
-    TECHNICAL = "technical"
-    CULTURE = "culture"
-    SITUATIONAL = "situational"
 
 
 class DifficultyLevel(str, Enum):

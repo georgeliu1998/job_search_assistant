@@ -12,6 +12,8 @@ from src.agent.workflows.interview_prep.main import (
 )
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.models.interview import (
+    DEFAULT_DURATIONS,
+    QUESTION_MIXES,
     DifficultyLevel,
     InterviewDetails,
     InterviewFormat,
@@ -58,9 +60,7 @@ def render_interview_prep_page():
             help="What format will the interview be conducted in?",
         )
 
-        is_panel = st.checkbox(
-            "Panel Interview", help="Multiple interviewers will be present"
-        )
+    # Panel interview detection is now handled automatically via format selection
 
     with col2:
         company = st.text_input(
@@ -75,27 +75,47 @@ def render_interview_prep_page():
             help="The specific role you're applying for",
         )
 
-        if is_panel:
-            interviewer_count = st.number_input(
-                "Number of Interviewers",
-                min_value=2,
-                max_value=10,
-                value=3,
-                help="How many people will be interviewing you?",
-            )
+    # Interviewer count is no longer needed for question generation
+
+    # Question preview
+    st.subheader("📊 Question Configuration")
+
+    # Show question breakdown based on selected interview type
+    try:
+        interview_type_enum = InterviewType(interview_type)
+        question_mix = QUESTION_MIXES.get(interview_type_enum, {})
+        duration = DEFAULT_DURATIONS.get(interview_type_enum, 60)
+
+        if question_mix:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.info(f"**Expected Duration:** {duration} minutes")
+                st.write("**Question Breakdown:**")
+                total_questions = 0
+                for category, count in question_mix.items():
+                    if count > 0:
+                        st.write(f"• {category.replace('_', ' ').title()}: {count}")
+                        total_questions += count
+                st.write(f"**Total Questions:** {total_questions}")
+
+            with col2:
+                st.write("**Interview Focus:**")
+                if interview_type_enum == InterviewType.HR_SCREEN:
+                    st.write("• Cultural fit assessment")
+                    st.write("• Basic qualifications")
+                    st.write("• Behavioral evaluation")
+                elif interview_type_enum == InterviewType.HIRING_MANAGER:
+                    st.write("• Leadership assessment")
+                    st.write("• Technical judgment")
+                    st.write("• System thinking")
+                elif interview_type_enum == InterviewType.PEER:
+                    st.write("• Technical deep-dive")
+                    st.write("• Problem-solving skills")
+                    st.write("• Team collaboration")
         else:
-            interviewer_count = 1
-
-    # Question customization
-    st.subheader("⚙️ Customization Options")
-
-    num_questions = st.number_input(
-        "Number of Questions",
-        min_value=1,
-        max_value=50,
-        value=10,
-        help="How many interview questions would you like to generate?",
-    )
+            st.warning("Question breakdown not available for selected interview type.")
+    except Exception as e:
+        st.warning(f"Could not load question configuration: {e}")
 
     st.subheader("📄 Required Information")
 
@@ -148,11 +168,8 @@ def render_interview_prep_page():
                 resume_text=resume_text,
                 interview_type=interview_type,
                 interview_format=interview_format,
-                is_panel=is_panel,
                 company=company,
                 role=role,
-                interviewer_count=interviewer_count,
-                num_questions=num_questions,
             )
 
     # Check if PII is approved and we have a pending workflow to run
@@ -177,11 +194,8 @@ def generate_interview_guide(
     resume_text: str,
     interview_type: str,
     interview_format: str,
-    is_panel: bool,
     company: Optional[str],
     role: Optional[str],
-    interviewer_count: int,
-    num_questions: int,
 ):
     """Generate the interview preparation guide."""
     try:
@@ -189,10 +203,8 @@ def generate_interview_guide(
         interview_details = InterviewDetails(
             type=InterviewType(interview_type),
             format=InterviewFormat(interview_format),
-            is_panel=is_panel,
             company=company or None,
             role=role or None,
-            interviewer_count=interviewer_count,
         )
 
         # Create initial state
@@ -200,7 +212,6 @@ def generate_interview_guide(
             job_description=job_description,
             resume_text=resume_text,
             interview_details=interview_details,
-            num_questions=num_questions,
         )
 
         # Show PII redaction preview first
