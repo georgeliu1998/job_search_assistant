@@ -24,14 +24,12 @@ class PIIRedactionPipeline:
         logger.info("PII redaction pipeline initialized")
 
     def _init_regex_fallback(self):
-        """Initialize regex-based fallback patterns."""
+        """Initialize regex-based fallback patterns for phone numbers and email only."""
         self.regex_patterns = {
             "EMAIL": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
             "PHONE": re.compile(
                 r"(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})"
             ),
-            "SSN": re.compile(r"\b\d{3}-?\d{2}-?\d{4}\b"),
-            "CREDIT_CARD": re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"),
         }
         logger.info("Regex fallback patterns initialized")
 
@@ -74,52 +72,20 @@ class PIIRedactionPipeline:
                 text="test email: test@example.com", language="en"
             )
 
-            # Configure anonymization operators
+            # Configure anonymization operators for phone numbers and email only
             self.anonymization_config = {
-                "PERSON": OperatorConfig("replace", {"new_value": "[REDACTED_NAME]"}),
                 "EMAIL_ADDRESS": OperatorConfig(
                     "replace", {"new_value": "[REDACTED_EMAIL]"}
                 ),
                 "PHONE_NUMBER": OperatorConfig(
                     "replace", {"new_value": "[REDACTED_PHONE]"}
                 ),
-                "SSN": OperatorConfig("replace", {"new_value": "[REDACTED_SSN]"}),
-                "CREDIT_CARD": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_CC]"}
-                ),
-                "IBAN_CODE": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_IBAN]"}
-                ),
-                "IP_ADDRESS": OperatorConfig("replace", {"new_value": "[REDACTED_IP]"}),
-                "DATE_TIME": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_DATE]"}
-                ),
-                "LOCATION": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_LOCATION]"}
-                ),
-                "URL": OperatorConfig("replace", {"new_value": "[REDACTED_URL]"}),
-                "US_DRIVER_LICENSE": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_LICENSE]"}
-                ),
-                "US_PASSPORT": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_PASSPORT]"}
-                ),
             }
 
-            # Supported entity types for detection
+            # Supported entity types for detection (phone numbers and email only)
             self.entity_types = [
-                "PERSON",
                 "EMAIL_ADDRESS",
                 "PHONE_NUMBER",
-                "SSN",
-                "CREDIT_CARD",
-                "IBAN_CODE",
-                "IP_ADDRESS",
-                "DATE_TIME",
-                "LOCATION",
-                "URL",
-                "US_DRIVER_LICENSE",
-                "US_PASSPORT",
             ]
 
             self.presidio_available = True
@@ -293,11 +259,13 @@ class PIIRedactionPipeline:
                 )
                 return False
 
-            # Additional basic pattern checks for common PII that might slip through
+            # Additional basic pattern checks for phone numbers and email that might slip through
             suspicious_patterns = [
                 (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "email"),
-                (r"\b\d{3}-?\d{2}-?\d{4}\b", "SSN"),
-                (r"\b(?:\d{4}[-\s]?){3}\d{4}\b", "credit card"),
+                (
+                    r"(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}",
+                    "phone number",
+                ),
             ]
 
             for pattern, pii_type in suspicious_patterns:
