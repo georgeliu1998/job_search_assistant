@@ -42,13 +42,19 @@ model = "claude-3-5-haiku-20241022"
 temperature = 0.7
 max_tokens = 1024
 
+[llm_profiles.google_flash_lite]
+provider = "google"
+model = "gemini-2.5-flash-lite"
+temperature = 0.7
+max_tokens = 4096
+
 # Agent task to LLM profile mapping
 [agents]
 job_evaluation_extraction = "anthropic_extraction"
-interview_research = "anthropic_interview_generation"
-interview_question_generation = "anthropic_interview_generation"
-interview_answer_generation = "anthropic_interview_generation"
-interview_compilation = "google_interview_generation"
+interview_research = "google_flash_lite"
+interview_question_generation = "google_flash_lite"
+interview_answer_generation = "google_flash_lite"
+interview_compilation = "google_flash_lite"
 
 # Business logic parameters for job evaluation
 [evaluation_criteria]
