@@ -25,6 +25,7 @@ from src.models.interview import (
     AnswerStyle,
     DifficultyLevel,
     InterviewGuide,
+    InterviewQuestions,
     QAPair,
     QuestionCategory,
     QuestionItem,
@@ -120,7 +121,7 @@ def research_with_citations(state: InterviewPrepState) -> Dict[str, Any]:
 
 
 def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
-    """Generate interview questions based on role and interview type."""
+    """Generate interview questions based on role and interview type using structured output."""
     logger.info("Generating interview questions")
 
     # Skip if previous error
@@ -134,76 +135,75 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
             config.agents.interview_question_generation
         )
 
+        # Create structured LLM with schema
+        structured_llm = llm_client._get_client().with_structured_output(
+            InterviewQuestions
+        )
+
         # Create system prompt for question generation
         system_prompt = create_question_system_prompt(state)
 
-        # Create user prompt with context
+        # Create user prompt with context, emphasizing exact number of questions
         user_prompt = create_question_user_prompt(state)
+        user_prompt += f"\n\nIMPORTANT: Generate exactly {state.num_questions} questions in the response."
 
-        # Generate questions with retry logic
-        questions = []
-        max_retries = 2
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
 
-        for attempt in range(max_retries + 1):
-            # Generate questions using LLM
-            messages = [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt),
-            ]
+        # Context-aware tracing configuration
+        config_dict = langfuse_manager.get_config()
 
-            # Context-aware tracing configuration for individual LLM calls
-            config_dict = langfuse_manager.get_config()
-            response = llm_client.invoke(messages, config=config_dict)
+        # Generate structured questions
+        logger.info(
+            f"Generating {state.num_questions} interview questions using structured output"
+        )
+        result = structured_llm.invoke(messages, config=config_dict)
 
-            # Log the raw LLM response for debugging
-            logger.info(
-                f"Attempt {attempt + 1}: LLM response length: {len(response.content)} characters"
+        # Extract questions from structured result
+        questions = (
+            result.questions
+            if hasattr(result, "questions")
+            else result.get("questions", [])
+        )
+
+        logger.info(f"Generated {len(questions)} structured interview questions")
+
+        # Validate we got the expected number of questions
+        if len(questions) != state.num_questions:
+            logger.warning(
+                f"Generated {len(questions)} questions but requested {state.num_questions}. "
+                "Adjusting to match request."
             )
-            logger.debug(f"Raw LLM response:\n{response.content}")
 
-            # Parse response into structured questions
-            questions = _parse_questions_response(response.content, state)
-
-            logger.info(
-                f"Attempt {attempt + 1}: Generated {len(questions)} interview questions (requested: {state.num_questions})"
-            )
-
-            # Check if we got the right number of questions
-            if len(questions) == state.num_questions:
-                logger.info(
-                    f"Successfully generated exactly {state.num_questions} questions on attempt {attempt + 1}"
-                )
-                break
-            elif len(questions) > state.num_questions:
-                # If we got too many, truncate to the requested number
-                logger.warning(
-                    f"Got {len(questions)} questions, truncating to {state.num_questions}"
-                )
+            if len(questions) > state.num_questions:
+                # Truncate if we got too many
                 questions = questions[: state.num_questions]
-                break
-            elif attempt < max_retries:
-                logger.warning(
-                    f"Got only {len(questions)} questions, retrying... (attempt {attempt + 1}/{max_retries + 1})"
-                )
+                logger.info(f"Truncated to {state.num_questions} questions")
             else:
-                logger.error(
-                    f"Failed to generate {state.num_questions} questions after {max_retries + 1} attempts. Got {len(questions)} questions."
+                # Could implement retry logic here if needed, but structured output is typically more reliable
+                logger.warning(
+                    f"Only got {len(questions)} questions, proceeding with available questions"
                 )
-        return {
-            "qa_pairs": [
-                QAPair(
-                    question=q,
-                    answer=AnswerItem(
-                        question=q.question,
-                        answer="",
-                        style=AnswerStyle.DETAILED,
-                        key_points=[],
-                        examples=[],
-                    ),
-                )
-                for q in questions
-            ]
-        }
+
+        # Convert to QAPair format for workflow state
+        qa_pairs = [
+            QAPair(
+                question=q,
+                answer=AnswerItem(
+                    question=q.question,
+                    answer="",
+                    style=AnswerStyle.DETAILED,
+                    key_points=[],
+                    examples=[],
+                ),
+            )
+            for q in questions
+        ]
+
+        logger.info(f"Successfully created {len(qa_pairs)} QA pairs")
+        return {"qa_pairs": qa_pairs}
 
     except Exception as e:
         logger.error(f"Question generation failed: {e}")
@@ -322,100 +322,6 @@ def _get_role_specific_topics(role: str) -> List[str]:
         topics.extend(["data analysis", "statistical methods", "machine learning"])
 
     return topics
-
-
-def _parse_questions_response(
-    response: str, state: InterviewPrepState
-) -> List[QuestionItem]:
-    """Parse LLM response into structured questions."""
-    questions = []
-    lines = response.strip().split("\n")
-    current_question = {}
-
-    logger.debug(f"Parsing {len(lines)} lines from LLM response")
-
-    for i, line in enumerate(lines):
-        line = line.strip()
-
-        # Skip empty lines
-        if not line:
-            continue
-
-        # Handle both "Question:" and "1. Question:" formats
-        if line.startswith("Question:") or (
-            line
-            and "Question:" in line
-            and any(
-                line.startswith(str(i) + ".") for i in range(1, 50)
-            )  # Increased range for more questions
-        ):
-            if current_question.get("question"):
-                # Save previous question
-                questions.append(_create_question_item(current_question))
-                logger.debug(
-                    f"Parsed question {len(questions)}: {current_question.get('question', '')[:50]}..."
-                )
-
-            # Extract question text after "Question:"
-            if "Question:" in line:
-                question_text = line.split("Question:", 1)[1].strip()
-                current_question = {"question": question_text}
-
-        elif line.startswith("Category:") or (
-            "Category:" in line and line.strip().startswith("Category:")
-        ):
-            category_text = line.split("Category:", 1)[1].strip()
-            current_question["category"] = category_text
-
-        elif line.startswith("Difficulty:") or (
-            "Difficulty:" in line and line.strip().startswith("Difficulty:")
-        ):
-            difficulty_text = line.split("Difficulty:", 1)[1].strip()
-            current_question["difficulty"] = difficulty_text
-
-        elif line.startswith("Rationale:") or (
-            "Rationale:" in line and line.strip().startswith("Rationale:")
-        ):
-            rationale_text = line.split("Rationale:", 1)[1].strip()
-            current_question["rationale"] = rationale_text
-
-    # Add last question
-    if current_question.get("question"):
-        questions.append(_create_question_item(current_question))
-        logger.debug(
-            f"Parsed final question {len(questions)}: {current_question.get('question', '')[:50]}..."
-        )
-
-    logger.info(f"Successfully parsed {len(questions)} questions from LLM response")
-    return questions
-
-
-def _create_question_item(question_data: Dict[str, str]) -> QuestionItem:
-    """Create QuestionItem from parsed data."""
-    category_map = {
-        "general": QuestionCategory.GENERAL,
-        "behavioral": QuestionCategory.BEHAVIORAL,
-        "technical": QuestionCategory.TECHNICAL,
-        "culture": QuestionCategory.CULTURE,
-        "situational": QuestionCategory.SITUATIONAL,
-    }
-
-    difficulty_map = {
-        "easy": DifficultyLevel.EASY,
-        "medium": DifficultyLevel.MEDIUM,
-        "hard": DifficultyLevel.HARD,
-    }
-
-    return QuestionItem(
-        question=question_data.get("question", ""),
-        category=category_map.get(
-            question_data.get("category", "").lower(), QuestionCategory.GENERAL
-        ),
-        rationale=question_data.get("rationale", ""),
-        difficulty=difficulty_map.get(
-            question_data.get("difficulty", "").lower(), DifficultyLevel.MEDIUM
-        ),
-    )
 
 
 def _determine_answer_style(category: QuestionCategory) -> AnswerStyle:

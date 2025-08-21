@@ -168,6 +168,14 @@ class QuestionItem(BaseDataModel):
     )
 
 
+class InterviewQuestions(BaseDataModel):
+    """Schema for structured generation of interview questions."""
+
+    questions: List[QuestionItem] = Field(
+        ..., description="List of interview questions with metadata"
+    )
+
+
 class AnswerItem(BaseDataModel):
     """Personalized answer suggestion for an interview question."""
 
