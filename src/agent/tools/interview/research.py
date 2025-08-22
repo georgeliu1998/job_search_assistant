@@ -42,23 +42,27 @@ class ResearchWithCitations:
         citations = []
         try:
             # Perform search with Tavily
-            results = self.search.invoke(search_query)
+            search_response = self.search.invoke(search_query)
+
+            # Extract results from the Tavily response
+            # According to Tavily docs, response has structure: {'results': [...], 'query': '...', etc.}
+            results = search_response.get("results", [])
+
+            logger.debug(f"Tavily returned {len(results)} results")
 
             for result in results:
                 try:
                     # Verify link accessibility
-                    reliability_score = self._check_link_reliability(result["url"])
+                    reliability_score = self._check_link_reliability(
+                        result.get("url", "")
+                    )
 
                     citation = ResearchCitation(
-                        url=result["url"],
+                        url=result.get("url", ""),
                         title=result.get("title", ""),
                         accessed_at=datetime.now(),
                         reliability_score=reliability_score,
-                        content_snippet=(
-                            result.get("content", "")[:200]
-                            if result.get("content")
-                            else ""
-                        ),
+                        content_snippet=result.get("content", "")[:200],
                     )
                     citations.append(citation)
                     logger.info(
@@ -88,22 +92,26 @@ class ResearchWithCitations:
             try:
                 # Create a new TavilySearch instance for fewer results per topic
                 topic_search = TavilySearch(max_results=3)
-                results = topic_search.invoke(search_query)
+                search_response = topic_search.invoke(search_query)
+
+                # Extract results from the Tavily response
+                results = search_response.get("results", [])
+                logger.debug(
+                    f"Topic '{topic}' - Tavily returned {len(results)} results"
+                )
 
                 for result in results:
                     try:
-                        reliability_score = self._check_link_reliability(result["url"])
+                        reliability_score = self._check_link_reliability(
+                            result.get("url", "")
+                        )
 
                         citation = ResearchCitation(
-                            url=result["url"],
+                            url=result.get("url", ""),
                             title=result.get("title", ""),
                             accessed_at=datetime.now(),
                             reliability_score=reliability_score,
-                            content_snippet=(
-                                result.get("content", "")[:200]
-                                if result.get("content")
-                                else ""
-                            ),
+                            content_snippet=result.get("content", "")[:200],
                         )
                         all_citations.append(citation)
 
@@ -122,6 +130,10 @@ class ResearchWithCitations:
 
     def _check_link_reliability(self, url: str) -> float:
         """Verify URL accessibility and assign reliability score."""
+        # Return low score for empty URLs
+        if not url or not url.strip():
+            return 0.1
+
         try:
             # Perform HEAD request to check if URL is accessible
             response = self.client.head(url, timeout=5.0, follow_redirects=True)
@@ -190,4 +202,25 @@ class ResearchWithCitations:
 
 
 # Global instance for use across the application
-research_tool = ResearchWithCitations()
+# Only create when TAVILY_API_KEY is available
+_research_tool_instance = None
+
+
+def get_research_tool():
+    """Get a ResearchWithCitations instance (lazy-loaded)."""
+    global _research_tool_instance
+    if _research_tool_instance is None:
+        _research_tool_instance = ResearchWithCitations()
+    return _research_tool_instance
+
+
+# Create a research_tool that can be imported directly
+class LazyResearchTool:
+    """Lazy-loading wrapper for ResearchWithCitations."""
+
+    def __getattr__(self, name):
+        # Delegate all attribute access to the actual research tool
+        return getattr(get_research_tool(), name)
+
+
+research_tool = LazyResearchTool()
