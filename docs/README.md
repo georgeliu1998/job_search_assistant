@@ -6,6 +6,7 @@ Welcome to the Job Search Assistant documentation. This guide will help you unde
 
 ### Getting Started
 - [Installation Guide](installation.md)
+- [Debugging & Log Capture](debugging.md)
 - [Tracing Quick Reference](tracing-quick-reference.md)
 
 ### Architecture & Design

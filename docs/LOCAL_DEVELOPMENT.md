@@ -112,6 +112,10 @@ bundle exec jekyll serve --port 4001
 - Check the terminal for build errors
 - Try refreshing the browser (Ctrl/Cmd + R)
 
+### Debugging the Main Application
+
+For troubleshooting the main Job Search Assistant application (not the documentation), see the [Debugging & Log Capture Guide](debugging.md).
+
 ---
 
 **Happy documenting!** 📚✨
