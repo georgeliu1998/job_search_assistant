@@ -15,7 +15,7 @@ Run the application in the background and capture all output to a file:
 ```bash
 cd job_search_assistant
 mkdir -p logs
-uv run streamlit run ui/app.py > logs/app_logs.txt 2>&1 &
+APP_ENV=dev uv run streamlit run ui/app.py > logs/app_logs.txt 2>&1 &
 ```
 
 **Features:**
@@ -45,7 +45,7 @@ Show logs in terminal AND save to file simultaneously:
 
 ```bash
 mkdir -p logs
-uv run streamlit run ui/app.py 2>&1 | tee logs/app_logs_with_console.txt
+APP_ENV=dev uv run streamlit run ui/app.py 2>&1 | tee logs/app_logs_with_console.txt
 ```
 
 **Features:**
@@ -66,13 +66,13 @@ mkdir -p logs
 APP_ENV=dev LOG_LEVEL=DEBUG uv run streamlit run ui/app.py > logs/debug_logs.txt 2>&1 &
 
 # Info level (default)
-LOG_LEVEL=INFO uv run streamlit run ui/app.py > logs/info_logs.txt 2>&1 &
+APP_ENV=dev uv run streamlit run ui/app.py > logs/info_logs.txt 2>&1 &
 
 # Warning and error only
-LOG_LEVEL=WARNING uv run streamlit run ui/app.py > logs/warning_logs.txt 2>&1 &
+APP_ENV=dev uv run streamlit run ui/app.py > logs/warning_logs.txt 2>&1 &
 
 # Error only
-LOG_LEVEL=ERROR uv run streamlit run ui/app.py > logs/error_only_logs.txt 2>&1 &
+APP_ENV=dev uv run streamlit run ui/app.py > logs/error_only_logs.txt 2>&1 &
 ```
 
 ## Log Analysis
@@ -226,7 +226,7 @@ lsof -i :8501
 kill <process_id>
 
 # Or use a different port
-uv run streamlit run ui/app.py --server.port 8502
+APP_ENV=dev uv run streamlit run ui/app.py --server.port 8502
 ```
 
 ## Advanced Debugging
@@ -236,7 +236,7 @@ uv run streamlit run ui/app.py --server.port 8502
 ```bash
 # Maximum verbosity
 mkdir -p logs
-DEBUG=true LOG_LEVEL=DEBUG uv run streamlit run ui/app.py > logs/debug_full.txt 2>&1 &
+APP_ENV=dev DEBUG=true LOG_LEVEL=DEBUG uv run streamlit run ui/app.py > logs/debug_full.txt 2>&1 &
 ```
 
 ### Component-Specific Debugging
