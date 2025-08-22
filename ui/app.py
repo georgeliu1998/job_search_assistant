@@ -8,10 +8,6 @@ from pathlib import Path
 
 import streamlit as st
 
-# Set APP_ENV for the application BEFORE importing config
-if "APP_ENV" not in os.environ:
-    os.environ["APP_ENV"] = "dev"
-
 # Add the parent directory to the path so we can import the src package
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))

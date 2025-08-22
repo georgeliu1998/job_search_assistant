@@ -40,7 +40,7 @@ Add your API keys using the template shown in the [Detailed Setup](#environment-
 
 ### 4. Run the Application
 ```bash
-uv run streamlit run ui/app.py
+APP_ENV=dev uv run streamlit run ui/app.py
 ```
 
 ### 5. Open Your Browser
@@ -56,7 +56,7 @@ Create a `.env` file in the project root with the following variables:
 # Required: Anthropic API key for AI functionality
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-# Optional: Application environment (dev, stage, prod)
+# Required: Application environment (dev, stage, prod)
 APP_ENV=dev
 
 # Optional: Fireworks AI API key (alternative LLM provider)
