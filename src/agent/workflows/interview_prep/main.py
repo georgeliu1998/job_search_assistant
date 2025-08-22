@@ -160,6 +160,7 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
             f"Generating {state.num_questions} interview questions using structured output"
         )
         result = structured_llm.invoke(messages, config=config_dict)
+        logger.debug(f"Result: {result}")
 
         # Extract questions from structured result
         questions = (
