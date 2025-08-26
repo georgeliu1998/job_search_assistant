@@ -45,7 +45,9 @@ QUESTION_GENERATION_USER_TEMPLATE = """Job Description:
 Redacted Resume Context:
 {redacted_resume}
 
-{research_context}Please generate interview questions for this {interview_type} interview."""
+{research_context}Please generate interview questions for this {interview_type} interview.
+
+CRITICAL: Generate exactly {num_questions} questions in total as specified in the system prompt."""
 
 
 QUESTION_GENERATION_SYSTEM_PROMPT = PromptTemplate.from_template(
@@ -108,4 +110,5 @@ def create_question_user_prompt(state: InterviewPrepState) -> str:
         ),
         research_context=research_context,
         interview_type=interview_type,
+        num_questions=state.num_questions,
     )

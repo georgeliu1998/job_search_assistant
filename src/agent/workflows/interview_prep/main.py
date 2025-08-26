@@ -143,9 +143,8 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
         # Create system prompt for question generation
         system_prompt = create_question_system_prompt(state)
 
-        # Create user prompt with context, emphasizing exact number of questions
+        # Create user prompt with context
         user_prompt = create_question_user_prompt(state)
-        user_prompt += f"\n\nIMPORTANT: Generate exactly {state.num_questions} questions in the response."
 
         messages = [
             SystemMessage(content=system_prompt),
