@@ -122,8 +122,8 @@ class ResearchCitation(BaseDataModel):
     url: str = Field(..., description="Source URL")
     title: str = Field(..., description="Page/article title")
     accessed_at: datetime = Field(..., description="When the source was accessed")
-    reliability_score: float = Field(..., description="Reliability score 0.0-1.0")
     content_snippet: str = Field(..., description="Relevant content excerpt")
+    is_accessible: bool = Field(..., description="Whether the URL is accessible")
 
 
 class PIIRedactionResult(BaseDataModel):

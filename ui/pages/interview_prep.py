@@ -428,12 +428,8 @@ def display_interview_guide():
             f"📚 Research Sources ({len(guide.citations)} sources)", expanded=False
         ):
             for citation in guide.citations:
-                reliability_emoji = (
-                    "🔴"
-                    if citation.reliability_score < 0.5
-                    else "🟡" if citation.reliability_score < 0.8 else "🟢"
-                )
-                st.markdown(f"{reliability_emoji} **{citation.title}**")
+                accessibility_indicator = "✅" if citation.is_accessible else "❌"
+                st.markdown(f"{accessibility_indicator} **{citation.title}**")
                 st.markdown(f"🔗 [{citation.url}]({citation.url})")
                 st.markdown(
                     f"📅 Accessed: {citation.accessed_at.strftime('%Y-%m-%d %H:%M')}"
@@ -536,12 +532,15 @@ def display_guide_stats(guide):
         st.metric("Preparation Tips", len(guide.preparation_tips))
 
     with col4:
-        avg_reliability = (
-            sum(c.reliability_score for c in guide.citations) / len(guide.citations)
-            if guide.citations
-            else 0
+        accessible_sources = sum(1 for c in guide.citations if c.is_accessible)
+        st.metric(
+            "Accessible Sources",
+            (
+                f"{accessible_sources}/{len(guide.citations)}"
+                if guide.citations
+                else "0/0"
+            ),
         )
-        st.metric("Avg Source Reliability", f"{avg_reliability:.1f}")
 
     if guide.qa_pairs:
         # Question category breakdown

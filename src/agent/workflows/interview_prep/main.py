@@ -379,7 +379,7 @@ def _create_research_summary(research_results: List) -> str:
     summary_parts = ["Research Summary:"]
 
     for citation in research_results[:3]:  # Use top 3 citations
-        if citation.reliability_score >= 0.6:
+        if citation.is_accessible:
             summary_parts.append(f"• {citation.title}: {citation.content_snippet}")
 
     return "\n".join(summary_parts)

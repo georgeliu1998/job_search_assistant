@@ -53,20 +53,18 @@ class ResearchWithCitations:
             for result in results:
                 try:
                     # Verify link accessibility
-                    reliability_score = self._check_link_reliability(
-                        result.get("url", "")
-                    )
+                    is_accessible = self._check_url_accessibility(result.get("url", ""))
 
                     citation = ResearchCitation(
                         url=result.get("url", ""),
                         title=result.get("title", ""),
                         accessed_at=datetime.now(),
-                        reliability_score=reliability_score,
                         content_snippet=result.get("content", "")[:200],
+                        is_accessible=is_accessible,
                     )
                     citations.append(citation)
                     logger.info(
-                        f"Added citation: {result.get('title', 'No title')} (score: {reliability_score})"
+                        f"Added citation: {result.get('title', 'No title')} (accessible: {is_accessible})"
                     )
 
                 except Exception as e:
@@ -102,7 +100,7 @@ class ResearchWithCitations:
 
                 for result in results:
                     try:
-                        reliability_score = self._check_link_reliability(
+                        is_accessible = self._check_url_accessibility(
                             result.get("url", "")
                         )
 
@@ -110,8 +108,8 @@ class ResearchWithCitations:
                             url=result.get("url", ""),
                             title=result.get("title", ""),
                             accessed_at=datetime.now(),
-                            reliability_score=reliability_score,
                             content_snippet=result.get("content", "")[:200],
+                            is_accessible=is_accessible,
                         )
                         all_citations.append(citation)
 
@@ -128,72 +126,24 @@ class ResearchWithCitations:
         logger.info(f"Topic research completed with {len(all_citations)} citations")
         return all_citations
 
-    def _check_link_reliability(self, url: str) -> float:
-        """Verify URL accessibility and assign reliability score."""
-        # Return low score for empty URLs
+    def _check_url_accessibility(self, url: str) -> bool:
+        """Verify URL accessibility."""
+        # Return False for empty URLs
         if not url or not url.strip():
-            return 0.1
+            return False
 
         try:
             # Perform HEAD request to check if URL is accessible
             response = self.client.head(url, timeout=5.0, follow_redirects=True)
-
-            if response.status_code == 200:
-                # Score based on domain reputation
-                domain = url.lower()
-
-                # High reliability domains
-                if any(
-                    trusted in domain
-                    for trusted in [
-                        "linkedin.com",
-                        "glassdoor.com",
-                        "indeed.com",
-                        "harvard.edu",
-                        "mit.edu",
-                        ".edu",
-                        "medium.com",
-                        "dev.to",
-                        "stackoverflow.com",
-                        "github.com",
-                    ]
-                ):
-                    return 0.9
-
-                # Medium reliability domains
-                elif any(
-                    medium in domain
-                    for medium in [
-                        "forbes.com",
-                        "techcrunch.com",
-                        "wired.com",
-                        "businessinsider.com",
-                        "bloomberg.com",
-                        "reddit.com",
-                        "quora.com",
-                    ]
-                ):
-                    return 0.7
-
-                # Basic reliable response
-                else:
-                    return 0.6
-
-            elif response.status_code in [301, 302, 303, 307, 308]:
-                # Redirects are okay but slightly lower score
-                return 0.5
-
-            else:
-                # Non-200 response
-                return 0.3
+            return response.status_code == 200
 
         except httpx.TimeoutException:
             logger.warning(f"Timeout checking URL: {url}")
-            return 0.2
+            return False
 
         except Exception as e:
             logger.warning(f"Error checking URL {url}: {e}")
-            return 0.1
+            return False
 
     def close(self):
         """Close the HTTP client."""
