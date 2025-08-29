@@ -14,8 +14,8 @@ from src.agent.prompts.interview.questions import (
     create_question_system_prompt,
     create_question_user_prompt,
 )
-from src.agent.tools.interview.pii_redaction import pii_pipeline
-from src.agent.tools.interview.research import research_tool
+from src.agent.tools.pii_redaction import pii_pipeline
+from src.agent.tools.research import research_tool
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.config import config
 from src.llm.common.factory import get_llm_client_by_profile_name
@@ -232,27 +232,58 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
         # Context-aware tracing configuration (computed once per batch)
         config_dict = langfuse_manager.get_config()
 
+        # Generate answers for each question
         for qa_pair in state.qa_pairs:
-            # Create prompts for each question
-            system_prompt = create_answer_system_prompt(state)
-            user_prompt = create_answer_user_prompt(state, qa_pair.question)
+            try:
+                # Create system prompt for this answer generation
+                system_prompt = create_answer_system_prompt(state)
 
-            messages = [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt),
-            ]
+                # Create user prompt with question context
+                user_prompt = create_answer_user_prompt(state, qa_pair.question)
 
-            response = llm_client.invoke(messages, config=config_dict)
+                messages = [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt),
+                ]
 
-            # Parse and create answer
-            answer_content = response.content
-            answer = AnswerItem(
-                question=qa_pair.question.question,
-                answer=answer_content,
-                style=_determine_answer_style(qa_pair.question.category),
-            )
+                # Generate answer using LLM
+                logger.debug(
+                    f"Generating answer for question: {qa_pair.question.question[:50]}..."
+                )
+                response = llm_client.invoke(messages, config=config_dict)
 
-            updated_qa_pairs.append(QAPair(question=qa_pair.question, answer=answer))
+                # Extract answer text from response
+                answer_text = (
+                    response.content if hasattr(response, "content") else str(response)
+                )
+
+                # Determine answer style based on question category
+                answer_style = _determine_answer_style(qa_pair.question.category)
+
+                # Create updated answer
+                updated_answer = AnswerItem(
+                    question=qa_pair.question.question,
+                    answer=answer_text,
+                    style=answer_style,
+                )
+
+                # Create updated QA pair
+                updated_qa_pair = QAPair(
+                    question=qa_pair.question,
+                    answer=updated_answer,
+                )
+
+                updated_qa_pairs.append(updated_qa_pair)
+                logger.debug(
+                    f"Generated answer for question: {qa_pair.question.question[:50]}..."
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"Failed to generate answer for question '{qa_pair.question.question[:50]}...': {e}"
+                )
+                # Keep the original QA pair with empty answer
+                updated_qa_pairs.append(qa_pair)
 
         logger.info(f"Generated answers for {len(updated_qa_pairs)} questions")
         return {"qa_pairs": updated_qa_pairs}
@@ -386,6 +417,11 @@ def run_interview_prep_workflow(
         Final workflow state as a dict
     """
     logger.info("Starting interview preparation workflow")
+    logger.debug(
+        f"Initial state: company={initial_state.interview_details.company}, "
+        f"role={initial_state.interview_details.role}, "
+        f"num_questions={initial_state.num_questions}"
+    )
 
     try:
         workflow = get_interview_prep_workflow()
@@ -396,9 +432,19 @@ def run_interview_prep_workflow(
         # Run workflow
         final_state_dict = workflow.invoke(initial_state, config=execution_config)
 
-        logger.info("Interview preparation workflow completed successfully")
+        # Enhanced logging for debugging
+        if "error" in final_state_dict:
+            logger.error(f"Workflow completed with error: {final_state_dict['error']}")
+        else:
+            qa_count = len(final_state_dict.get("qa_pairs", []))
+            has_guide = "interview_guide" in final_state_dict
+            logger.info(
+                f"Interview preparation workflow completed successfully: "
+                f"{qa_count} QA pairs generated, guide created: {has_guide}"
+            )
+
         return final_state_dict
 
     except Exception as e:
-        logger.error(f"Interview preparation workflow failed: {e}")
+        logger.error(f"Interview preparation workflow failed: {e}", exc_info=True)
         return {"error": f"Workflow execution failed: {str(e)}"}

@@ -5,7 +5,7 @@ from typing import Optional
 
 import streamlit as st
 
-from src.agent.tools.interview.pii_redaction import pii_pipeline
+from src.agent.tools.pii_redaction import pii_pipeline
 from src.agent.workflows.interview_prep.main import (
     get_interview_prep_workflow,
     run_interview_prep_workflow,
@@ -135,7 +135,7 @@ def render_interview_prep_page():
 
     # Privacy notice with PII detection method info
     try:
-        from src.agent.tools.interview.pii_redaction import pii_pipeline
+        from src.agent.tools.pii_redaction import pii_pipeline
 
         if pii_pipeline.presidio_available is None:
             pii_method = (
