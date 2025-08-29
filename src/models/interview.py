@@ -183,10 +183,6 @@ class AnswerItem(BaseDataModel):
     answer: str = Field(..., description="Personalized answer suggestion")
     style: AnswerStyle = Field(..., description="Answer style")
 
-    examples: List[str] = Field(
-        default_factory=list, description="Specific examples from resume"
-    )
-
 
 class QAPair(BaseDataModel):
     """Question and answer pair for interview preparation."""

@@ -195,7 +195,6 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
                     question=q.question,
                     answer="",
                     style=AnswerStyle.DETAILED,
-                    examples=[],
                 ),
             )
             for q in questions
@@ -251,7 +250,6 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
                 question=qa_pair.question.question,
                 answer=answer_content,
                 style=_determine_answer_style(qa_pair.question.category),
-                examples=_extract_examples(answer_content),
             )
 
             updated_qa_pairs.append(QAPair(question=qa_pair.question, answer=answer))
@@ -330,29 +328,6 @@ def _determine_answer_style(category: QuestionCategory) -> AnswerStyle:
         return AnswerStyle.DETAILED
     else:
         return AnswerStyle.CONCISE
-
-
-def _extract_examples(answer: str) -> List[str]:
-    """Extract specific examples from answer text."""
-    # Look for phrases that indicate examples
-    examples = []
-    sentences = answer.split(".")
-
-    for sentence in sentences:
-        if any(
-            phrase in sentence.lower()
-            for phrase in [
-                "for example",
-                "for instance",
-                "specifically",
-                "in my experience at",
-                "when I worked on",
-                "during my time at",
-            ]
-        ):
-            examples.append(sentence.strip())
-
-    return examples[:3]  # Limit to 3 examples
 
 
 def _create_research_summary(research_results: List) -> str:

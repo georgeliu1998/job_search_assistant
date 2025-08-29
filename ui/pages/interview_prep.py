@@ -406,11 +406,6 @@ def display_interview_guide():
                 st.markdown("**Suggested Answer:**")
                 st.write(qa_pair.answer.answer)
 
-                if qa_pair.answer.examples:
-                    st.markdown("**Examples from Your Background:**")
-                    for example in qa_pair.answer.examples:
-                        st.write(f"• {example}")
-
     # Preparation tips
     if guide.preparation_tips:
         with st.expander("💡 Preparation Tips", expanded=True):
