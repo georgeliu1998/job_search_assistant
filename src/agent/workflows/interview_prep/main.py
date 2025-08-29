@@ -195,7 +195,6 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
                     question=q.question,
                     answer="",
                     style=AnswerStyle.DETAILED,
-                    key_points=[],
                     examples=[],
                 ),
             )
@@ -252,7 +251,6 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
                 question=qa_pair.question.question,
                 answer=answer_content,
                 style=_determine_answer_style(qa_pair.question.category),
-                key_points=_extract_key_points(answer_content),
                 examples=_extract_examples(answer_content),
             )
 
@@ -332,20 +330,6 @@ def _determine_answer_style(category: QuestionCategory) -> AnswerStyle:
         return AnswerStyle.DETAILED
     else:
         return AnswerStyle.CONCISE
-
-
-def _extract_key_points(answer: str) -> List[str]:
-    """Extract key points from answer text."""
-    # Simple extraction - look for numbered points or bullet points
-    lines = answer.split("\n")
-    key_points = []
-
-    for line in lines:
-        line = line.strip()
-        if line.startswith(("1.", "2.", "3.", "4.", "5.", "-", "•")):
-            key_points.append(line)
-
-    return key_points[:5]  # Limit to 5 key points
 
 
 def _extract_examples(answer: str) -> List[str]:

@@ -182,9 +182,7 @@ class AnswerItem(BaseDataModel):
     question: str = Field(..., description="The interview question")
     answer: str = Field(..., description="Personalized answer suggestion")
     style: AnswerStyle = Field(..., description="Answer style")
-    key_points: List[str] = Field(
-        default_factory=list, description="Key points to cover"
-    )
+
     examples: List[str] = Field(
         default_factory=list, description="Specific examples from resume"
     )

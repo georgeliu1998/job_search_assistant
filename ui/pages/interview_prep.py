@@ -406,11 +406,6 @@ def display_interview_guide():
                 st.markdown("**Suggested Answer:**")
                 st.write(qa_pair.answer.answer)
 
-                if qa_pair.answer.key_points:
-                    st.markdown("**Key Points to Remember:**")
-                    for point in qa_pair.answer.key_points:
-                        st.write(f"• {point}")
-
                 if qa_pair.answer.examples:
                     st.markdown("**Examples from Your Background:**")
                     for example in qa_pair.answer.examples:
@@ -485,12 +480,6 @@ def format_guide_as_text(guide) -> str:
             text_parts.append("Answer:")
             text_parts.append(qa_pair.answer.answer)
             text_parts.append("")
-
-            if qa_pair.answer.key_points:
-                text_parts.append("Key Points:")
-                for point in qa_pair.answer.key_points:
-                    text_parts.append(f"• {point}")
-                text_parts.append("")
 
             text_parts.append("-" * 40)
             text_parts.append("")
