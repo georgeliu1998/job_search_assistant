@@ -39,10 +39,11 @@ uv sync  # Installs Python 3.11 + all dependencies automatically
 
 Create a `.env` file in the project root:
 ```bash
-# Required: Anthropic API key for AI functionality
+# Required: API keys for AI functionality
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 
-# Optional: Application environment (dev, stage, prod)
+# Required: Application environment (dev, stage, prod)
 APP_ENV=dev
 ```
 
@@ -50,7 +51,7 @@ For complete setup including optional services (Langfuse, Fireworks), see the [d
 
 3. **Run the application**
 ```bash
-uv run streamlit run ui/app.py
+APP_ENV=dev uv run streamlit run ui/app.py
 ```
 
 4. **Open your browser** to `http://localhost:8501` and start evaluating jobs!

@@ -129,6 +129,9 @@ Thumbs.db
 # Add any project specific files to ignore here
 job_search_assistant.txt
 
+# Local logs directory (ignored to keep repo clean)
+logs/
+
 # Jekyll (docs local development) - auto-generated files
 docs/_site/
 docs/.jekyll-metadata
@@ -139,3 +142,6 @@ docs/Gemfile.lock
 
 # Implementation plan
 PLAN.md
+
+# Claude
+CLAUDE.md

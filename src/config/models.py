@@ -44,8 +44,27 @@ class LoggingConfig(BaseModel):
 class AgentConfig(BaseModel):
     """Agent task to LLM profile mappings."""
 
+    # Existing
     job_evaluation_extraction: str = Field(
         ..., description="LLM profile for job information extraction"
+    )
+
+    # New interview preparation agents
+    interview_research: str = Field(
+        default="google_interview_research",
+        description="LLM profile for interview research",
+    )
+    interview_question_generation: str = Field(
+        default="google_interview_generation",
+        description="LLM profile for question generation",
+    )
+    interview_answer_generation: str = Field(
+        default="google_interview_generation",
+        description="LLM profile for answer generation",
+    )
+    interview_compilation: str = Field(
+        default="google_interview_generation",
+        description="LLM profile for guide compilation",
     )
 
 

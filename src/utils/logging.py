@@ -34,6 +34,8 @@ def setup_logging(level: str = "INFO", format_string: Optional[str] = None) -> N
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("presidio-analyzer").setLevel(logging.WARNING)
+    logging.getLogger("presidio-anonymizer").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:
