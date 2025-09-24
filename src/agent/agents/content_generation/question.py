@@ -12,6 +12,7 @@ from src.agent.workflows.interview_prep.multi_agent_states import (
     MultiAgentInterviewPrepState,
     WorkflowPhase,
 )
+from src.config import config
 from src.models.interview import (
     AnswerItem,
     AnswerStyle,
@@ -26,7 +27,10 @@ class QuestionAgent(BaseAgent):
 
     def __init__(self):
         """Initialize the Question Agent."""
-        super().__init__(name="question_agent")
+        super().__init__(
+            name="question_agent",
+            llm_profile=config.agents.interview_question_generation,
+        )
 
     def check_prerequisites(self, state: MultiAgentInterviewPrepState) -> bool:
         """Check if question generation prerequisites are met.
@@ -150,7 +154,7 @@ class QuestionAgent(BaseAgent):
                 "emphasize_practical_scenarios", False
             ),
             research_summary=research_summary,
-            research_insights=_format_research_insights(research_insights),
+            research_insights=self._format_research_insights(research_insights),
             resume_context=resume_context,
             question_mix=question_mix_str,
             num_questions=state.num_questions,
@@ -162,10 +166,17 @@ class QuestionAgent(BaseAgent):
             structured_output=InterviewQuestions,
         )
 
+        # Validate LLM response
+        if not result:
+            self.logger.error(
+                "LLM returned None instead of structured output for questions"
+            )
+            return []
+
         questions = (
             result.questions
             if hasattr(result, "questions")
-            else result.get("questions", [])
+            else result.get("questions", []) if hasattr(result, "get") else []
         )
         self.logger.info(f"Generated {len(questions)} intelligent questions")
 

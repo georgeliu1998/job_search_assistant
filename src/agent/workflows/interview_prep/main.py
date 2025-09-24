@@ -161,11 +161,16 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
         result = structured_llm.invoke(messages, config=config_dict)
         logger.debug(f"Result: {result}")
 
+        # Validate LLM response
+        if not result:
+            logger.error("LLM returned None instead of structured output")
+            return {"error": "Question generation failed: LLM returned empty response"}
+
         # Extract questions from structured result
         questions = (
             result.questions
             if hasattr(result, "questions")
-            else result.get("questions", [])
+            else result.get("questions", []) if hasattr(result, "get") else []
         )
 
         logger.info(f"Generated {len(questions)} structured interview questions")

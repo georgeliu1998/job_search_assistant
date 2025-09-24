@@ -15,6 +15,7 @@ from src.agent.workflows.interview_prep.multi_agent_states import (
     MultiAgentInterviewPrepState,
     WorkflowPhase,
 )
+from src.config import config
 from src.models.agent_plans import ExecutionPlan
 
 
@@ -23,7 +24,7 @@ class PlannerAgent(BaseAgent):
 
     def __init__(self):
         """Initialize the Planner Agent."""
-        super().__init__(name="planner")
+        super().__init__(name="planner", llm_profile=config.agents.interview_planner)
 
     def check_prerequisites(self, state: MultiAgentInterviewPrepState) -> bool:
         """Check if planner prerequisites are met.
@@ -76,12 +77,44 @@ class PlannerAgent(BaseAgent):
         )
 
         self.logger.info("Successfully created structured execution plan")
-        self.logger.debug(
-            f"Execution plan research queries: {execution_plan.research_strategy.primary_queries}"
-        )
 
-        # Update state with plan
-        state.execution_plan = execution_plan
+        # Validate execution plan structure
+        if not execution_plan:
+            raise ValueError("Generated execution plan is None")
+
+        # Validate required strategy fields
+        missing_strategies = []
+        if not execution_plan.research_strategy:
+            missing_strategies.append("research_strategy")
+        if not execution_plan.question_strategy:
+            missing_strategies.append("question_strategy")
+        if not execution_plan.answer_strategy:
+            missing_strategies.append("answer_strategy")
+        if not execution_plan.compilation_strategy:
+            missing_strategies.append("compilation_strategy")
+
+        if missing_strategies:
+            self.logger.error(
+                f"Execution plan is missing required strategies: {missing_strategies}"
+            )
+            raise ValueError(
+                f"Generated execution plan is incomplete. Missing strategies: {', '.join(missing_strategies)}"
+            )
+
+        # Safe logging with null checks
+        if execution_plan.research_strategy and hasattr(
+            execution_plan.research_strategy, "primary_queries"
+        ):
+            self.logger.debug(
+                f"Execution plan research queries: {execution_plan.research_strategy.primary_queries}"
+            )
+        else:
+            self.logger.warning(
+                "Research strategy or primary_queries not available for logging"
+            )
+
+        # Update state with plan (convert to dict for consistency)
+        state.execution_plan = execution_plan.model_dump()
 
         # Set individual strategies for agents (convert to dict for compatibility)
         state.research_strategy = execution_plan.research_strategy.model_dump()
@@ -92,7 +125,7 @@ class PlannerAgent(BaseAgent):
         self.logger.info("Context analysis and strategy creation completed")
 
         return {
-            "execution_plan": execution_plan,
+            "execution_plan": state.execution_plan,  # Already converted to dict above
             "research_strategy": state.research_strategy,
             "question_strategy": state.question_strategy,
             "answer_strategy": state.answer_strategy,

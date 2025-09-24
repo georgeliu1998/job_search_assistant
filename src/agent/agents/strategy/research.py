@@ -20,6 +20,7 @@ from src.agent.workflows.interview_prep.multi_agent_states import (
     MultiAgentInterviewPrepState,
     WorkflowPhase,
 )
+from src.config import config
 from src.models.interview import ResearchCitation
 
 
@@ -28,7 +29,9 @@ class ResearchAgent(BaseAgent):
 
     def __init__(self):
         """Initialize the Research Agent."""
-        super().__init__(name="research_agent")
+        super().__init__(
+            name="research_agent", llm_profile=config.agents.interview_research
+        )
 
     def check_prerequisites(self, state: MultiAgentInterviewPrepState) -> bool:
         """Check if research prerequisites are met.

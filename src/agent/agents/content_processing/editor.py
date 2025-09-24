@@ -12,6 +12,7 @@ from src.agent.workflows.interview_prep.multi_agent_states import (
     MultiAgentInterviewPrepState,
     WorkflowPhase,
 )
+from src.config import config
 from src.models.interview import InterviewGuide
 
 
@@ -20,7 +21,9 @@ class EditorAgent(BaseAgent):
 
     def __init__(self):
         """Initialize the Editor Agent."""
-        super().__init__(name="editor_agent")
+        super().__init__(
+            name="editor_agent", llm_profile=config.agents.interview_compilation
+        )
 
     def check_prerequisites(self, state: MultiAgentInterviewPrepState) -> bool:
         """Check if editor prerequisites are met.

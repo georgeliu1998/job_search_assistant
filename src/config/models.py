@@ -50,20 +50,24 @@ class AgentConfig(BaseModel):
     )
 
     # New interview preparation agents
+    interview_planner: str = Field(
+        default="interview_planner",
+        description="LLM profile for interview planning",
+    )
     interview_research: str = Field(
-        default="google_interview_research",
+        default="interview_research",
         description="LLM profile for interview research",
     )
     interview_question_generation: str = Field(
-        default="google_interview_generation",
+        default="interview_questions",
         description="LLM profile for question generation",
     )
     interview_answer_generation: str = Field(
-        default="google_interview_generation",
+        default="interview_answers",
         description="LLM profile for answer generation",
     )
     interview_compilation: str = Field(
-        default="google_interview_generation",
+        default="interview_editor",
         description="LLM profile for guide compilation",
     )
 
