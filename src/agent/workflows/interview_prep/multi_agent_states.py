@@ -104,6 +104,9 @@ class MultiAgentInterviewPrepState(InterviewPrepState):
     answer_strategy: Optional[Dict[str, Any]] = Field(
         default=None, description="Answer generation strategy"
     )
+    answer_analysis: Optional[Dict[str, Any]] = Field(
+        default=None, description="Analysis of generated answers and quality assessment"
+    )
     resume_mapping: Optional[Dict[str, Any]] = Field(
         default=None, description="Mapping of resume experiences to questions"
     )

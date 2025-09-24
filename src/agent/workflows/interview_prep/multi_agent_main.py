@@ -124,11 +124,20 @@ def route_after_questions(state: MultiAgentInterviewPrepState) -> str:
     if state.has_errors:
         return "end"
 
+    # Check iteration limits to prevent infinite loops
+    if state.iteration_count >= state.max_iterations:
+        logger.warning(
+            f"Maximum iterations ({state.max_iterations}) reached in question routing"
+        )
+        return "end"
+
     # Check if we need more research based on question analysis
     if state.question_analysis and state.question_analysis.get(
         "needs_more_research", False
     ):
         logger.info("Question agent determined more research is needed")
+        # Increment iteration count when going back
+        state.iteration_count += 1
         return "research"
 
     # Move to answer generation
@@ -142,11 +151,20 @@ def route_after_answers(state: MultiAgentInterviewPrepState) -> str:
     if state.has_errors:
         return "end"
 
-    # Check if we need better questions
-    if state.answer_strategy and state.answer_strategy.get(
+    # Check iteration limits to prevent infinite loops
+    if state.iteration_count >= state.max_iterations:
+        logger.warning(
+            f"Maximum iterations ({state.max_iterations}) reached in answer routing"
+        )
+        return "end"
+
+    # Check if we need better questions (Fixed: check answer_analysis instead of answer_strategy)
+    if state.answer_analysis and state.answer_analysis.get(
         "needs_better_questions", False
     ):
         logger.info("Answer agent determined better questions are needed")
+        # Increment iteration count when going back
+        state.iteration_count += 1
         return "questions"
 
     # Move to final compilation
