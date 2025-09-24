@@ -4,6 +4,13 @@ Models package for the Job Search Assistant.
 This package contains all the data models and enums used throughout the application.
 """
 
+from src.models.agent_plans import (
+    AnswerStrategy,
+    CompilationStrategy,
+    ExecutionPlan,
+    QuestionStrategy,
+    ResearchStrategy,
+)
 from src.models.base import BaseDataModel
 from src.models.enums import Environment, JobSource, JobStatus
 from src.models.evaluation import EvaluationResult
@@ -18,6 +25,12 @@ __all__ = [
     "Environment",
     "JobSource",
     "JobStatus",
+    # Agent Plans
+    "ExecutionPlan",
+    "ResearchStrategy",
+    "QuestionStrategy",
+    "AnswerStrategy",
+    "CompilationStrategy",
     # Domain models
     "EvaluationResult",
     "JobDescription",

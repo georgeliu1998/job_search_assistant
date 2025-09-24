@@ -6,11 +6,13 @@ from typing import Optional
 import streamlit as st
 
 from src.agent.tools.pii_redaction import pii_pipeline
-from src.agent.workflows.interview_prep.main import (
-    get_interview_prep_workflow,
-    run_interview_prep_workflow,
+from src.agent.workflows.interview_prep.multi_agent_main import (
+    get_multi_agent_interview_prep_workflow,
+    run_multi_agent_interview_prep_workflow,
 )
-from src.agent.workflows.interview_prep.states import InterviewPrepState
+from src.agent.workflows.interview_prep.multi_agent_states import (
+    MultiAgentInterviewPrepState,
+)
 from src.models.interview import (
     DEFAULT_DURATIONS,
     QUESTION_MIXES,
@@ -24,11 +26,17 @@ from src.models.interview import (
 
 def render_interview_prep_page():
     """Render the Interview Preparation page."""
-    st.header("🧭 Interview Preparation")
+    st.header("🤖 AI-Powered Interview Preparation")
     st.markdown(
         """
-        Prepare for your upcoming interview with personalized questions, answers,
-        and research insights tailored to your background and the specific role.
+        **🚀 Now powered by Multi-Agent AI System!**
+
+        Experience next-generation interview preparation with intelligent agents working together:
+        - 🧠 **Smart Planning**: AI analyzes your context and creates targeted strategies
+        - 🔍 **Dynamic Research**: AI generates company-specific search queries (no more generic topics!)
+        - ❓ **Research-Informed Questions**: Questions that incorporate actual company insights
+        - 💬 **Experience-Mapped Answers**: Personalized responses that highlight your background
+        - 📚 **Quality Synthesis**: Comprehensive guide compilation and validation
         """
     )
 
@@ -154,7 +162,7 @@ def render_interview_prep_page():
         )
 
     # Generate button
-    if st.button("🚀 Generate Interview Guide", type="primary"):
+    if st.button("🤖 Generate AI-Powered Interview Guide", type="primary"):
         if not job_description or not resume_text:
             st.error("Please provide both job description and resume content.")
         else:
@@ -207,8 +215,8 @@ def generate_interview_guide(
             role=role or None,
         )
 
-        # Create initial state
-        initial_state = InterviewPrepState(
+        # Create initial state for multi-agent workflow
+        initial_state = MultiAgentInterviewPrepState(
             job_description=job_description,
             resume_text=resume_text,
             interview_details=interview_details,
@@ -248,7 +256,7 @@ def generate_interview_guide(
         st.error(f"Error generating interview guide: {str(e)}")
 
 
-def process_interview_workflow(initial_state: InterviewPrepState):
+def process_interview_workflow(initial_state: MultiAgentInterviewPrepState):
     """Process the interview preparation workflow."""
     import threading
     import time
@@ -258,14 +266,15 @@ def process_interview_workflow(initial_state: InterviewPrepState):
     progress_bar = st.progress(0)
     status_text = st.empty()
 
-    # Progress steps with corresponding messages
+    # Multi-Agent Progress steps with corresponding messages
     progress_steps = [
-        (10, "🔒 Validating and redacting personal information..."),
-        (25, "🔍 Researching company and role..."),
-        (50, "❓ Generating interview questions..."),
-        (75, "💡 Creating personalized answers..."),
-        (90, "📋 Compiling your interview guide..."),
-        (100, "✅ Finalizing your interview guide..."),
+        (5, "🔒 Validating and redacting personal information..."),
+        (15, "🧠 Planner Agent: Analyzing context and creating strategy..."),
+        (30, "🔍 Research Agent: Generating AI-driven search queries..."),
+        (45, "❓ Question Agent: Creating research-informed questions..."),
+        (65, "💬 Answer Agent: Personalizing answers with experience mapping..."),
+        (85, "📚 Editor Agent: Synthesizing and validating guide..."),
+        (100, "✅ Multi-agent interview guide ready!"),
     ]
 
     try:
@@ -277,7 +286,7 @@ def process_interview_workflow(initial_state: InterviewPrepState):
         def run_workflow():
             nonlocal result, error
             try:
-                result = run_interview_prep_workflow(initial_state)
+                result = run_multi_agent_interview_prep_workflow(initial_state)
             except Exception as e:
                 error = e
 
