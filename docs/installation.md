@@ -109,7 +109,7 @@ The application uses TOML configuration files in the `configs/` directory:
 ```toml
 [llm_profiles.anthropic_extraction]
 provider = "anthropic"
-model = "claude-3-5-haiku-20241022"
+model = "claude-haiku-4-5"
 temperature = 0.0
 max_tokens = 512
 ```

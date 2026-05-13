@@ -94,10 +94,11 @@ class LLMProfileConfig(BaseModel):
     # Valid models for each provider
     VALID_MODELS: ClassVar[Dict[str, set]] = {
         "anthropic": {
-            "claude-3-5-haiku-20241022",
-            "claude-3-5-haiku-latest",
-            "claude-3-haiku-20240307",
+            "claude-haiku-4-5",
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-4-6",
             "claude-sonnet-4-20250514",
+            "claude-opus-4-7",
         },
         "google": {
             "gemini-2.5-pro",
