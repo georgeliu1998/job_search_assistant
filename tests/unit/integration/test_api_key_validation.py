@@ -22,7 +22,7 @@ class TestAPIKeyValidation:
         # Create config without API key in environment
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             # No api_key provided
         )
 
@@ -44,21 +44,21 @@ class TestAPIKeyValidation:
         """Test that Anthropic client accepts a valid API key format."""
         config_with_key = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="sk-ant-api03-test-key-format",
         )
 
         # This should not raise an error
         client = get_llm_client(config_with_key)
         assert client is not None
-        assert client.get_model_name() == "claude-3-5-haiku-20241022"
+        assert client.get_model_name() == "claude-haiku-4-5"
 
     def test_different_providers_require_different_api_keys(self):
         """Test that different providers validate their specific API key environment variables."""
         # Test Anthropic
         anthropic_config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
         )
 
         # Test Google
@@ -100,7 +100,7 @@ class TestAPIKeyValidation:
             # Create config with explicit API key
             config = LLMProfileConfig(
                 provider="anthropic",
-                model="claude-3-5-haiku-20241022",
+                model="claude-haiku-4-5",
                 api_key=config_key,
             )
 

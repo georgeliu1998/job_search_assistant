@@ -23,7 +23,7 @@ class TestAnthropicClientInitialization:
         """Test successful client initialization with valid configuration."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.7,
             max_tokens=1000,
             api_key="test-api-key",
@@ -32,7 +32,7 @@ class TestAnthropicClientInitialization:
         client = AnthropicClient(config)
 
         assert client.config == config
-        assert client.get_model_name() == "claude-3-5-haiku-20241022"
+        assert client.get_model_name() == "claude-haiku-4-5"
         assert client._client is None  # Lazy initialization
 
     def test_invalid_provider_raises_error(self):
@@ -40,7 +40,7 @@ class TestAnthropicClientInitialization:
         # Since LLMProfileConfig validates the provider, we need to test the AnthropicClient's
         # own validation by creating a config with valid provider but then changing it
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         # Manually change the provider to test AnthropicClient validation
@@ -55,7 +55,7 @@ class TestAnthropicClientInitialization:
         """Test that missing API key raises LLMProviderError."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key=None,  # No API key in config
         )
 
@@ -68,7 +68,7 @@ class TestAnthropicClientInitialization:
         """Test that API key can be loaded from environment variable."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key=None,  # No API key in config
         )
 
@@ -82,7 +82,7 @@ class TestAnthropicClientInitialization:
         """Test that config API key takes precedence over environment variable."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="config-api-key",
         )
 
@@ -97,7 +97,7 @@ class TestAnthropicClientCreation:
     def test_client_lazy_initialization(self):
         """Test that the underlying client is created lazily."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         client = AnthropicClient(config)
@@ -119,7 +119,7 @@ class TestAnthropicClientCreation:
 
             # ChatAnthropic should only be called once
             mock_chat_anthropic.assert_called_once_with(
-                model="claude-3-5-haiku-20241022",
+                model="claude-haiku-4-5",
                 temperature=0.0,  # Default temperature
                 max_tokens=512,  # Default max_tokens (from config)
                 api_key="test-key",
@@ -153,7 +153,7 @@ class TestAnthropicClientCreation:
     def test_client_initialization_failure_raises_error(self):
         """Test that client initialization failure raises LLMProviderError."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         client = AnthropicClient(config)
@@ -170,11 +170,11 @@ class TestAnthropicClientCreation:
     def test_get_model_name(self):
         """Test get_model_name method returns correct model."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         client = AnthropicClient(config)
-        assert client.get_model_name() == "claude-3-5-haiku-20241022"
+        assert client.get_model_name() == "claude-haiku-4-5"
 
 
 class TestAnthropicClientInvoke:
@@ -183,7 +183,7 @@ class TestAnthropicClientInvoke:
     def setup_method(self):
         """Set up test fixtures."""
         self.config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         self.client = AnthropicClient(self.config)
 
@@ -297,7 +297,7 @@ class TestAnthropicClientErrorHandling:
     def test_error_message_classification(self):
         """Test that different error messages are classified correctly."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         client = AnthropicClient(config)
 
@@ -325,7 +325,7 @@ class TestAnthropicClientErrorHandling:
     def test_empty_messages_handling(self):
         """Test handling of empty messages list."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         client = AnthropicClient(config)
 
@@ -341,7 +341,7 @@ class TestAnthropicClientErrorHandling:
     def test_none_response_handling(self):
         """Test handling when underlying client returns None."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         client = AnthropicClient(config)
 
@@ -362,7 +362,7 @@ class TestAnthropicClientLogging:
     def test_debug_logging_during_initialization(self):
         """Test that debug logging occurs during client initialization."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         client = AnthropicClient(config)
 
@@ -374,13 +374,13 @@ class TestAnthropicClientLogging:
                 client._get_client()
 
                 mock_debug.assert_called_once_with(
-                    "Initialized Anthropic client with model: claude-3-5-haiku-20241022"
+                    "Initialized Anthropic client with model: claude-haiku-4-5"
                 )
 
     def test_logger_name_format(self):
         """Test that logger has correct name format."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         client = AnthropicClient(config)
 
@@ -394,7 +394,7 @@ class TestAnthropicClientIntegration:
     def test_multiple_invoke_calls_reuse_client(self):
         """Test that multiple invoke calls reuse the same underlying client."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         client = AnthropicClient(config)
 
@@ -417,7 +417,7 @@ class TestAnthropicClientIntegration:
         """Test a realistic conversation flow with multiple messages."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.7,
             max_tokens=2000,
             api_key="test-key",
@@ -451,7 +451,7 @@ class TestAnthropicClientIntegration:
 
             # Verify client was created with correct parameters
             mock_chat_anthropic.assert_called_once_with(
-                model="claude-3-5-haiku-20241022",
+                model="claude-haiku-4-5",
                 temperature=0.7,
                 max_tokens=2000,
                 api_key="test-key",
@@ -465,7 +465,7 @@ class TestAnthropicClientSingleton:
         """Test that creating clients with identical configs returns the same instance."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.7,
             max_tokens=1000,
             api_key="test-key",
@@ -482,7 +482,7 @@ class TestAnthropicClientSingleton:
         """Test that different configurations create different instances."""
         config1 = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.7,
             max_tokens=1000,
             api_key="test-key-1",
@@ -490,7 +490,7 @@ class TestAnthropicClientSingleton:
 
         config2 = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.5,  # Different temperature
             max_tokens=1000,
             api_key="test-key-1",
@@ -509,13 +509,13 @@ class TestAnthropicClientSingleton:
         """Test that different models create different instances."""
         config1 = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
 
         config2 = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-haiku-20240307",  # Different model
+            model="claude-haiku-4-5-20251001",  # Different model
             api_key="test-key",
         )
 
@@ -524,14 +524,14 @@ class TestAnthropicClientSingleton:
 
         # Should be different instances
         assert client1 is not client2
-        assert client1.get_model_name() == "claude-3-5-haiku-20241022"
-        assert client2.get_model_name() == "claude-3-haiku-20240307"
+        assert client1.get_model_name() == "claude-haiku-4-5"
+        assert client2.get_model_name() == "claude-haiku-4-5-20251001"
 
     def test_singleton_reload_functionality(self):
         """Test that reload_singleton creates a new instance."""
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
 
@@ -552,7 +552,7 @@ class TestAnthropicClientSingleton:
         # Simulate the pattern used in schema_extraction_tool.py
         config = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
 

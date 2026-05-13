@@ -44,7 +44,7 @@ class TestLLMClientFactory:
     def test_create_anthropic_client(self):
         """Test creating an Anthropic client through the factory."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         client = self.factory.create_client(config)
@@ -66,7 +66,7 @@ class TestLLMClientFactory:
     def test_create_client_singleton_behavior(self):
         """Test that factory respects singleton pattern of underlying clients."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         # Create two clients with same config
@@ -80,13 +80,13 @@ class TestLLMClientFactory:
         """Test that different configs create different client instances."""
         config1 = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.5,
             api_key="test-key",
         )
         config2 = LLMProfileConfig(
             provider="anthropic",
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             temperature=0.7,  # Different temperature
             api_key="test-key",
         )
@@ -107,7 +107,7 @@ class TestLLMClientFactory:
         # Create config with mock values to bypass validation
         config = LLMProfileConfig(
             provider="anthropic",  # Valid provider for Pydantic
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
         # Manually change provider to test factory validation
@@ -172,7 +172,7 @@ class TestLLMClientFactory:
                 # Create config with valid provider, then modify it
                 config = LLMProfileConfig(
                     provider="anthropic",  # Valid for Pydantic
-                    model="claude-3-5-haiku-20241022",
+                    model="claude-haiku-4-5",
                     api_key="test-key",
                 )
                 # Change to mock provider after validation
@@ -192,7 +192,7 @@ class TestLLMClientFactory:
 
         config = LLMProfileConfig(
             provider="anthropic",  # Valid for Pydantic
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
         # Change to broken provider after validation
@@ -221,7 +221,7 @@ class TestLLMClientFactory:
 
         config = LLMProfileConfig(
             provider="anthropic",  # Valid for Pydantic
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
         # Change to invalid provider after validation
@@ -237,12 +237,12 @@ class TestLLMClientFactory:
         """Test that provider names are handled case-insensitively in create_client."""
         config_upper = LLMProfileConfig(
             provider="ANTHROPIC",  # Uppercase
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
         config_mixed = LLMProfileConfig(
             provider="Anthropic",  # Mixed case
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
 
@@ -260,7 +260,7 @@ class TestConvenienceFunctions:
     def test_get_llm_client(self):
         """Test the get_llm_client convenience function."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         client = get_llm_client(config)
@@ -272,7 +272,7 @@ class TestConvenienceFunctions:
         """Test the get_llm_client_by_profile_name convenience function."""
         # Mock the config
         mock_profile = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
         mock_config.get_llm_profile.return_value = mock_profile
 
@@ -311,7 +311,7 @@ class TestFactoryIntegrationWithSingleton:
     def test_factory_and_direct_instantiation_same_instance(self):
         """Test that factory and direct instantiation return the same singleton instance."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         # Create via factory
@@ -327,7 +327,7 @@ class TestFactoryIntegrationWithSingleton:
     def test_multiple_factories_same_singletons(self):
         """Test that multiple factory instances respect singleton pattern."""
         config = LLMProfileConfig(
-            provider="anthropic", model="claude-3-5-haiku-20241022", api_key="test-key"
+            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
         )
 
         factory1 = LLMClientFactory()
@@ -366,7 +366,7 @@ class TestFactoryErrorScenarios:
 
         config = LLMProfileConfig(
             provider="anthropic",  # Valid for Pydantic
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
         # Change to bad provider after validation
@@ -406,7 +406,7 @@ class TestFactoryErrorScenarios:
 
         config = LLMProfileConfig(
             provider="anthropic",  # Valid for Pydantic
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             api_key="test-key",
         )
         # Change to failing provider after validation

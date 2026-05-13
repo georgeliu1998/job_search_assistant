@@ -73,7 +73,7 @@ from src.config.models import LLMProfileConfig
 # Create client via factory
 config = LLMProfileConfig(
     provider="anthropic",
-    model="claude-3-5-haiku-20241022",
+    model="claude-haiku-4-5",
     api_key="your-api-key"
 )
 client = get_llm_client(config)
@@ -206,7 +206,7 @@ _DEFAULT_PROVIDERS: Dict[str, str] = {
 ```python
 # src/config/models.py - Add to VALID_MODELS
 VALID_MODELS: ClassVar[Dict[str, set]] = {
-    "anthropic": {"claude-3-5-haiku-20241022", ...},
+    "anthropic": {"claude-haiku-4-5", ...},
     "google": {"gemini-2.5-flash", ...},
     "openai": {"gpt-4", "gpt-3.5-turbo", ...},  # ← Add models
 }
@@ -332,7 +332,7 @@ job_evaluation_extraction = "anthropic_extraction"
 
 [llm_profiles.anthropic_extraction]
 provider = "anthropic"
-model = "claude-3-5-haiku-20241022"
+model = "claude-haiku-4-5"
 temperature = 0.0
 max_tokens = 512
 

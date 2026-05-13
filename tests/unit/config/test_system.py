@@ -574,7 +574,7 @@ ic_title_requirements = ["senior", "staff", "principal"]
 
 [llm_profiles.claude_profile]
 provider = "anthropic"
-model = "claude-3-5-haiku-20241022"
+model = "claude-haiku-4-5"
 temperature = 0.1
 max_tokens = 2048
 
@@ -631,4 +631,4 @@ temperature = 0.0
             assert profile.provider == "anthropic"
 
             agent_profile = settings.get_agent_llm_profile("job_evaluation_extraction")
-            assert agent_profile.model == "claude-3-5-haiku-20241022"
+            assert agent_profile.model == "claude-haiku-4-5"

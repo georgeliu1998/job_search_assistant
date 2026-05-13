@@ -66,7 +66,7 @@ class LLMClientFactory:
             LLMProviderError: If the provider is not supported or client creation fails
 
         Example:
-            config = LLMProfileConfig(provider="anthropic", model="claude-3-5-haiku-20241022")
+            config = LLMProfileConfig(provider="anthropic", model="claude-haiku-4-5")
             client = factory.create_client(config)
         """
         provider = config.provider.lower()
@@ -194,7 +194,7 @@ def get_llm_client(config: LLMProfileConfig) -> BaseLLMClient:
         BaseLLMClient: An instance of the appropriate client implementation
 
     Example:
-        config = LLMProfileConfig(provider="anthropic", model="claude-3-5-haiku-20241022")
+        config = LLMProfileConfig(provider="anthropic", model="claude-haiku-4-5")
         client = get_llm_client(config)
     """
     return _global_factory.create_client(config)
