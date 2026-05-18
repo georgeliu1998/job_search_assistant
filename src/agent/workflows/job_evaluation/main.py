@@ -216,14 +216,7 @@ def run_job_evaluation_workflow(
         # Run workflow
         final_state_dict = workflow.invoke(initial_state, config=execution_config)
 
-        # Convert the AddableValuesDict to JobEvaluationState
-        final_state = JobEvaluationState(
-            job_posting_text=final_state_dict.get("job_posting_text", job_posting_text),
-            extracted_info=final_state_dict.get("extracted_info"),
-            evaluation_result=final_state_dict.get("evaluation_result"),
-            recommendation=final_state_dict.get("recommendation"),
-            reasoning=final_state_dict.get("reasoning"),
-        )
+        final_state = JobEvaluationState.model_validate(final_state_dict)
 
         logger.info("Job evaluation workflow completed successfully")
         return final_state
