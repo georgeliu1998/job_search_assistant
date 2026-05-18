@@ -8,7 +8,8 @@ LangChain and LangGraph workflows.
 import contextvars
 from typing import Optional
 
-from langfuse.callback import CallbackHandler
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
 
 from src.config import config
 from src.utils.logging import get_logger
@@ -49,7 +50,13 @@ class LangfuseManager:
 
         if self._handler is None:
             try:
-                # Create handler using environment variables
+                # Initialize the Langfuse client (singleton) with configured
+                # credentials so the CallbackHandler can pick them up.
+                Langfuse(
+                    public_key=self.config.public_key,
+                    secret_key=self.config.secret_key,
+                    host=self.config.host,
+                )
                 self._handler = CallbackHandler()
                 self.logger.info("Langfuse CallbackHandler initialized")
             except Exception as e:
