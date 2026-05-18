@@ -153,17 +153,16 @@ def mock_failed_evaluation_result():
 
 
 @pytest.fixture
-def mock_llm_client():
-    """Mock LLM client for testing."""
-    client = Mock()
-    client.invoke = Mock()
-    client._get_client = Mock()
+def mock_chat_model():
+    """Mock LangChain chat model for testing."""
+    model = Mock()
+    model.invoke = Mock()
+    model.with_structured_output = Mock()
 
-    # Mock structured output
     structured_llm = Mock()
-    client._get_client.return_value.with_structured_output.return_value = structured_llm
+    model.with_structured_output.return_value = structured_llm
 
-    return client
+    return model
 
 
 @pytest.fixture

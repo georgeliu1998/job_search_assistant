@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.prompts.extraction.job_posting import JOB_POSTING_EXTRACTION_PROMPT
 from src.config import config
-from src.llm import get_llm_client_by_profile_name
+from src.llm import get_chat_model_by_profile_name
 from src.llm.observability import langfuse_manager
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
@@ -19,26 +19,10 @@ from src.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def _get_extraction_client():
-    """
-    Get the LLM client for extraction operations using the factory pattern.
-
-    Uses the factory pattern to create the appropriate client based on the
-    configured provider. The factory ensures singleton behavior, so multiple
-    calls with the same configuration return the same instance, improving
-    resource efficiency by reusing connections and avoiding redundant client
-    initialization.
-
-    Returns:
-        BaseLLMClient: Singleton instance configured for extraction
-
-    Example:
-        # This will create an AnthropicClient if the profile is configured for Anthropic,
-        # or a GoogleClient if configured for Google, etc.
-        client = _get_extraction_client()
-    """
+def _get_extraction_model():
+    """Get the LangChain chat model configured for extraction."""
     profile_name = config.agents.job_evaluation_extraction
-    return get_llm_client_by_profile_name(profile_name)
+    return get_chat_model_by_profile_name(profile_name)
 
 
 def _extract_with_schema(
@@ -57,23 +41,18 @@ def _extract_with_schema(
     Returns:
         Dict containing extracted data
     """
-    # Get client and create structured LLM
-    client = _get_extraction_client()
-    structured_llm = client._get_client().with_structured_output(schema_class)
+    model = _get_extraction_model()
+    structured_llm = model.with_structured_output(schema_class)
 
-    # Format prompt
     prompt_content = prompt_template.format(job_text=text)
     messages = [HumanMessage(content=prompt_content)]
 
-    # Get context-aware tracing configuration
     config_dict = langfuse_manager.get_config()
 
-    # Extract structured information
     logger.info(f"Extracting structured data using schema: {schema_class.__name__}")
 
     result = structured_llm.invoke(messages, config=config_dict)
 
-    # Convert to dict for tool return
     result_dict = result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     logger.info(f"Successfully extracted data: {result_dict}")

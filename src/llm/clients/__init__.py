@@ -1,19 +1,6 @@
 """
-Client implementations for different LLM providers.
+Client implementations are now handled directly by the factory module.
 
-This module contains the base client class and provider-specific implementations.
-Individual client classes are accessed through the factory pattern in the parent
-module rather than direct imports.
-
-For creating clients, use:
-    from src.llm import get_llm_client, LLMClientFactory
-
-For implementing new providers, use:
-    from src.llm.clients import BaseLLMClient
+Use:
+    from src.llm import get_chat_model, get_chat_model_by_profile_name
 """
-
-from src.llm.common.base import BaseLLMClient
-
-__all__ = [
-    "BaseLLMClient",
-]
