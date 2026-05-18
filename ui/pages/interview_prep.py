@@ -25,12 +25,10 @@ from src.models.interview import (
 def render_interview_prep_page():
     """Render the Interview Preparation page."""
     st.header("🧭 Interview Preparation")
-    st.markdown(
-        """
+    st.markdown("""
         Prepare for your upcoming interview with personalized questions, answers,
         and research insights tailored to your background and the specific role.
-        """
-    )
+        """)
 
     # Initialize session state
     if "interview_guide" not in st.session_state:

@@ -22,7 +22,7 @@ AI-powered job search assistant who does the heavy lifting and gets the job for 
 ## Quick Start
 
 ### Prerequisites
-- **Python 3.11+** (automatically managed by uv)
+- **Python 3.13+** (automatically managed by uv)
 - **uv** package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
 - **Anthropic API Key** (required for AI functionality)
 
@@ -32,7 +32,7 @@ AI-powered job search assistant who does the heavy lifting and gets the job for 
 ```bash
 git clone https://github.com/georgeliu1998/job_search_assistant.git
 cd job_search_assistant
-uv sync  # Installs Python 3.11 + all dependencies automatically
+uv sync  # Installs Python 3.13 + all dependencies automatically
 ```
 
 2. **Set up environment variables**
