@@ -11,7 +11,7 @@ import pytest
 
 from src.config.models import LLMProfileConfig
 from src.exceptions.llm import LLMProviderError
-from src.llm.common.factory import (
+from src.llm.factory import (
     _ensure_api_key,
     get_chat_model,
     get_chat_model_by_profile_name,
@@ -21,7 +21,7 @@ from src.llm.common.factory import (
 class TestGetChatModel:
     """Test the get_chat_model function."""
 
-    @patch("src.llm.common.factory._create_anthropic_model")
+    @patch("src.llm.factory._create_anthropic_model")
     def test_creates_anthropic_model(self, mock_create):
         """Test creating an Anthropic chat model."""
         mock_model = MagicMock()
@@ -36,7 +36,7 @@ class TestGetChatModel:
         assert result is mock_model
         mock_create.assert_called_once_with(config)
 
-    @patch("src.llm.common.factory._create_google_model")
+    @patch("src.llm.factory._create_google_model")
     def test_creates_google_model(self, mock_create):
         """Test creating a Google chat model."""
         mock_model = MagicMock()
@@ -63,7 +63,7 @@ class TestGetChatModel:
 
     def test_provider_case_insensitive(self):
         """Test that provider names are handled case-insensitively."""
-        with patch("src.llm.common.factory._create_anthropic_model") as mock_create:
+        with patch("src.llm.factory._create_anthropic_model") as mock_create:
             mock_create.return_value = MagicMock()
 
             config = LLMProfileConfig(
@@ -73,7 +73,7 @@ class TestGetChatModel:
             get_chat_model(config)
             mock_create.assert_called_once()
 
-    @patch("src.llm.common.factory._create_anthropic_model")
+    @patch("src.llm.factory._create_anthropic_model")
     def test_import_error_raises_provider_error(self, mock_create):
         """Test that import errors are wrapped in LLMProviderError."""
         mock_create.side_effect = ImportError("langchain_anthropic not installed")
@@ -85,7 +85,7 @@ class TestGetChatModel:
         with pytest.raises(LLMProviderError, match="Failed to import dependencies"):
             get_chat_model(config)
 
-    @patch("src.llm.common.factory._create_anthropic_model")
+    @patch("src.llm.factory._create_anthropic_model")
     def test_generic_error_raises_provider_error(self, mock_create):
         """Test that generic errors are wrapped in LLMProviderError."""
         mock_create.side_effect = RuntimeError("Connection failed")
@@ -97,7 +97,7 @@ class TestGetChatModel:
         with pytest.raises(LLMProviderError, match="Failed to create chat model"):
             get_chat_model(config)
 
-    @patch("src.llm.common.factory._create_anthropic_model")
+    @patch("src.llm.factory._create_anthropic_model")
     def test_llm_provider_error_passthrough(self, mock_create):
         """Test that LLMProviderError from constructor passes through unwrapped."""
         mock_create.side_effect = LLMProviderError("API key not found")
@@ -113,7 +113,7 @@ class TestGetChatModel:
 class TestGetChatModelByProfileName:
     """Test the get_chat_model_by_profile_name function."""
 
-    @patch("src.llm.common.factory.get_chat_model")
+    @patch("src.llm.factory.get_chat_model")
     @patch("src.config.config")
     def test_loads_profile_and_creates_model(self, mock_config, mock_get_model):
         """Test that profile is loaded and model is created."""
@@ -148,7 +148,7 @@ class TestProviderConstructors:
             api_key="test-key",
         )
 
-        from src.llm.common.factory import _create_anthropic_model
+        from src.llm.factory import _create_anthropic_model
 
         result = _create_anthropic_model(config)
 
@@ -174,7 +174,7 @@ class TestProviderConstructors:
             api_key="test-key",
         )
 
-        from src.llm.common.factory import _create_google_model
+        from src.llm.factory import _create_google_model
 
         result = _create_google_model(config)
 

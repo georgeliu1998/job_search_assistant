@@ -269,7 +269,7 @@ class TestExtractWithSchema:
         assert result == mock_result.model_dump.return_value
         mock_structured_llm.invoke.assert_called_once()
 
-    @patch("src.llm.observability.langfuse_manager.get_config")
+    @patch("src.llm.langfuse.langfuse_manager.get_config")
     @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_model")
     def test_extract_with_schema_with_langfuse(self, mock_get_model, mock_get_config):
         """Test extraction with Langfuse manager integration."""

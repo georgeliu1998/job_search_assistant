@@ -18,8 +18,7 @@ from src.agent.tools.pii_redaction import pii_pipeline
 from src.agent.tools.research import research_tool
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.config import config
-from src.llm import get_chat_model_by_profile_name
-from src.llm.observability import langfuse_manager
+from src.llm import get_chat_model_by_profile_name, langfuse_manager
 from src.models.interview import (
     AnswerItem,
     AnswerStyle,

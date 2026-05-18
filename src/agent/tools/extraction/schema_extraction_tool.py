@@ -11,8 +11,7 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.prompts.extraction.job_posting import JOB_POSTING_EXTRACTION_PROMPT
 from src.config import config
-from src.llm import get_chat_model_by_profile_name
-from src.llm.observability import langfuse_manager
+from src.llm import get_chat_model_by_profile_name, langfuse_manager
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
 
