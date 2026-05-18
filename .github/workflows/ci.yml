@@ -12,13 +12,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      matrix:
-        # Test against current version (3.13) and next version (3.14) for forward compatibility
-        # Temporarily disabled Python 3.14 to speed up CI during development
-        # Re-enable by uncommenting the line below when needed
-        python-version: ["3.13"] # , "3.14"]
-      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
@@ -30,10 +23,10 @@ jobs:
         enable-cache: true
         cache-dependency-glob: "uv.lock"
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.13"
       timeout-minutes: 3
 
     - name: Install dependencies
@@ -44,18 +37,15 @@ jobs:
     - name: Lint with black
       run: uv run black --check src tests ui
       timeout-minutes: 3
-      if: matrix.python-version == '3.13'  # Only run linting on one version
 
     - name: Check imports with isort
       run: uv run isort --check-only --profile black src tests ui
       timeout-minutes: 3
-      if: matrix.python-version == '3.13'  # Only run import checking on one version
 
     # Temporarily disabled for prototyping - re-enable during refactoring
     # - name: Type check with mypy
     #   run: uv run mypy src
     #   timeout-minutes: 5
-    #   if: matrix.python-version == '3.13'  # Only run mypy on one version to save time
 
     - name: Test with pytest
       run: uv run pytest tests/ --cov=src --cov-report=xml --cov-report=term-missing
@@ -69,4 +59,3 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
       timeout-minutes: 3
-      if: matrix.python-version == '3.13'  # Only upload coverage once
