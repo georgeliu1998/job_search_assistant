@@ -15,8 +15,7 @@ from ui.components.job_results import display_job_evaluation_results
 def render_job_evaluation_page():
     """Render the job evaluation page content"""
     st.header("🎯 Job Evaluation")
-    st.markdown(
-        """
+    st.markdown("""
     Paste a job description below and our AI will analyze if it's a good fit
     based on your preferences.
 
@@ -25,8 +24,7 @@ def render_job_evaluation_page():
     - 🏠 Remote work availability
     - 📊 Experience level match
     - 🛠️ Technical skills alignment
-    """
-    )
+    """)
 
     # Job description input
     job_description = st.text_area(
@@ -80,14 +78,12 @@ def render_job_evaluation_page():
 
                     except Exception as e:
                         st.error(f"❌ **Error during evaluation:** {str(e)}")
-                        st.info(
-                            """
+                        st.info("""
                         **Troubleshooting:**
                         - Check your API key configuration
                         - Ensure you have internet connectivity
                         - Try with a different job description
-                        """
-                        )
+                        """)
 
                         # Show error details in expander for debugging
                         with st.expander("🔧 Technical Details"):

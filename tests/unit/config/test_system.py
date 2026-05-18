@@ -30,8 +30,7 @@ class TestConfigLoader:
         """Test loading development configuration."""
         # Create test config files
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "test-app"
 tagline = "Test dev application"
@@ -57,19 +56,16 @@ max_tokens = 100
 
 [observability.langfuse]
 enabled = false
-"""
-        )
+""")
 
         dev_config = tmp_path / "dev.toml"
-        dev_config.write_text(
-            """
+        dev_config.write_text("""
 [general]
 debug = true
 
 [logging]
 level = "DEBUG"
-"""
-        )
+""")
 
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             loader = ConfigLoader(config_dir=tmp_path)
@@ -137,8 +133,7 @@ level = "DEBUG"
     def test_secrets_loading(self, tmp_path):
         """Test that secrets are loaded from environment variables."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "test"
 tagline = "Test secrets application"
@@ -161,8 +156,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = true
-"""
-        )
+""")
 
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text("")
@@ -195,8 +189,7 @@ enabled = true
     def test_config_merging(self, tmp_path):
         """Test that configurations are properly merged."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "test-app"
 tagline = "Test merge application"
@@ -209,20 +202,17 @@ format = "basic"
 [nested.section]
 value1 = "base"
 value2 = "base"
-"""
-        )
+""")
 
         dev_config = tmp_path / "dev.toml"
-        dev_config.write_text(
-            """
+        dev_config.write_text("""
 [general]
 debug = true
 
 [nested.section]
 value1 = "override"
 value3 = "new"
-"""
-        )
+""")
 
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             loader = ConfigLoader(config_dir=tmp_path)
@@ -245,8 +235,7 @@ class TestConfigManager:
         """Test loading and validating configuration."""
         # Create minimal valid config
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "test-app"
 tagline = "Test application"
@@ -269,8 +258,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
-"""
-        )
+""")
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -285,8 +273,7 @@ enabled = false
     def test_singleton_behavior(self, tmp_path):
         """Test that ConfigManager follows singleton pattern."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "test-app"
 tagline = "Test application"
@@ -309,8 +296,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
-"""
-        )
+""")
 
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text("")
@@ -332,8 +318,7 @@ enabled = false
         """Test that configuration can be reloaded."""
         # Create initial config
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "original-app"
 tagline = "Original application"
@@ -356,8 +341,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
-"""
-        )
+""")
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -369,8 +353,7 @@ enabled = false
             assert initial_config.general.name == "original-app"
 
             # Modify the config file
-            base_config.write_text(
-                """
+            base_config.write_text("""
 [general]
 name = "updated-app"
 tagline = "Updated application"
@@ -393,8 +376,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
-"""
-            )
+""")
 
             # Reload and verify change
             reloaded_config = manager.reload()
@@ -404,13 +386,11 @@ enabled = false
         """Test that validation errors are properly handled."""
         # Create invalid config (missing required fields)
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "test-app"
 # Missing required fields
-"""
-        )
+""")
 
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text("")
@@ -428,8 +408,7 @@ class TestLazyConfigProxy:
         """Test that config attributes are accessible via lazy proxy."""
         # Create test config
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "proxy-test"
 tagline = "Proxy test application"
@@ -452,8 +431,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = true
-"""
-        )
+""")
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -475,8 +453,7 @@ enabled = true
         """Test that proxy reload works correctly."""
         # Create initial config
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "initial"
 tagline = "Initial application"
@@ -499,8 +476,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
-"""
-        )
+""")
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -513,8 +489,7 @@ enabled = false
             assert test_config.general.name == "initial"
 
             # Modify config file
-            base_config.write_text(
-                """
+            base_config.write_text("""
 [general]
 name = "modified"
 tagline = "Modified application"
@@ -537,8 +512,7 @@ model = "stage-test-model"
 
 [observability.langfuse]
 enabled = false
-"""
-            )
+""")
 
             # Reload and verify
             test_config.reload(config_dir=tmp_path)
@@ -552,8 +526,7 @@ class TestConfigIntegration:
         """Test complete end-to-end configuration loading."""
         # Create comprehensive config
         base_config = tmp_path / "base.toml"
-        base_config.write_text(
-            """
+        base_config.write_text("""
 [general]
 name = "integration-test"
 tagline = "Integration test application"
@@ -581,12 +554,10 @@ max_tokens = 2048
 [observability.langfuse]
 enabled = true
 host = "https://us.cloud.langfuse.com"
-"""
-        )
+""")
 
         dev_config = tmp_path / "dev.toml"
-        dev_config.write_text(
-            """
+        dev_config.write_text("""
 [general]
 debug = true
 
@@ -595,8 +566,7 @@ level = "DEBUG"
 
 [llm_profiles.claude_profile]
 temperature = 0.0
-"""
-        )
+""")
 
         with patch.dict(
             os.environ,

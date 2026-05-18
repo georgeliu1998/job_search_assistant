@@ -36,8 +36,7 @@ def render_environment_warning():
     env_ok, env_message = check_environment_setup()
     if not env_ok:
         st.error(f"⚠️ **Setup Required:** {env_message}")
-        st.info(
-            """
+        st.info("""
         **Setup Instructions:**
         1. Create a `.env` file in the root directory
         2. Add your Anthropic API key: `ANTHROPIC_API_KEY=your_key_here`
@@ -47,6 +46,5 @@ def render_environment_warning():
         - `LANGFUSE_PUBLIC_KEY=your_public_key`
         - `LANGFUSE_SECRET_KEY=your_secret_key`
         - `LANGFUSE_ENABLED=true`
-        """
-        )
+        """)
     return env_ok

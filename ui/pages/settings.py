@@ -14,8 +14,7 @@ def render_settings_page():
     )
 
     st.subheader("📋 Current Evaluation Criteria")
-    st.markdown(
-        """
+    st.markdown("""
     The job evaluation currently uses these built-in criteria:
 
     - **💰 Minimum Salary:** $100,000/year
@@ -24,5 +23,4 @@ def render_settings_page():
     - **🛠️ Technical Skills:** Python, ML, Data Science focus
 
     *Customizable preferences will be available in a future update.*
-    """
-    )
+    """)
