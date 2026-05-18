@@ -18,7 +18,7 @@ from src.core.job_evaluation import (
     evaluate_job_against_criteria,
     generate_recommendation_from_evaluation,
 )
-from src.llm.observability import langfuse_manager
+from src.llm import langfuse_manager
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -47,18 +47,11 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract structured information from job posting text."""
     logger.info("Extracting job information")
 
-    # Skip extraction if validation failed
-    if state.recommendation == "ERROR":
-        logger.info("Skipping extraction due to validation error")
-        return {}
-
     job_text = state.job_posting_text
 
     try:
-        # Extract structured information
         extracted_info = extract_job_posting(job_text)
 
-        # Validate extraction
         is_valid = validate_extraction_result(extracted_info, "job_posting")
 
         if not is_valid:
@@ -85,14 +78,8 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
     """Evaluate extracted job information against criteria."""
     logger.info("Evaluating job against criteria")
 
-    # Skip evaluation if previous steps failed
-    if state.recommendation == "ERROR":
-        logger.info("Skipping evaluation due to previous error")
-        return {}
-
     extracted_info = state.extracted_info
 
-    # Skip evaluation if extraction failed
     if not extracted_info:
         logger.warning("No extracted info to evaluate")
         return {
@@ -102,7 +89,6 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
         }
 
     try:
-        # Evaluate against criteria
         evaluation_result = evaluate_job_against_criteria(extracted_info)
 
         logger.info("Job evaluation completed successfully")
@@ -121,14 +107,8 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
     """Generate recommendation based on evaluation results."""
     logger.info("Generating recommendation")
 
-    # Skip recommendation if previous steps failed
-    if state.recommendation == "ERROR":
-        logger.info("Skipping recommendation due to previous error")
-        return {}
-
     evaluation_result = state.evaluation_result
 
-    # Skip recommendation if evaluation failed
     if not evaluation_result:
         logger.warning("No evaluation result to generate recommendation from")
         return {
@@ -137,7 +117,6 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
         }
 
     try:
-        # Generate recommendation
         recommendation, reasoning = generate_recommendation_from_evaluation(
             evaluation_result
         )
@@ -154,6 +133,14 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
             "recommendation": "ERROR",
             "reasoning": f"Recommendation generation failed: {str(e)}",
         }
+
+
+def _route_on_error(state: JobEvaluationState) -> str:
+    """Route to END if an error occurred, otherwise continue to the next node."""
+    if state.recommendation == "ERROR":
+        logger.info("Error detected, short-circuiting workflow")
+        return END
+    return "continue"
 
 
 _compiled_workflow: Optional[StateGraph] = None
@@ -173,17 +160,21 @@ def get_job_evaluation_workflow() -> StateGraph:
 
         workflow = StateGraph(JobEvaluationState)
 
-        # Add workflow nodes
         workflow.add_node("validate", validate_input)
         workflow.add_node("extract", extract_job_info)
         workflow.add_node("evaluate", evaluate_job)
         workflow.add_node("recommend", generate_recommendation)
 
-        # Define workflow flow
         workflow.add_edge(START, "validate")
-        workflow.add_edge("validate", "extract")
-        workflow.add_edge("extract", "evaluate")
-        workflow.add_edge("evaluate", "recommend")
+        workflow.add_conditional_edges(
+            "validate", _route_on_error, {"continue": "extract", END: END}
+        )
+        workflow.add_conditional_edges(
+            "extract", _route_on_error, {"continue": "evaluate", END: END}
+        )
+        workflow.add_conditional_edges(
+            "evaluate", _route_on_error, {"continue": "recommend", END: END}
+        )
         workflow.add_edge("recommend", END)
 
         _compiled_workflow = workflow.compile()
@@ -225,14 +216,7 @@ def run_job_evaluation_workflow(
         # Run workflow
         final_state_dict = workflow.invoke(initial_state, config=execution_config)
 
-        # Convert the AddableValuesDict to JobEvaluationState
-        final_state = JobEvaluationState(
-            job_posting_text=final_state_dict.get("job_posting_text", job_posting_text),
-            extracted_info=final_state_dict.get("extracted_info"),
-            evaluation_result=final_state_dict.get("evaluation_result"),
-            recommendation=final_state_dict.get("recommendation"),
-            reasoning=final_state_dict.get("reasoning"),
-        )
+        final_state = JobEvaluationState.model_validate(final_state_dict)
 
         logger.info("Job evaluation workflow completed successfully")
         return final_state

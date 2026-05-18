@@ -18,8 +18,7 @@ from src.agent.tools.pii_redaction import pii_pipeline
 from src.agent.tools.research import research_tool
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.config import config
-from src.llm.common.factory import get_llm_client_by_profile_name
-from src.llm.observability import langfuse_manager
+from src.llm import get_chat_model_by_profile_name, langfuse_manager
 from src.models.interview import (
     AnswerItem,
     AnswerStyle,
@@ -34,23 +33,37 @@ from src.models.interview import (
 logger = logging.getLogger(__name__)
 
 
+def _route_on_error(state: InterviewPrepState) -> str:
+    """Route to END if an error occurred, otherwise continue to the next node."""
+    if state.error:
+        logger.info("Error detected, short-circuiting workflow")
+        return END
+    return "continue"
+
+
 def get_interview_prep_workflow() -> StateGraph:
     """Create the interview preparation workflow."""
     workflow = StateGraph(InterviewPrepState)
 
-    # Sequential nodes (no supervisor initially)
     workflow.add_node("validate_and_redact", validate_and_redact_input)
     workflow.add_node("research", research_with_citations)
     workflow.add_node("questions", generate_questions)
     workflow.add_node("answers", generate_answers)
     workflow.add_node("compile", compile_guide)
 
-    # Sequential edges (like job_evaluation)
     workflow.add_edge(START, "validate_and_redact")
-    workflow.add_edge("validate_and_redact", "research")
-    workflow.add_edge("research", "questions")
-    workflow.add_edge("questions", "answers")
-    workflow.add_edge("answers", "compile")
+    workflow.add_conditional_edges(
+        "validate_and_redact", _route_on_error, {"continue": "research", END: END}
+    )
+    workflow.add_conditional_edges(
+        "research", _route_on_error, {"continue": "questions", END: END}
+    )
+    workflow.add_conditional_edges(
+        "questions", _route_on_error, {"continue": "answers", END: END}
+    )
+    workflow.add_conditional_edges(
+        "answers", _route_on_error, {"continue": "compile", END: END}
+    )
     workflow.add_edge("compile", END)
 
     return workflow.compile()
@@ -59,11 +72,6 @@ def get_interview_prep_workflow() -> StateGraph:
 def validate_and_redact_input(state: InterviewPrepState) -> Dict[str, Any]:
     """Validate input and perform PII redaction with guardrails."""
     logger.info("Validating input and performing PII redaction")
-
-    # CRITICAL: Skip if previous error (workflow short-circuiting)
-    if state.error:
-        logger.info("Skipping validation due to previous error")
-        return {}
 
     # Validate required inputs
     if not state.job_description or not state.resume_text:
@@ -94,11 +102,6 @@ def research_with_citations(state: InterviewPrepState) -> Dict[str, Any]:
     """Conduct research with verifiable citations."""
     logger.info("Starting research phase")
 
-    # Skip if previous error
-    if state.error:
-        logger.info("Skipping research due to previous error")
-        return {}
-
     try:
         company = state.interview_details.company
         role = state.interview_details.role
@@ -124,21 +127,11 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
     """Generate interview questions based on role and interview type using structured output."""
     logger.info("Generating interview questions")
 
-    # Skip if previous error
-    if state.error:
-        logger.info("Skipping question generation due to previous error")
-        return {}
-
     try:
-        # Get LLM client for question generation
-        llm_client = get_llm_client_by_profile_name(
+        llm = get_chat_model_by_profile_name(
             config.agents.interview_question_generation
         )
-
-        # Create structured LLM with schema
-        structured_llm = llm_client._get_client().with_structured_output(
-            InterviewQuestions
-        )
+        structured_llm = llm.with_structured_output(InterviewQuestions)
 
         # Create system prompt for question generation
         system_prompt = create_question_system_prompt(state)
@@ -212,33 +205,20 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
     """Generate personalized answers for the interview questions."""
     logger.info("Generating personalized answers")
 
-    # Skip if previous error
-    if state.error:
-        logger.info("Skipping answer generation due to previous error")
-        return {}
-
     if not state.qa_pairs:
         logger.warning("No questions available for answer generation")
         return {"error": "No questions available for answer generation"}
 
     try:
-        # Get LLM client for answer generation
-        llm_client = get_llm_client_by_profile_name(
-            config.agents.interview_answer_generation
-        )
+        llm = get_chat_model_by_profile_name(config.agents.interview_answer_generation)
 
         updated_qa_pairs = []
 
-        # Context-aware tracing configuration (computed once per batch)
         config_dict = langfuse_manager.get_config()
 
-        # Generate answers for each question
         for qa_pair in state.qa_pairs:
             try:
-                # Create system prompt for this answer generation
                 system_prompt = create_answer_system_prompt(state)
-
-                # Create user prompt with question context
                 user_prompt = create_answer_user_prompt(state, qa_pair.question)
 
                 messages = [
@@ -246,11 +226,10 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
                     HumanMessage(content=user_prompt),
                 ]
 
-                # Generate answer using LLM
                 logger.debug(
                     f"Generating answer for question: {qa_pair.question.question[:50]}..."
                 )
-                response = llm_client.invoke(messages, config=config_dict)
+                response = llm.invoke(messages, config=config_dict)
 
                 # Extract answer text from response
                 answer_text = (
@@ -296,11 +275,6 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
 def compile_guide(state: InterviewPrepState) -> Dict[str, Any]:
     """Compile the complete interview preparation guide."""
     logger.info("Compiling interview preparation guide")
-
-    # Skip if previous error
-    if state.error:
-        logger.info("Skipping compilation due to previous error")
-        return {}
 
     try:
         # Create research summary

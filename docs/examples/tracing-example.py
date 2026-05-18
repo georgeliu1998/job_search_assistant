@@ -27,7 +27,7 @@ sys.path.insert(0, str(project_root))
 os.environ.setdefault("APP_ENV", "dev")
 
 from src.agent.workflows.job_evaluation import run_job_evaluation_workflow
-from src.llm.observability import langfuse_manager
+from src.llm import langfuse_manager
 
 
 def demonstrate_tracing():

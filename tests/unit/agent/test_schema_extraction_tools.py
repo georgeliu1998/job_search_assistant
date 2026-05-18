@@ -244,23 +244,20 @@ class TestGetExtractionSummary:
 class TestExtractWithSchema:
     """Test cases for the _extract_with_schema function."""
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
-    def test_extract_with_schema_success(self, mock_get_client):
+    @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_model")
+    def test_extract_with_schema_success(self, mock_get_model):
         """Test successful extraction with schema."""
         from src.agent.prompts.extraction.job_posting import (
             JOB_POSTING_EXTRACTION_PROMPT,
         )
 
-        # Mock the client and its methods
-        mock_client = Mock()
-        mock_anthropic_client = Mock()
+        mock_model = Mock()
         mock_structured_llm = Mock()
         mock_result = Mock()
         mock_result.model_dump.return_value = {"title": "Software Engineer"}
 
-        mock_get_client.return_value = mock_client
-        mock_client._get_client.return_value = mock_anthropic_client
-        mock_anthropic_client.with_structured_output.return_value = mock_structured_llm
+        mock_get_model.return_value = mock_model
+        mock_model.with_structured_output.return_value = mock_structured_llm
         mock_structured_llm.invoke.return_value = mock_result
 
         result = _extract_with_schema(
@@ -272,27 +269,23 @@ class TestExtractWithSchema:
         assert result == mock_result.model_dump.return_value
         mock_structured_llm.invoke.assert_called_once()
 
-    @patch("src.llm.observability.langfuse_manager.get_config")
-    @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
-    def test_extract_with_schema_with_langfuse(self, mock_get_client, mock_get_config):
+    @patch("src.llm.langfuse.langfuse_manager.get_config")
+    @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_model")
+    def test_extract_with_schema_with_langfuse(self, mock_get_model, mock_get_config):
         """Test extraction with Langfuse manager integration."""
         from src.agent.prompts.extraction.job_posting import (
             JOB_POSTING_EXTRACTION_PROMPT,
         )
 
-        # Mock the client and its methods
-        mock_client = Mock()
-        mock_anthropic_client = Mock()
+        mock_model = Mock()
         mock_structured_llm = Mock()
         mock_result = Mock()
         mock_result.model_dump.return_value = {"title": "Software Engineer"}
 
-        mock_get_client.return_value = mock_client
-        mock_client._get_client.return_value = mock_anthropic_client
-        mock_anthropic_client.with_structured_output.return_value = mock_structured_llm
+        mock_get_model.return_value = mock_model
+        mock_model.with_structured_output.return_value = mock_structured_llm
         mock_structured_llm.invoke.return_value = mock_result
 
-        # Mock Langfuse manager config
         mock_langfuse_handler = Mock()
         mock_config = {"callbacks": [mock_langfuse_handler]}
         mock_get_config.return_value = mock_config
@@ -304,21 +297,19 @@ class TestExtractWithSchema:
         )
 
         assert result == mock_result.model_dump.return_value
-        # Verify that langfuse manager get_config was called
         mock_get_config.assert_called_once()
-        # Verify that invoke was called with the config from langfuse manager
         mock_structured_llm.invoke.assert_called_once()
         call_args = mock_structured_llm.invoke.call_args
         assert call_args.kwargs["config"] == mock_config
 
-    @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_client")
-    def test_extract_with_schema_client_error(self, mock_get_client):
-        """Test extraction when client initialization fails."""
+    @patch("src.agent.tools.extraction.schema_extraction_tool._get_extraction_model")
+    def test_extract_with_schema_client_error(self, mock_get_model):
+        """Test extraction when model creation fails."""
         from src.agent.prompts.extraction.job_posting import (
             JOB_POSTING_EXTRACTION_PROMPT,
         )
 
-        mock_get_client.side_effect = LLMProviderError("Client initialization failed")
+        mock_get_model.side_effect = LLMProviderError("Client initialization failed")
 
         with pytest.raises(LLMProviderError, match="Client initialization failed"):
             _extract_with_schema(
