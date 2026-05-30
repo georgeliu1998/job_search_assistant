@@ -100,6 +100,59 @@ class JobPostingExtractionSchema(BaseDataModel):
         examples=["ic", "manager", "unclear"],
     )
 
+    seniority_level: Literal[
+        "junior", "mid", "senior", "staff", "principal", "lead", "unclear"
+    ] = Field(
+        default="unclear",
+        description="Seniority level inferred from the job title and description",
+        examples=["senior", "staff", "principal", "unclear"],
+    )
+
+    visa_sponsorship: Literal["yes", "no", "unclear"] = Field(
+        default="unclear",
+        description="Whether the posting mentions offering visa sponsorship",
+        examples=["yes", "no", "unclear"],
+    )
+
+    employment_type: Literal[
+        "full-time", "part-time", "contract", "internship", "unclear"
+    ] = Field(
+        default="unclear",
+        description="Employment type of the role",
+        examples=["full-time", "contract", "unclear"],
+    )
+
+    travel_required: Literal["yes", "no", "unclear"] = Field(
+        default="unclear",
+        description="Whether the role requires travel",
+        examples=["yes", "no", "unclear"],
+    )
+
+    education_requirement: Literal[
+        "associate", "bachelor", "master", "phd", "none", "unclear"
+    ] = Field(
+        default="unclear",
+        description=(
+            "Minimum education the posting requires. Use 'none' when the posting "
+            "explicitly states no degree is required, 'unclear' when not mentioned."
+        ),
+        examples=["bachelor", "master", "none", "unclear"],
+    )
+
+    equity_offered: List[Literal["stock_options", "rsus"]] = Field(
+        default_factory=list,
+        description="Equity types the posting mentions offering (empty if not mentioned)",
+        examples=[["rsus"], ["stock_options"], []],
+    )
+
+    benefits_offered: List[
+        Literal["health", "vision", "dental", "life", "std", "ltd", "401k", "pto"]
+    ] = Field(
+        default_factory=list,
+        description="Benefits the posting mentions offering (empty if not mentioned)",
+        examples=[["health", "dental", "401k", "pto"], []],
+    )
+
     @field_validator("salary_max")
     @classmethod
     def salary_max_must_be_greater_than_min(

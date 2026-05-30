@@ -1,33 +1,37 @@
 """
-Job recommendation core logic
+Job recommendation core logic.
 
-This module contains the core business logic for generating job application
-recommendations based on evaluation results. It's designed to be framework-agnostic
-and reusable across different contexts.
+Turns per-criterion evaluation results into an APPLY / DO_NOT_APPLY decision,
+respecting each criterion's ``mode`` (required vs. optional). Only required
+criteria can block an APPLY recommendation; optional criteria are reported for
+transparency but do not gate the decision.
 """
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
+from src.models.user import CriterionMode
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
+def _is_criterion(result: Any) -> bool:
+    """Return True if ``result`` is a well-formed criterion result dict."""
+    return isinstance(result, dict) and "pass" in result and "mode" in result
+
+
 def generate_recommendation_from_evaluation(
     evaluation_result: Dict[str, Any],
 ) -> Tuple[str, str]:
-    """
-    Generate job application recommendation based on evaluation results.
-
-    This function contains the core business logic for recommendation generation,
-    independent of any specific workflow or state management framework.
+    """Generate an application recommendation from evaluation results.
 
     Args:
-        evaluation_result: Dictionary containing evaluation results for each criteria
+        evaluation_result: Mapping of criterion name to its result dict
+            (``pass``, ``reason``, ``mode``, ``extracted_value``).
 
     Returns:
         Tuple of (recommendation, reasoning) where recommendation is one of
-        "APPLY", "DO_NOT_APPLY", or "ERROR"
+        "APPLY", "DO_NOT_APPLY", or "ERROR".
     """
     if not evaluation_result or "error" in evaluation_result:
         logger.warning("Invalid or empty evaluation result for recommendation")
@@ -35,34 +39,45 @@ def generate_recommendation_from_evaluation(
 
     logger.info("Generating recommendation from evaluation results")
 
-    # Count passed and failed criteria
-    passed_criteria = []
-    failed_criteria = []
+    required_failures: List[str] = []
+    optional_failures: List[str] = []
+    required_passes: List[str] = []
 
     for criterion, result in evaluation_result.items():
-        if isinstance(result, dict) and "pass" in result:
-            if result["pass"]:
-                passed_criteria.append(f"{criterion}: {result['reason']}")
-                logger.debug(f"Criterion passed: {criterion}")
-            else:
-                failed_criteria.append(f"{criterion}: {result['reason']}")
-                logger.debug(f"Criterion failed: {criterion}")
+        if not _is_criterion(result):
+            continue
 
-    # Generate recommendation based on results
-    if not failed_criteria:
-        recommendation = "APPLY"
-        reasoning = f"All criteria passed: {'; '.join(passed_criteria)}"
-        logger.info(
-            f"Recommendation: APPLY - all {len(passed_criteria)} criteria passed"
-        )
-    else:
-        recommendation = "DO_NOT_APPLY"
-        if failed_criteria:
-            reasoning = f"Failed criteria: {'; '.join(failed_criteria)}"
+        reason = result.get("reason", "")
+        entry = f"{criterion}: {reason}"
+        is_required = result["mode"] == CriterionMode.REQUIRED.value
+
+        if result["pass"]:
+            if is_required:
+                required_passes.append(entry)
         else:
-            reasoning = "Job does not meet evaluation criteria"
-        logger.info(
-            f"Recommendation: DO_NOT_APPLY - {len(failed_criteria)} criteria failed"
-        )
+            if is_required:
+                required_failures.append(entry)
+            else:
+                optional_failures.append(entry)
 
+    if required_failures:
+        recommendation = "DO_NOT_APPLY"
+        reasoning = f"Required criteria failed: {'; '.join(required_failures)}"
+        if optional_failures:
+            reasoning += f". Optional concerns: {'; '.join(optional_failures)}"
+        logger.info(
+            "Recommendation: DO_NOT_APPLY - %d required criteria failed",
+            len(required_failures),
+        )
+        return recommendation, reasoning
+
+    recommendation = "APPLY"
+    reasoning = "All required criteria passed"
+    if required_passes:
+        reasoning += f": {'; '.join(required_passes)}"
+    if optional_failures:
+        reasoning += (
+            f". Optional concerns (non-blocking): {'; '.join(optional_failures)}"
+        )
+    logger.info("Recommendation: APPLY - no required criteria failed")
     return recommendation, reasoning

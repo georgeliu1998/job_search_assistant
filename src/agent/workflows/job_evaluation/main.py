@@ -15,13 +15,27 @@ from src.agent.tools.extraction.schema_extraction_tool import (
 )
 from src.agent.workflows.job_evaluation.states import JobEvaluationState
 from src.core.job_evaluation import (
+    evaluate_fit,
     evaluate_job_against_criteria,
     generate_recommendation_from_evaluation,
 )
+from src.core.preferences import load_preferences
 from src.llm import langfuse_manager
+from src.models.user import JobPreferences
 from src.utils.logging import get_logger
+from src.utils.text import MAX_JOB_DESCRIPTION_CHARS, truncate_text
 
 logger = get_logger(__name__)
+
+
+def load_user_preferences(state: JobEvaluationState) -> Dict[str, Any]:
+    """Load user preferences so they are available to downstream nodes."""
+    logger.info("Loading user preferences")
+
+    if state.user_preferences is not None:
+        return {}
+
+    return {"user_preferences": load_preferences()}
 
 
 def validate_input(state: JobEvaluationState) -> Dict[str, Any]:
@@ -47,7 +61,9 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract structured information from job posting text."""
     logger.info("Extracting job information")
 
-    job_text = state.job_posting_text
+    job_text = truncate_text(
+        state.job_posting_text, MAX_JOB_DESCRIPTION_CHARS, "job posting"
+    )
 
     try:
         extracted_info = extract_job_posting(job_text)
@@ -75,7 +91,7 @@ def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
 
 
 def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
-    """Evaluate extracted job information against criteria."""
+    """Evaluate extracted job information against user preferences."""
     logger.info("Evaluating job against criteria")
 
     extracted_info = state.extracted_info
@@ -88,8 +104,13 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
             "reasoning": "No job information available for evaluation",
         }
 
+    preferences = state.user_preferences or JobPreferences()
+
     try:
-        evaluation_result = evaluate_job_against_criteria(extracted_info)
+        evaluation_result = evaluate_job_against_criteria(extracted_info, preferences)
+
+        # Fold in the LLM-based fit assessment as an additional criterion.
+        evaluation_result["fit"] = evaluate_fit(state.job_posting_text, preferences)
 
         logger.info("Job evaluation completed successfully")
         return {"evaluation_result": evaluation_result}
@@ -160,12 +181,14 @@ def get_job_evaluation_workflow() -> StateGraph:
 
         workflow = StateGraph(JobEvaluationState)
 
+        workflow.add_node("load_preferences", load_user_preferences)
         workflow.add_node("validate", validate_input)
         workflow.add_node("extract", extract_job_info)
         workflow.add_node("evaluate", evaluate_job)
         workflow.add_node("recommend", generate_recommendation)
 
-        workflow.add_edge(START, "validate")
+        workflow.add_edge(START, "load_preferences")
+        workflow.add_edge("load_preferences", "validate")
         workflow.add_conditional_edges(
             "validate", _route_on_error, {"continue": "extract", END: END}
         )

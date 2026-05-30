@@ -1,138 +1,192 @@
 """
-Unit tests for core job evaluation logic
+Unit tests for core job evaluation logic.
 """
 
-import pytest
-
 from src.core.job_evaluation import evaluate_job_against_criteria
+from src.models.user import CriterionConfig, JobPreferences
 
 
-class TestEvaluateJobAgainstCriteria:
-    """Test the core job evaluation function"""
+def _full_match_info():
+    """Extracted info that passes the default preferences across the board."""
+    return {
+        "title": "Staff Software Engineer",
+        "company": "TechCorp",
+        "salary_min": 150000,
+        "salary_max": 180000,
+        "location_policy": "remote",
+        "role_type": "ic",
+        "seniority_level": "staff",
+        "visa_sponsorship": "yes",
+        "employment_type": "full-time",
+        "travel_required": "no",
+        "education_requirement": "bachelor",
+        "equity_offered": ["rsus"],
+        "benefits_offered": ["health", "dental", "401k", "pto"],
+    }
 
-    def test_all_criteria_pass(self):
-        """Test job that meets all criteria"""
-        job_info = {
-            "salary_max": 180000,
-            "location_policy": "Remote",
-            "role_type": "IC",
-            "title": "Staff Software Engineer",
-        }
 
-        result = evaluate_job_against_criteria(job_info)
-
+class TestSalaryCriterion:
+    def test_salary_passes_when_max_meets_floor(self):
+        prefs = JobPreferences(min_salary=100000)
+        result = evaluate_job_against_criteria(_full_match_info(), prefs)
         assert result["salary"]["pass"] is True
-        assert result["remote"]["pass"] is True
-        assert result["title_level"]["pass"] is True
 
-    def test_low_salary_fails(self):
-        """Test job with salary below minimum"""
-        job_info = {
-            "salary_max": 80000,  # Below 100k minimum
-            "location_policy": "Remote",
-            "role_type": "IC",
-            "title": "Staff Software Engineer",
-        }
+    def test_high_range_passes_low_floor(self):
+        """A $200k-$250k posting passes a $100k floor (regression guard)."""
+        prefs = JobPreferences(min_salary=100000)
+        info = _full_match_info()
+        info.update(salary_min=200000, salary_max=250000)
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["salary"]["pass"] is True
 
-        result = evaluate_job_against_criteria(job_info)
-
+    def test_salary_below_floor_fails(self):
+        prefs = JobPreferences(min_salary=160000)
+        info = _full_match_info()
+        info["salary_max"] = 120000
+        result = evaluate_job_against_criteria(info, prefs)
         assert result["salary"]["pass"] is False
-        assert "lower than required" in result["salary"]["reason"]
 
-    def test_missing_salary_fails(self):
-        """Test job with no salary information"""
-        job_info = {
-            "location_policy": "Remote",
-            "role_type": "IC",
-            "title": "Staff Software Engineer",
-        }
-
-        result = evaluate_job_against_criteria(job_info)
-
+    def test_missing_salary_respects_none_policy(self):
+        info = _full_match_info()
+        info["salary_max"] = None
+        # Default salary none_policy is FAIL.
+        result = evaluate_job_against_criteria(info, JobPreferences())
         assert result["salary"]["pass"] is False
-        assert result["salary"]["reason"] == "Salary not specified"
 
-    def test_not_remote_fails(self):
-        """Test job that is not remote"""
-        job_info = {
-            "salary_max": 180000,
-            "location_policy": "On-site",
-            "role_type": "IC",
-            "title": "Staff Software Engineer",
-        }
 
-        result = evaluate_job_against_criteria(job_info)
+class TestMembershipCriteria:
+    def test_location_not_acceptable_fails(self):
+        prefs = JobPreferences(acceptable_locations=["remote"])
+        info = _full_match_info()
+        info["location_policy"] = "onsite"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["location"]["pass"] is False
 
-        assert result["remote"]["pass"] is False
-        assert "not remote" in result["remote"]["reason"]
+    def test_seniority_not_acceptable_fails(self):
+        prefs = JobPreferences(acceptable_seniority=["staff", "principal"])
+        info = _full_match_info()
+        info["seniority_level"] = "junior"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["seniority"]["pass"] is False
 
-    def test_junior_ic_role_fails(self):
-        """Test IC role without required seniority"""
-        job_info = {
-            "salary_max": 180000,
-            "location_policy": "Remote",
-            "role_type": "IC",
-            "title": "Software Engineer",  # No senior/staff/lead/principal
-        }
+    def test_unclear_membership_respects_none_policy(self):
+        info = _full_match_info()
+        info["location_policy"] = "unclear"
+        # Default location none_policy is FAIL.
+        result = evaluate_job_against_criteria(info, JobPreferences())
+        assert result["location"]["pass"] is False
 
-        result = evaluate_job_against_criteria(job_info)
 
-        assert result["title_level"]["pass"] is False
-        assert "lacks required seniority" in result["title_level"]["reason"]
+class TestVisaCriterion:
+    def test_not_required_always_passes(self):
+        prefs = JobPreferences(visa_sponsorship_required=False)
+        info = _full_match_info()
+        info["visa_sponsorship"] = "no"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["visa"]["pass"] is True
 
-    def test_non_ic_role_passes_title_check(self):
-        """Test that non-IC roles pass title level requirement"""
-        job_info = {
-            "salary_max": 180000,
-            "location_policy": "Remote",
-            "role_type": "Manager",
-            "title": "Engineering Manager",
-        }
+    def test_required_and_not_offered_fails(self):
+        prefs = JobPreferences(visa_sponsorship_required=True)
+        info = _full_match_info()
+        info["visa_sponsorship"] = "no"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["visa"]["pass"] is False
 
-        result = evaluate_job_against_criteria(job_info)
 
-        assert result["title_level"]["pass"] is True
-        assert "not applicable" in result["title_level"]["reason"]
+class TestBlacklistCriterion:
+    def test_empty_blacklist_passes(self):
+        prefs = JobPreferences(company_blacklist=[])
+        result = evaluate_job_against_criteria(_full_match_info(), prefs)
+        assert result["blacklist"]["pass"] is True
 
-    def test_empty_job_info_returns_error(self):
-        """Test behavior with empty job information"""
-        result = evaluate_job_against_criteria({})
+    def test_word_boundary_match_fails(self):
+        prefs = JobPreferences(company_blacklist=["Microsoft"])
+        info = _full_match_info()
+        info["company"] = "Microsoft Co. Ltd."
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["blacklist"]["pass"] is False
 
-        assert "error" in result
-        assert result["error"] == "No extracted information available"
+    def test_partial_word_does_not_match(self):
+        prefs = JobPreferences(company_blacklist=["Meta"])
+        info = _full_match_info()
+        info["company"] = "Metadata Inc."
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["blacklist"]["pass"] is True
 
-    def test_none_job_info_returns_error(self):
-        """Test behavior with None job information"""
-        result = evaluate_job_against_criteria(None)
 
-        assert "error" in result
-        assert result["error"] == "No extracted information available"
+class TestTravelCriterion:
+    def test_willing_always_passes(self):
+        prefs = JobPreferences(willing_to_travel=True)
+        info = _full_match_info()
+        info["travel_required"] = "yes"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["travel"]["pass"] is True
 
-    def test_various_seniority_levels_pass(self):
-        """Test that various accepted seniority levels pass for IC roles"""
-        seniority_levels = ["lead", "staff", "principal", "senior staff"]
+    def test_not_willing_and_required_fails(self):
+        prefs = JobPreferences(willing_to_travel=False)
+        info = _full_match_info()
+        info["travel_required"] = "yes"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["travel"]["pass"] is False
 
-        for level in seniority_levels:
-            job_info = {
-                "salary_max": 180000,
-                "location_policy": "Remote",
-                "role_type": "IC",
-                "title": f"{level} software engineer",
-            }
 
-            result = evaluate_job_against_criteria(job_info)
-            assert result["title_level"]["pass"] is True, f"Failed for {level} title"
+class TestEducationCriterion:
+    def test_user_meets_requirement(self):
+        prefs = JobPreferences(education_level="master")
+        info = _full_match_info()
+        info["education_requirement"] = "bachelor"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["education"]["pass"] is True
 
-    def test_case_insensitive_matching(self):
-        """Test that matching is case insensitive"""
-        job_info = {
-            "salary_max": 180000,
-            "location_policy": "REMOTE",
-            "role_type": "ic",
-            "title": "STAFF SOFTWARE ENGINEER",
-        }
+    def test_user_below_requirement_fails(self):
+        prefs = JobPreferences(education_level="bachelor")
+        info = _full_match_info()
+        info["education_requirement"] = "phd"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["education"]["pass"] is False
 
-        result = evaluate_job_against_criteria(job_info)
+    def test_none_requirement_passes(self):
+        prefs = JobPreferences(education_level="associate")
+        info = _full_match_info()
+        info["education_requirement"] = "none"
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["education"]["pass"] is True
 
-        assert result["remote"]["pass"] is True
-        assert result["title_level"]["pass"] is True
+
+class TestEquityAndBenefits:
+    def test_equity_no_preference_passes(self):
+        prefs = JobPreferences(acceptable_equity_types=[])
+        info = _full_match_info()
+        info["equity_offered"] = []
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["equity"]["pass"] is True
+
+    def test_equity_overlap_passes(self):
+        prefs = JobPreferences(acceptable_equity_types=["rsus"])
+        info = _full_match_info()
+        info["equity_offered"] = ["rsus", "stock_options"]
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["equity"]["pass"] is True
+
+    def test_benefits_missing_required_fails(self):
+        prefs = JobPreferences(required_benefits=["health", "401k"])
+        info = _full_match_info()
+        info["benefits_offered"] = ["health"]
+        result = evaluate_job_against_criteria(info, prefs)
+        assert result["benefits"]["pass"] is False
+
+
+class TestResultShape:
+    def test_each_result_has_required_keys(self):
+        result = evaluate_job_against_criteria(_full_match_info(), JobPreferences())
+        for criterion in result.values():
+            assert set(criterion) == {"pass", "reason", "mode", "extracted_value"}
+
+    def test_mode_reflects_config(self):
+        prefs = JobPreferences()
+        prefs.salary_config = CriterionConfig(mode="optional", none_policy="pass")
+        result = evaluate_job_against_criteria(_full_match_info(), prefs)
+        assert result["salary"]["mode"] == "optional"
+
+    def test_empty_info_returns_error(self):
+        assert "error" in evaluate_job_against_criteria({}, JobPreferences())

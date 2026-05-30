@@ -9,6 +9,8 @@ from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.models.user import JobPreferences
+
 
 class JobEvaluationState(BaseModel):
     """State for job evaluation workflow with validation."""
@@ -24,6 +26,11 @@ class JobEvaluationState(BaseModel):
     # Input - allow empty strings and None for proper error handling
     job_posting_text: Optional[str] = Field(
         default="", description="The job posting text to evaluate"
+    )
+
+    # User preferences loaded at the start of the workflow
+    user_preferences: Optional[JobPreferences] = Field(
+        default=None, description="User job-search preferences for evaluation"
     )
 
     # Intermediate results

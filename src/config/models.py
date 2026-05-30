@@ -6,7 +6,7 @@ sections in the application.
 """
 
 import os
-from typing import ClassVar, Dict, List, Optional
+from typing import ClassVar, Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -48,6 +48,10 @@ class AgentConfig(BaseModel):
     job_evaluation_extraction: str = Field(
         ..., description="LLM profile for job information extraction"
     )
+    job_evaluation_fit: str = Field(
+        default="anthropic_extraction",
+        description="LLM profile for the job fit assessment",
+    )
 
     # New interview preparation agents
     interview_research: str = Field(
@@ -65,16 +69,6 @@ class AgentConfig(BaseModel):
     interview_compilation: str = Field(
         default="google_interview_generation",
         description="LLM profile for guide compilation",
-    )
-
-
-class EvaluationCriteriaConfig(BaseModel):
-    """Business logic parameters for job evaluation."""
-
-    min_salary: int = Field(..., ge=0, description="Minimum acceptable salary")
-    remote_required: bool = Field(..., description="Whether remote work is required")
-    ic_title_requirements: List[str] = Field(
-        ..., description="Required seniority levels for IC roles"
     )
 
 
@@ -221,9 +215,6 @@ class AppConfig(BaseModel):
     general: GeneralConfig = Field(..., description="General application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
     agents: AgentConfig = Field(..., description="Agent configuration")
-    evaluation_criteria: EvaluationCriteriaConfig = Field(
-        ..., description="Job evaluation criteria"
-    )
     llm_profiles: Dict[str, LLMProfileConfig] = Field(
         ..., description="LLM profile configurations"
     )

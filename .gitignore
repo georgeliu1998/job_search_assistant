@@ -129,6 +129,9 @@ Thumbs.db
 # Add any project specific files to ignore here
 job_search_assistant.txt
 
+# Locally persisted user preferences (user-specific runtime data)
+data/user_preferences.yaml
+
 # Local logs directory (ignored to keep repo clean)
 logs/
 

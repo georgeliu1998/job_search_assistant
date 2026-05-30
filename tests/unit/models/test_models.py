@@ -7,15 +7,17 @@ from pydantic import ValidationError
 
 from src.models import (
     BaseDataModel,
+    CriterionMode,
     Education,
     Environment,
     EvaluationResult,
     Experience,
     JobDescription,
+    JobPreferences,
     JobSource,
     JobStatus,
+    NonePolicy,
     Resume,
-    UserPreferences,
 )
 
 
@@ -378,38 +380,36 @@ class TestResumeModel:
         assert data == expected
 
 
-class TestUserPreferencesModel:
-    """Test the UserPreferences model."""
+class TestJobPreferencesModel:
+    """Test the JobPreferences model."""
 
-    def test_user_preferences_creation(self):
-        """Test UserPreferences model creation."""
-        job_titles = ["Software Engineer", "Data Scientist", "Product Manager"]
-        preferences = UserPreferences(job_titles=job_titles)
+    def test_defaults(self):
+        """A default JobPreferences is usable and has sensible criterion modes."""
+        prefs = JobPreferences()
 
-        assert preferences.job_titles == job_titles
+        assert prefs.min_salary == 100000
+        assert prefs.acceptable_locations == ["remote"]
+        # Salary required by default; fit optional so first-run isn't broken.
+        assert prefs.salary_config.mode == CriterionMode.REQUIRED
+        assert prefs.salary_config.none_policy == NonePolicy.FAIL
+        assert prefs.fit_config.mode == CriterionMode.OPTIONAL
+        assert prefs.fit_config.none_policy == NonePolicy.PASS
 
-    def test_user_preferences_missing_job_titles(self):
-        """Test UserPreferences validation with missing job_titles."""
-        with pytest.raises(ValidationError) as exc_info:
-            UserPreferences()
+    def test_literal_validation_rejects_typos(self):
+        """Invalid Literal values fail fast rather than silently never matching."""
+        with pytest.raises(ValidationError):
+            JobPreferences(acceptable_locations=["work-from-moon"])
 
-        errors = exc_info.value.errors()
-        missing_fields = {error["loc"][0] for error in errors}
-        assert "job_titles" in missing_fields
+    def test_json_round_trip_uses_plain_strings(self):
+        """model_dump(mode='json') writes enum values as plain strings."""
+        prefs = JobPreferences()
+        data = prefs.model_dump(mode="json")
 
-    def test_user_preferences_empty_job_titles(self):
-        """Test UserPreferences with empty job_titles list."""
-        preferences = UserPreferences(job_titles=[])
-        assert preferences.job_titles == []
+        assert data["salary_config"]["mode"] == "required"
+        assert data["fit_config"]["none_policy"] == "pass"
 
-    def test_user_preferences_serialization(self):
-        """Test UserPreferences model serialization."""
-        job_titles = ["Backend Developer", "DevOps Engineer"]
-        preferences = UserPreferences(job_titles=job_titles)
-
-        data = preferences.model_dump()
-        expected = {"job_titles": job_titles}
-        assert data == expected
+        restored = JobPreferences.model_validate(data)
+        assert restored == prefs
 
 
 class TestJobDescriptionModel:

@@ -446,8 +446,6 @@ enabled = true
             # Test attribute access
             assert test_config.general.name == "proxy-test"
             assert test_config.logging.level == "DEBUG"
-            assert test_config.evaluation_criteria.min_salary == 150000
-            assert test_config.evaluation_criteria.remote_required is False
 
     def test_proxy_reload(self, tmp_path):
         """Test that proxy reload works correctly."""
@@ -585,7 +583,6 @@ temperature = 0.0
             assert settings.general.name == "integration-test"
             assert settings.general.debug is True  # Overridden by dev.toml
             assert settings.logging.level == "DEBUG"  # Overridden by dev.toml
-            assert settings.evaluation_criteria.min_salary == 150000
             assert (
                 settings.llm_profiles["claude_profile"].temperature == 0.0
             )  # Overridden

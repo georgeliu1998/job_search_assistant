@@ -6,6 +6,12 @@ configuration system for evaluation criteria.
 """
 
 from src.core.job_evaluation.evaluator import evaluate_job_against_criteria
+from src.core.job_evaluation.fit_evaluator import FitAssessment, evaluate_fit
 from src.core.job_evaluation.recommender import generate_recommendation_from_evaluation
 
-__all__ = ["evaluate_job_against_criteria", "generate_recommendation_from_evaluation"]
+__all__ = [
+    "evaluate_job_against_criteria",
+    "evaluate_fit",
+    "FitAssessment",
+    "generate_recommendation_from_evaluation",
+]
