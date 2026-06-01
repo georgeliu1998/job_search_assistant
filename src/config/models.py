@@ -49,7 +49,7 @@ class AgentConfig(BaseModel):
         ..., description="LLM profile for job information extraction"
     )
     job_evaluation_fit: str = Field(
-        default="anthropic_extraction",
+        default="google_job_evaluation",
         description="LLM profile for the job fit assessment",
     )
 
@@ -95,6 +95,7 @@ class LLMProfileConfig(BaseModel):
             "claude-opus-4-7",
         },
         "google": {
+            "gemini-3.5-flash",
             "gemini-2.5-pro",
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
