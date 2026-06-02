@@ -188,7 +188,12 @@ def get_job_evaluation_workflow() -> StateGraph:
         workflow.add_node("recommend", generate_recommendation)
 
         workflow.add_edge(START, "load_preferences")
-        workflow.add_edge("load_preferences", "validate")
+        # Every node routes through _route_on_error so the graph stays uniform:
+        # if any node (now or in the future) sets recommendation="ERROR" the
+        # workflow short-circuits to END.
+        workflow.add_conditional_edges(
+            "load_preferences", _route_on_error, {"continue": "validate", END: END}
+        )
         workflow.add_conditional_edges(
             "validate", _route_on_error, {"continue": "extract", END: END}
         )
