@@ -202,6 +202,11 @@ def _evaluate_equity(info: Dict[str, Any], prefs: JobPreferences) -> Dict[str, A
     if not prefs.acceptable_equity_types:
         return _result(True, "No equity preference set", config, offered)
 
+    # Limitation: the extraction schema defaults equity_offered to [] both when
+    # the posting omits equity and when it explicitly states none, so the two
+    # are indistinguishable here. Both are treated as "missing" and follow the
+    # none policy rather than failing outright. Extracting a tri-state
+    # (unclear/none/list) would be needed to tell them apart.
     if not offered:
         return _none_result(config, offered, "Equity")
 
@@ -228,6 +233,9 @@ def _evaluate_benefits(info: Dict[str, Any], prefs: JobPreferences) -> Dict[str,
     if not prefs.required_benefits:
         return _result(True, "No benefits preference set", config, offered)
 
+    # Same limitation as equity: an empty benefits_offered list conflates "not
+    # mentioned" with "explicitly none", so both follow the none policy rather
+    # than failing outright.
     if not offered:
         return _none_result(config, offered, "Benefits")
 
