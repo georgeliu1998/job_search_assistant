@@ -87,9 +87,19 @@ def evaluate_fit(job_posting_text: str, preferences: JobPreferences) -> Dict[str
 
     config_dict = langfuse_manager.get_config()
     logger.info("Assessing job fit via LLM")
-    assessment: FitAssessment = structured_llm.invoke(
-        [HumanMessage(content=prompt_content)], config=config_dict
-    )
+    try:
+        assessment: FitAssessment = structured_llm.invoke(
+            [HumanMessage(content=prompt_content)], config=config_dict
+        )
+    except Exception as e:
+        # Fit is one of many criteria. A transient LLM failure (network, rate
+        # limit, structured-output parse error) must not discard the
+        # rule-based results, so fall back to the none policy.
+        passed = fit_config.none_policy == NonePolicy.PASS
+        decision = "pass" if passed else "fail"
+        reason = f"Fit assessment failed ({e}); counted as {decision} per preference"
+        logger.warning("Fit assessment failed: %s", e)
+        return _result(passed, reason, fit_config, None)
 
     passed = assessment.verdict == "good_fit"
     return _result(passed, assessment.reasoning, fit_config, assessment.verdict)
