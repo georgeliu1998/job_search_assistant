@@ -16,11 +16,7 @@ from src.config import config
 from src.llm import get_chat_model_by_profile_name, langfuse_manager
 from src.models.user import JobPreferences, NonePolicy
 from src.utils.logging import get_logger
-from src.utils.text import (
-    MAX_JOB_DESCRIPTION_CHARS,
-    MAX_ROLE_DESCRIPTION_CHARS,
-    truncate_text,
-)
+from src.utils.text import MAX_ROLE_DESCRIPTION_CHARS, truncate_text
 
 logger = get_logger(__name__)
 
@@ -53,7 +49,7 @@ def evaluate_fit(job_posting_text: str, preferences: JobPreferences) -> Dict[str
     provided a target role description.
 
     Args:
-        job_posting_text: Raw job posting text.
+        job_posting_text: Job posting text, already length-bounded by the caller.
         preferences: The user's job-search preferences.
 
     Returns:
@@ -87,9 +83,7 @@ def evaluate_fit(job_posting_text: str, preferences: JobPreferences) -> Dict[str
                 "target role description",
             ),
             key_skills=", ".join(preferences.key_skills) or "(none provided)",
-            job_text=truncate_text(
-                job_posting_text, MAX_JOB_DESCRIPTION_CHARS, "job posting"
-            ),
+            job_text=job_posting_text,
         )
         config_dict = langfuse_manager.get_config()
         assessment: FitAssessment = structured_llm.invoke(

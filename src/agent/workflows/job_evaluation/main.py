@@ -54,19 +54,19 @@ def validate_input(state: JobEvaluationState) -> Dict[str, Any]:
         }
 
     logger.info("Job posting input validation passed")
-    return {}
+    # Bound the posting text once here so every downstream node (extraction and
+    # fit) works from the same truncated text and the warning is logged once.
+    bounded_text = truncate_text(job_text, MAX_JOB_DESCRIPTION_CHARS, "job posting")
+    return {"job_posting_text": bounded_text}
 
 
 def extract_job_info(state: JobEvaluationState) -> Dict[str, Any]:
     """Extract structured information from job posting text."""
     logger.info("Extracting job information")
 
-    job_text = truncate_text(
-        state.job_posting_text, MAX_JOB_DESCRIPTION_CHARS, "job posting"
-    )
-
+    # Text was already bounded in validate_input.
     try:
-        extracted_info = extract_job_posting(job_text)
+        extracted_info = extract_job_posting(state.job_posting_text)
 
         is_valid = validate_extraction_result(extracted_info, "job_posting")
 
