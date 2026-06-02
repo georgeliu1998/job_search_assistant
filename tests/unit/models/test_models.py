@@ -460,7 +460,7 @@ class TestJobDescriptionModel:
         assert job.title is None
         assert job.company is None
         assert job.description is None
-        assert job.is_remote is False
+        assert job.is_remote is None
         assert job.requirements == []
         assert job.source is None
         assert job.url is None

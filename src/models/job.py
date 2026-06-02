@@ -15,7 +15,9 @@ class JobDescription(BaseDataModel):
     title: Optional[str] = Field(None, description="Job title.")
     company: Optional[str] = Field(None, description="Company name.")
     description: Optional[str] = Field(None, description="Full job description text.")
-    is_remote: Optional[bool] = Field(False, description="Is the job remote?")
+    is_remote: Optional[bool] = Field(
+        None, description="Is the job remote? None = unknown."
+    )
     requirements: List[str] = Field(
         default_factory=list, description="Job requirements."
     )
