@@ -70,31 +70,32 @@ def evaluate_fit(job_posting_text: str, preferences: JobPreferences) -> Dict[str
         )
         return _result(passed, reason, fit_config, None)
 
-    model = get_chat_model_by_profile_name(config.agents.job_evaluation_fit)
-    structured_llm = model.with_structured_output(FitAssessment)
-
-    prompt_content = FIT_ASSESSMENT_PROMPT.format(
-        target_role_description=truncate_text(
-            preferences.target_role_description,
-            MAX_ROLE_DESCRIPTION_CHARS,
-            "target role description",
-        ),
-        key_skills=", ".join(preferences.key_skills) or "(none provided)",
-        job_text=truncate_text(
-            job_posting_text, MAX_JOB_DESCRIPTION_CHARS, "job posting"
-        ),
-    )
-
-    config_dict = langfuse_manager.get_config()
+    # Fit is one of many criteria. Any failure here -- model construction
+    # (including a lazy provider ImportError), prompt formatting, the LLM call
+    # (network, rate limit), or structured-output parsing -- must not discard
+    # the rule-based results. The whole pipeline is wrapped so this function
+    # never raises; on failure it falls back to the none policy. This keeps the
+    # isolation guarantee independent of how the caller wraps the call.
     logger.info("Assessing job fit via LLM")
     try:
+        model = get_chat_model_by_profile_name(config.agents.job_evaluation_fit)
+        structured_llm = model.with_structured_output(FitAssessment)
+        prompt_content = FIT_ASSESSMENT_PROMPT.format(
+            target_role_description=truncate_text(
+                preferences.target_role_description,
+                MAX_ROLE_DESCRIPTION_CHARS,
+                "target role description",
+            ),
+            key_skills=", ".join(preferences.key_skills) or "(none provided)",
+            job_text=truncate_text(
+                job_posting_text, MAX_JOB_DESCRIPTION_CHARS, "job posting"
+            ),
+        )
+        config_dict = langfuse_manager.get_config()
         assessment: FitAssessment = structured_llm.invoke(
             [HumanMessage(content=prompt_content)], config=config_dict
         )
     except Exception as e:
-        # Fit is one of many criteria. A transient LLM failure (network, rate
-        # limit, structured-output parse error) must not discard the
-        # rule-based results, so fall back to the none policy.
         passed = fit_config.none_policy == NonePolicy.PASS
         decision = "pass" if passed else "fail"
         reason = f"Fit assessment failed ({e}); counted as {decision} per preference"

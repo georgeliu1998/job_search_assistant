@@ -89,3 +89,16 @@ class TestEvaluateFit:
 
         assert result["pass"] is False
         assert "Fit assessment failed" in result["reason"]
+
+    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model_by_profile_name")
+    def test_model_construction_failure_does_not_raise(self, mock_get_model):
+        """A failure before the LLM call (e.g. provider ImportError) is caught too."""
+        mock_get_model.side_effect = ImportError("provider package missing")
+
+        # Default fit none_policy is PASS.
+        prefs = JobPreferences(target_role_description="AI Engineer focused on LLMs")
+        result = evaluate_fit("some job text", prefs)
+
+        assert result["pass"] is True
+        assert "Fit assessment failed" in result["reason"]
+        assert result["extracted_value"] is None

@@ -110,6 +110,8 @@ def evaluate_job(state: JobEvaluationState) -> Dict[str, Any]:
         evaluation_result = evaluate_job_against_criteria(extracted_info, preferences)
 
         # Fold in the LLM-based fit assessment as an additional criterion.
+        # evaluate_fit never raises (it falls back to its none policy on any
+        # failure), so a fit problem cannot discard the rule-based results here.
         evaluation_result["fit"] = evaluate_fit(state.job_posting_text, preferences)
 
         logger.info("Job evaluation completed successfully")
