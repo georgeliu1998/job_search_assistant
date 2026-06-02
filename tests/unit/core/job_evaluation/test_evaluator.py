@@ -46,11 +46,19 @@ class TestSalaryCriterion:
         result = evaluate_job_against_criteria(info, prefs)
         assert result["salary"]["pass"] is False
 
-    def test_missing_salary_respects_none_policy(self):
+    def test_missing_salary_defaults_to_pass(self):
         info = _full_match_info()
         info["salary_max"] = None
-        # Default salary none_policy is FAIL.
+        # Default salary none_policy is PASS (wide net).
         result = evaluate_job_against_criteria(info, JobPreferences())
+        assert result["salary"]["pass"] is True
+
+    def test_missing_salary_fails_with_fail_policy(self):
+        info = _full_match_info()
+        info["salary_max"] = None
+        prefs = JobPreferences()
+        prefs.salary_config = CriterionConfig(mode="required", none_policy="fail")
+        result = evaluate_job_against_criteria(info, prefs)
         assert result["salary"]["pass"] is False
 
 
@@ -69,11 +77,19 @@ class TestMembershipCriteria:
         result = evaluate_job_against_criteria(info, prefs)
         assert result["seniority"]["pass"] is False
 
-    def test_unclear_membership_respects_none_policy(self):
+    def test_unclear_membership_defaults_to_pass(self):
         info = _full_match_info()
         info["location_policy"] = "unclear"
-        # Default location none_policy is FAIL.
+        # Default location none_policy is PASS (wide net).
         result = evaluate_job_against_criteria(info, JobPreferences())
+        assert result["location"]["pass"] is True
+
+    def test_unclear_membership_fails_with_fail_policy(self):
+        info = _full_match_info()
+        info["location_policy"] = "unclear"
+        prefs = JobPreferences()
+        prefs.location_config = CriterionConfig(mode="required", none_policy="fail")
+        result = evaluate_job_against_criteria(info, prefs)
         assert result["location"]["pass"] is False
 
 

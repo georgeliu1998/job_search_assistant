@@ -389,11 +389,27 @@ class TestJobPreferencesModel:
 
         assert prefs.min_salary == 100000
         assert prefs.acceptable_locations == ["remote"]
-        # Salary required by default; fit optional so first-run isn't broken.
         assert prefs.salary_config.mode == CriterionMode.REQUIRED
-        assert prefs.salary_config.none_policy == NonePolicy.FAIL
+        # Every criterion treats missing data as a pass by default (wide net).
+        all_configs = (
+            prefs.salary_config,
+            prefs.location_config,
+            prefs.level_config,
+            prefs.seniority_config,
+            prefs.visa_config,
+            prefs.blacklist_config,
+            prefs.employment_type_config,
+            prefs.travel_config,
+            prefs.education_config,
+            prefs.equity_config,
+            prefs.benefits_config,
+            prefs.fit_config,
+        )
+        assert all(cfg.none_policy == NonePolicy.PASS for cfg in all_configs)
+        # Mode defaults the user asked for.
+        assert prefs.seniority_config.mode == CriterionMode.OPTIONAL
+        assert prefs.employment_type_config.mode == CriterionMode.REQUIRED
         assert prefs.fit_config.mode == CriterionMode.OPTIONAL
-        assert prefs.fit_config.none_policy == NonePolicy.PASS
 
     def test_literal_validation_rejects_typos(self):
         """Invalid Literal values fail fast rather than silently never matching."""

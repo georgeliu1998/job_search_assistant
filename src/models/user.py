@@ -96,17 +96,20 @@ class JobPreferences(BaseModel):
     )
 
     # --- Per-criterion configuration ---
+    # Note: every criterion defaults to none_policy=PASS so that a posting only
+    # fails a criterion when it explicitly contains disqualifying info, never
+    # just for omitting it (casting a wide net).
     salary_config: CriterionConfig = Field(
-        default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.FAIL)
+        default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.PASS)
     )
     location_config: CriterionConfig = Field(
-        default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.FAIL)
+        default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.PASS)
     )
     level_config: CriterionConfig = Field(
         default_factory=lambda: _config(CriterionMode.OPTIONAL, NonePolicy.PASS)
     )
     seniority_config: CriterionConfig = Field(
-        default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.FAIL)
+        default_factory=lambda: _config(CriterionMode.OPTIONAL, NonePolicy.PASS)
     )
     visa_config: CriterionConfig = Field(
         default_factory=lambda: _config(CriterionMode.OPTIONAL, NonePolicy.PASS)
@@ -115,7 +118,7 @@ class JobPreferences(BaseModel):
         default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.PASS)
     )
     employment_type_config: CriterionConfig = Field(
-        default_factory=lambda: _config(CriterionMode.OPTIONAL, NonePolicy.PASS)
+        default_factory=lambda: _config(CriterionMode.REQUIRED, NonePolicy.PASS)
     )
     travel_config: CriterionConfig = Field(
         default_factory=lambda: _config(CriterionMode.OPTIONAL, NonePolicy.PASS)
