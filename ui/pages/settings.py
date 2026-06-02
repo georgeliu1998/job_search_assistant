@@ -72,6 +72,16 @@ def _multiselect(label, options_map, current, help_text=None):
     return [label_to_value[s] for s in selected]
 
 
+def _salary_slider_options(persisted: int) -> list:
+    """Return the salary tier options, always including the persisted value.
+
+    Folding the persisted value in (rather than indexing into a fixed list)
+    means a hand-edited or out-of-tier salary is shown as-is instead of being
+    silently clamped to a default tier on the next save.
+    """
+    return sorted(set(SALARY_TIERS) | {persisted})
+
+
 def _validate_required_lists(
     acceptable_locations: list,
     acceptable_employment_types: list,
@@ -107,13 +117,10 @@ def render_settings_page():
     prefs = load_preferences()
 
     st.subheader("💰 Compensation")
-    salary_index = (
-        SALARY_TIERS.index(prefs.min_salary) if prefs.min_salary in SALARY_TIERS else 2
-    )
     min_salary = st.select_slider(
         "Minimum yearly salary",
-        options=SALARY_TIERS,
-        value=SALARY_TIERS[salary_index],
+        options=_salary_slider_options(prefs.min_salary),
+        value=prefs.min_salary,
         format_func=lambda v: f"${v:,}",
     )
     acceptable_equity_types = _multiselect(
