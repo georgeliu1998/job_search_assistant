@@ -72,6 +72,30 @@ def _multiselect(label, options_map, current, help_text=None):
     return [label_to_value[s] for s in selected]
 
 
+def _validate_required_lists(
+    acceptable_locations: list,
+    acceptable_employment_types: list,
+    acceptable_levels: list,
+    acceptable_seniority: list,
+) -> list[str]:
+    """Return human-readable error messages for empty membership lists.
+
+    These four criteria are list-membership checks. An empty list combined
+    with any stated value in the posting always produces a fail, which is
+    never what the user wants -- so we require at least one selection.
+    """
+    errors = []
+    if not acceptable_locations:
+        errors.append("at least one acceptable location")
+    if not acceptable_employment_types:
+        errors.append("at least one acceptable employment type")
+    if not acceptable_levels:
+        errors.append("at least one acceptable role type")
+    if not acceptable_seniority:
+        errors.append("at least one acceptable seniority level")
+    return errors
+
+
 def render_settings_page():
     """Render the job preferences settings page."""
     st.header("⚙️ Job Preferences")
@@ -190,9 +214,23 @@ def render_settings_page():
                 )
             criteria_configs[attr] = CriterionConfig(mode=mode, none_policy=none_policy)
 
+    validation_errors = _validate_required_lists(
+        acceptable_locations,
+        acceptable_employment_types,
+        acceptable_levels,
+        acceptable_seniority,
+    )
+    if validation_errors:
+        st.error("Please select " + "; ".join(validation_errors) + " before saving.")
+
     col_save, col_reset = st.columns([1, 1])
     with col_save:
-        if st.button("💾 Save Preferences", type="primary", use_container_width=True):
+        if st.button(
+            "💾 Save Preferences",
+            type="primary",
+            use_container_width=True,
+            disabled=bool(validation_errors),
+        ):
             new_prefs = JobPreferences(
                 min_salary=min_salary,
                 acceptable_locations=acceptable_locations,
