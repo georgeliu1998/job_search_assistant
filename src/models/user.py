@@ -24,7 +24,9 @@ class CriterionConfig(BaseModel):
     """Per-criterion configuration: required/optional and how to handle missing data."""
 
     mode: CriterionMode = CriterionMode.REQUIRED
-    none_policy: NonePolicy = NonePolicy.FAIL
+    # Matches the JobPreferences product-wide default so hand-edited YAML with
+    # only `mode` set picks up the same none_policy as the full factories.
+    none_policy: NonePolicy = NonePolicy.PASS
 
 
 def _config(mode: CriterionMode, none_policy: NonePolicy) -> CriterionConfig:

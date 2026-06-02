@@ -48,3 +48,15 @@ class TestPreferencesPersistence:
         path = tmp_path / "prefs.yaml"
         path.write_text("")
         assert load_preferences(path) == JobPreferences()
+
+    def test_partial_criterion_config_uses_pass_none_policy(self, tmp_path):
+        """Partial YAML with only `mode` set picks up the product-wide PASS default.
+
+        Regression guard: keeps CriterionConfig's class-level none_policy default
+        aligned with what every JobPreferences factory uses.
+        """
+        path = tmp_path / "prefs.yaml"
+        path.write_text("salary_config:\n  mode: required\n")
+        prefs = load_preferences(path)
+        assert prefs.salary_config.mode == "required"
+        assert prefs.salary_config.none_policy == "pass"
