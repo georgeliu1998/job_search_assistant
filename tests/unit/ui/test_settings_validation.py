@@ -6,10 +6,28 @@ pure validation helper is testable in isolation.
 """
 
 from ui.pages.settings import (
+    CRITERIA_CONFIGS,
     SALARY_TIERS,
+    _all_widget_keys,
     _salary_slider_options,
     _validate_required_lists,
 )
+
+
+class TestWidgetKeys:
+    def test_no_duplicate_keys(self):
+        keys = _all_widget_keys()
+        assert len(keys) == len(set(keys))
+
+    def test_every_criterion_has_mode_and_none_keys(self):
+        keys = set(_all_widget_keys())
+        for attr, _ in CRITERIA_CONFIGS:
+            assert f"{attr}_mode" in keys
+            assert f"{attr}_none" in keys
+
+    def test_includes_value_widget_keys(self):
+        keys = set(_all_widget_keys())
+        assert {"pref_min_salary", "pref_locations", "pref_key_skills"} <= keys
 
 
 class TestSalarySliderOptions:
