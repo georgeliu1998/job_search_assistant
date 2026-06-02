@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from src.models.base import BaseDataModel
 from src.models.enums import JobSource, JobStatus
@@ -153,19 +153,20 @@ class JobPostingExtractionSchema(BaseDataModel):
         examples=[["health", "dental", "401k", "pto"], []],
     )
 
-    @field_validator("salary_max")
-    @classmethod
-    def salary_max_must_be_greater_than_min(
-        cls, v: Optional[int], info
-    ) -> Optional[int]:
-        """Validate that salary_max is greater than salary_min if both are provided."""
-        if v is not None and info.data.get("salary_min") is not None:
-            salary_min = info.data["salary_min"]
-            if v < salary_min:
-                raise ValueError(
-                    "salary_max must be greater than or equal to salary_min"
-                )
-        return v
+    @model_validator(mode="after")
+    def salary_max_must_be_greater_than_min(self) -> "JobPostingExtractionSchema":
+        """Validate that salary_max >= salary_min when both are provided.
+
+        Uses an after-model validator so the check reads the fully-populated
+        fields and does not depend on field declaration order.
+        """
+        if (
+            self.salary_max is not None
+            and self.salary_min is not None
+            and self.salary_max < self.salary_min
+        ):
+            raise ValueError("salary_max must be greater than or equal to salary_min")
+        return self
 
     model_config = ConfigDict(
         # Enable JSON schema generation with examples

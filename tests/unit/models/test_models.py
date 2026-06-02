@@ -13,6 +13,7 @@ from src.models import (
     EvaluationResult,
     Experience,
     JobDescription,
+    JobPostingExtractionSchema,
     JobPreferences,
     JobSource,
     JobStatus,
@@ -426,6 +427,26 @@ class TestJobPreferencesModel:
 
         restored = JobPreferences.model_validate(data)
         assert restored == prefs
+
+
+class TestJobPostingExtractionSchema:
+    """Test the salary cross-field validation on the extraction schema."""
+
+    def test_valid_when_max_ge_min(self):
+        schema = JobPostingExtractionSchema(salary_min=100000, salary_max=150000)
+        assert schema.salary_max == 150000
+
+    def test_equal_min_max_is_valid(self):
+        schema = JobPostingExtractionSchema(salary_min=120000, salary_max=120000)
+        assert schema.salary_min == schema.salary_max
+
+    def test_max_below_min_raises(self):
+        with pytest.raises(ValidationError):
+            JobPostingExtractionSchema(salary_min=150000, salary_max=100000)
+
+    def test_only_one_bound_is_valid(self):
+        assert JobPostingExtractionSchema(salary_max=150000).salary_min is None
+        assert JobPostingExtractionSchema(salary_min=150000).salary_max is None
 
 
 class TestJobDescriptionModel:
