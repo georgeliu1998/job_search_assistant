@@ -25,9 +25,12 @@ class FitAssessment(BaseModel):
     """Structured output for the fit assessment LLM call."""
 
     verdict: Literal["good_fit", "poor_fit"] = Field(
-        ..., description="Whether the job is a good fit for the candidate"
+        ...,
+        description="Whether the role's focus matches the candidate's target role/skills",
     )
-    reasoning: str = Field(..., description="Short explanation for the verdict")
+    reasoning: str = Field(
+        ..., description="Short explanation referring only to subject-matter alignment"
+    )
 
 
 def _result(
