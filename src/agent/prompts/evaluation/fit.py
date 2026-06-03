@@ -18,8 +18,8 @@ their full background; that decision is made elsewhere).
 Compare the candidate's target role and key skills against the job's actual
 focus areas, responsibilities, and required skills. Do not rely on the job
 title alone -- a similar title with a different focus may still be a poor match
-(for example, an "AI Engineer" who builds LLM/RAG systems is a poor match for a
-"Data Scientist" role centered on A/B testing and recommendation engines).
+(for example, a "Data Scientist" who builds LLM-driven applications is a poor
+match for a "Data Scientist" role focused on A/B testing and analytics).
 
 Return:
 - verdict: "good_fit" if the role's focus matches the candidate's target role
