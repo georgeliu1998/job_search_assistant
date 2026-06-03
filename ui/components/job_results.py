@@ -32,6 +32,17 @@ def _criterion_icon(result: Dict[str, Any]) -> str:
     return "❌" if required else "🟡"
 
 
+def _escape_md(text: str) -> str:
+    """Escape ``$`` so Streamlit's markdown doesn't render it as LaTeX math.
+
+    Streamlit interprets ``$...$`` as inline math, which silently strips the
+    dollar signs and italicizes the digits ("$100,000 meets $200,000" renders
+    as "100,000 meets 200,000" in math italics). Escape to ``\\$`` so dollars
+    render literally.
+    """
+    return str(text).replace("$", r"\$")
+
+
 def _display_extracted_info(extracted_info: Dict[str, Any]) -> None:
     """Render the structured fields extracted from the posting."""
     st.subheader("📋 Extracted Job Information")
@@ -60,11 +71,11 @@ def _display_extracted_info(extracted_info: Dict[str, Any]) -> None:
         salary_min = extracted_info.get("salary_min")
         salary_max = extracted_info.get("salary_max")
         if salary_min and salary_max:
-            st.write(f"**Salary:** ${salary_min:,} - ${salary_max:,}")
+            st.write(_escape_md(f"**Salary:** ${salary_min:,} - ${salary_max:,}"))
         elif salary_max:
-            st.write(f"**Salary:** Up to ${salary_max:,}")
+            st.write(_escape_md(f"**Salary:** Up to ${salary_max:,}"))
         elif salary_min:
-            st.write(f"**Salary:** From ${salary_min:,}")
+            st.write(_escape_md(f"**Salary:** From ${salary_min:,}"))
 
         visa = extracted_info.get("visa_sponsorship")
         if visa and visa != "unclear":
@@ -92,7 +103,8 @@ def _display_criteria(evaluation_result: Dict[str, Any]) -> None:
             continue
         label = CRITERION_LABELS.get(key, key.replace("_", " ").title())
         icon = _criterion_icon(result)
-        st.write(f"{icon} **{label}:** {result.get('reason', '')}")
+        reason = _escape_md(result.get("reason", ""))
+        st.write(f"{icon} **{label}:** {reason}")
 
 
 def display_job_evaluation_results(results: Dict[str, Any]) -> None:
@@ -104,10 +116,10 @@ def display_job_evaluation_results(results: Dict[str, Any]) -> None:
 
     if recommendation == "APPLY":
         st.success(f"🎯 **Recommendation: {recommendation}**")
-        st.success(f"**Reasoning:** {reasoning}")
+        st.success(_escape_md(f"**Reasoning:** {reasoning}"))
     else:
         st.error(f"❌ **Recommendation: {recommendation}**")
-        st.error(f"**Reasoning:** {reasoning}")
+        st.error(_escape_md(f"**Reasoning:** {reasoning}"))
 
     if evaluation_result:
         _display_criteria(evaluation_result)

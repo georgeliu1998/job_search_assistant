@@ -26,7 +26,9 @@ class TestGenerateRecommendation:
         }
         rec, reasoning = generate_recommendation_from_evaluation(evaluation)
         assert rec == "DO_NOT_APPLY"
-        assert "Salary too low" in reasoning
+        # Reasoning is brief: lists failed criterion names, not full reasons
+        # (the breakdown UI shows the per-criterion reasons).
+        assert reasoning == "Required criteria failed: salary."
 
     def test_optional_failure_does_not_block(self):
         """An optional criterion failing must not change APPLY."""
@@ -37,7 +39,9 @@ class TestGenerateRecommendation:
         rec, reasoning = generate_recommendation_from_evaluation(evaluation)
         assert rec == "APPLY"
         assert "Optional concerns" in reasoning
-        assert "Missing dental" in reasoning
+        assert "benefits" in reasoning
+        # Full per-criterion reason text stays out of the recommender summary.
+        assert "Missing dental" not in reasoning
 
     def test_required_failure_reports_optional_concerns_too(self):
         evaluation = {
@@ -46,8 +50,18 @@ class TestGenerateRecommendation:
         }
         rec, reasoning = generate_recommendation_from_evaluation(evaluation)
         assert rec == "DO_NOT_APPLY"
-        assert "Salary too low" in reasoning
-        assert "Missing dental" in reasoning
+        assert "Required criteria failed: salary." in reasoning
+        assert "Optional concerns: benefits." in reasoning
+
+    def test_multiple_required_failures_listed_with_readable_names(self):
+        evaluation = {
+            "salary": _crit(False),
+            "employment_type": _crit(False),
+            "location": _crit(True),
+        }
+        _, reasoning = generate_recommendation_from_evaluation(evaluation)
+        # underscores normalized to spaces for readability
+        assert reasoning == "Required criteria failed: salary, employment type."
 
     def test_empty_returns_error(self):
         rec, reasoning = generate_recommendation_from_evaluation({})

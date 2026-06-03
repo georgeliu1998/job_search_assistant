@@ -20,6 +20,11 @@ def _is_criterion(result: Any) -> bool:
     return isinstance(result, dict) and "pass" in result and "mode" in result
 
 
+def _display_name(criterion_key: str) -> str:
+    """Turn 'employment_type' into 'employment type' for readable lists."""
+    return criterion_key.replace("_", " ")
+
+
 def generate_recommendation_from_evaluation(
     evaluation_result: Dict[str, Any],
 ) -> Tuple[str, str]:
@@ -31,7 +36,9 @@ def generate_recommendation_from_evaluation(
 
     Returns:
         Tuple of (recommendation, reasoning) where recommendation is one of
-        "APPLY", "DO_NOT_APPLY", or "ERROR".
+        "APPLY", "DO_NOT_APPLY", or "ERROR". Reasoning is a brief summary that
+        names which criteria failed; the per-criterion ``reason`` text is left
+        to the criteria breakdown so the two views don't duplicate each other.
     """
     if not evaluation_result or "error" in evaluation_result:
         logger.warning("Invalid or empty evaluation result for recommendation")
@@ -41,43 +48,30 @@ def generate_recommendation_from_evaluation(
 
     required_failures: List[str] = []
     optional_failures: List[str] = []
-    required_passes: List[str] = []
 
     for criterion, result in evaluation_result.items():
-        if not _is_criterion(result):
+        if not _is_criterion(result) or result["pass"]:
             continue
-
-        reason = result.get("reason", "")
-        entry = f"{criterion}: {reason}"
-        is_required = result["mode"] == CriterionMode.REQUIRED.value
-
-        if result["pass"]:
-            if is_required:
-                required_passes.append(entry)
+        if result["mode"] == CriterionMode.REQUIRED.value:
+            required_failures.append(criterion)
         else:
-            if is_required:
-                required_failures.append(entry)
-            else:
-                optional_failures.append(entry)
+            optional_failures.append(criterion)
 
     if required_failures:
-        recommendation = "DO_NOT_APPLY"
-        reasoning = f"Required criteria failed: {'; '.join(required_failures)}"
+        names = ", ".join(_display_name(c) for c in required_failures)
+        reasoning = f"Required criteria failed: {names}."
         if optional_failures:
-            reasoning += f". Optional concerns: {'; '.join(optional_failures)}"
+            opt = ", ".join(_display_name(c) for c in optional_failures)
+            reasoning += f" Optional concerns: {opt}."
         logger.info(
             "Recommendation: DO_NOT_APPLY - %d required criteria failed",
             len(required_failures),
         )
-        return recommendation, reasoning
+        return "DO_NOT_APPLY", reasoning
 
-    recommendation = "APPLY"
-    reasoning = "All required criteria passed"
-    if required_passes:
-        reasoning += f": {'; '.join(required_passes)}"
+    reasoning = "All required criteria passed."
     if optional_failures:
-        reasoning += (
-            f". Optional concerns (non-blocking): {'; '.join(optional_failures)}"
-        )
+        opt = ", ".join(_display_name(c) for c in optional_failures)
+        reasoning += f" Optional concerns (non-blocking): {opt}."
     logger.info("Recommendation: APPLY - no required criteria failed")
-    return recommendation, reasoning
+    return "APPLY", reasoning
