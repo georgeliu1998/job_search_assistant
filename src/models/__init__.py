@@ -9,7 +9,12 @@ from src.models.enums import Environment, JobSource, JobStatus
 from src.models.evaluation import EvaluationResult
 from src.models.job import JobDescription, JobPostingExtractionSchema
 from src.models.resume import Education, Experience, Resume
-from src.models.user import UserPreferences
+from src.models.user import (
+    CriterionConfig,
+    CriterionMode,
+    JobPreferences,
+    NonePolicy,
+)
 
 __all__ = [
     # Base
@@ -25,5 +30,9 @@ __all__ = [
     "Education",
     "Experience",
     "Resume",
-    "UserPreferences",
+    # User preferences
+    "JobPreferences",
+    "CriterionConfig",
+    "CriterionMode",
+    "NonePolicy",
 ]

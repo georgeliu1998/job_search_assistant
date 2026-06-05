@@ -7,15 +7,18 @@ from pydantic import ValidationError
 
 from src.models import (
     BaseDataModel,
+    CriterionMode,
     Education,
     Environment,
     EvaluationResult,
     Experience,
     JobDescription,
+    JobPostingExtractionSchema,
+    JobPreferences,
     JobSource,
     JobStatus,
+    NonePolicy,
     Resume,
-    UserPreferences,
 )
 
 
@@ -378,38 +381,72 @@ class TestResumeModel:
         assert data == expected
 
 
-class TestUserPreferencesModel:
-    """Test the UserPreferences model."""
+class TestJobPreferencesModel:
+    """Test the JobPreferences model."""
 
-    def test_user_preferences_creation(self):
-        """Test UserPreferences model creation."""
-        job_titles = ["Software Engineer", "Data Scientist", "Product Manager"]
-        preferences = UserPreferences(job_titles=job_titles)
+    def test_defaults(self):
+        """A default JobPreferences is usable and has sensible criterion modes."""
+        prefs = JobPreferences()
 
-        assert preferences.job_titles == job_titles
+        assert prefs.min_salary == 100000
+        assert prefs.acceptable_locations == ["remote"]
+        assert prefs.salary_config.mode == CriterionMode.REQUIRED
+        # Every criterion treats missing data as a pass by default (wide net).
+        all_configs = (
+            prefs.salary_config,
+            prefs.location_config,
+            prefs.level_config,
+            prefs.seniority_config,
+            prefs.visa_config,
+            prefs.blacklist_config,
+            prefs.employment_type_config,
+            prefs.travel_config,
+            prefs.education_config,
+            prefs.equity_config,
+            prefs.benefits_config,
+            prefs.fit_config,
+        )
+        assert all(cfg.none_policy == NonePolicy.PASS for cfg in all_configs)
+        # Mode defaults the user asked for.
+        assert prefs.seniority_config.mode == CriterionMode.OPTIONAL
+        assert prefs.employment_type_config.mode == CriterionMode.REQUIRED
+        assert prefs.fit_config.mode == CriterionMode.OPTIONAL
 
-    def test_user_preferences_missing_job_titles(self):
-        """Test UserPreferences validation with missing job_titles."""
-        with pytest.raises(ValidationError) as exc_info:
-            UserPreferences()
+    def test_literal_validation_rejects_typos(self):
+        """Invalid Literal values fail fast rather than silently never matching."""
+        with pytest.raises(ValidationError):
+            JobPreferences(acceptable_locations=["work-from-moon"])
 
-        errors = exc_info.value.errors()
-        missing_fields = {error["loc"][0] for error in errors}
-        assert "job_titles" in missing_fields
+    def test_json_round_trip_uses_plain_strings(self):
+        """model_dump(mode='json') writes enum values as plain strings."""
+        prefs = JobPreferences()
+        data = prefs.model_dump(mode="json")
 
-    def test_user_preferences_empty_job_titles(self):
-        """Test UserPreferences with empty job_titles list."""
-        preferences = UserPreferences(job_titles=[])
-        assert preferences.job_titles == []
+        assert data["salary_config"]["mode"] == "required"
+        assert data["fit_config"]["none_policy"] == "pass"
 
-    def test_user_preferences_serialization(self):
-        """Test UserPreferences model serialization."""
-        job_titles = ["Backend Developer", "DevOps Engineer"]
-        preferences = UserPreferences(job_titles=job_titles)
+        restored = JobPreferences.model_validate(data)
+        assert restored == prefs
 
-        data = preferences.model_dump()
-        expected = {"job_titles": job_titles}
-        assert data == expected
+
+class TestJobPostingExtractionSchema:
+    """Test the salary cross-field validation on the extraction schema."""
+
+    def test_valid_when_max_ge_min(self):
+        schema = JobPostingExtractionSchema(salary_min=100000, salary_max=150000)
+        assert schema.salary_max == 150000
+
+    def test_equal_min_max_is_valid(self):
+        schema = JobPostingExtractionSchema(salary_min=120000, salary_max=120000)
+        assert schema.salary_min == schema.salary_max
+
+    def test_max_below_min_raises(self):
+        with pytest.raises(ValidationError):
+            JobPostingExtractionSchema(salary_min=150000, salary_max=100000)
+
+    def test_only_one_bound_is_valid(self):
+        assert JobPostingExtractionSchema(salary_max=150000).salary_min is None
+        assert JobPostingExtractionSchema(salary_min=150000).salary_max is None
 
 
 class TestJobDescriptionModel:
@@ -423,7 +460,7 @@ class TestJobDescriptionModel:
         assert job.title is None
         assert job.company is None
         assert job.description is None
-        assert job.is_remote is False
+        assert job.is_remote is None
         assert job.requirements == []
         assert job.source is None
         assert job.url is None

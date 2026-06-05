@@ -19,11 +19,8 @@ def render_job_evaluation_page():
     Paste a job description below and our AI will analyze if it's a good fit
     based on your preferences.
 
-    **Current evaluation criteria:**
-    - 💰 Salary range ($100,000+ preferred)
-    - 🏠 Remote work availability
-    - 📊 Experience level match
-    - 🛠️ Technical skills alignment
+    Configure what to evaluate (salary, location, seniority, visa, benefits,
+    fit, and more) on the **⚙️ Job Preferences** page.
     """)
 
     # Job description input

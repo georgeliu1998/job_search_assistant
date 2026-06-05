@@ -1316,6 +1316,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "streamlit" },
 ]
 
@@ -1357,6 +1358,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.3" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "streamlit", specifier = ">=1.57.0" },
 ]
 provides-extras = ["dev", "presidio"]

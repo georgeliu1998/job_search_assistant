@@ -19,15 +19,25 @@ from src.exceptions.llm import LLMProviderError
 class TestJobEvaluationWorkflow:
     """Integration tests for the job evaluation workflow."""
 
+    @patch("src.agent.workflows.job_evaluation.main.load_preferences")
+    @patch("src.agent.workflows.job_evaluation.main.evaluate_fit")
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
-    @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
+    @patch("src.agent.workflows.job_evaluation.main.evaluate_job_against_criteria")
     def test_workflow_should_apply(
-        self, mock_evaluate, mock_validate, mock_extract_schema
+        self,
+        mock_evaluate,
+        mock_validate,
+        mock_extract_schema,
+        mock_fit,
+        mock_load_prefs,
     ):
         """Test complete workflow resulting in APPLY recommendation."""
+        from src.models.user import JobPreferences
+
+        mock_load_prefs.return_value = JobPreferences()
         # Setup extraction with passing criteria
         mock_extract_schema.return_value = {
             "title": "Staff Software Engineer",
@@ -39,12 +49,18 @@ class TestJobEvaluationWorkflow:
         }
         mock_validate.return_value = True
         mock_evaluate.return_value = {
-            "salary": {"pass": True, "reason": "Salary meets requirement"},
-            "remote": {"pass": True, "reason": "Position is remote"},
-            "title_level": {
+            "salary": {
                 "pass": True,
-                "reason": "IC role has appropriate seniority",
+                "reason": "Salary meets requirement",
+                "mode": "required",
+                "extracted_value": 170000,
             },
+        }
+        mock_fit.return_value = {
+            "pass": True,
+            "reason": "Good fit",
+            "mode": "optional",
+            "extracted_value": "good_fit",
         }
 
         final_state = run_job_evaluation_workflow(
@@ -58,16 +74,25 @@ class TestJobEvaluationWorkflow:
         assert final_state.extracted_info["title"] == "Staff Software Engineer"
         assert final_state.extracted_info["company"] == "TechCorp"
 
+    @patch("src.agent.workflows.job_evaluation.main.load_preferences")
+    @patch("src.agent.workflows.job_evaluation.main.evaluate_fit")
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
-    @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
+    @patch("src.agent.workflows.job_evaluation.main.evaluate_job_against_criteria")
     def test_workflow_should_not_apply(
-        self, mock_evaluate, mock_validate, mock_extract_schema
+        self,
+        mock_evaluate,
+        mock_validate,
+        mock_extract_schema,
+        mock_fit,
+        mock_load_prefs,
     ):
         """Test complete workflow resulting in DO_NOT_APPLY recommendation."""
-        # Setup extraction with failing criteria
+        from src.models.user import JobPreferences
+
+        mock_load_prefs.return_value = JobPreferences()
         mock_extract_schema.return_value = {
             "title": "Junior Software Engineer",
             "company": "TechCorp",
@@ -78,12 +103,18 @@ class TestJobEvaluationWorkflow:
         }
         mock_validate.return_value = True
         mock_evaluate.return_value = {
-            "salary": {"pass": False, "reason": "Salary too low"},
-            "remote": {"pass": False, "reason": "Position is not remote"},
-            "title_level": {
+            "salary": {
                 "pass": False,
-                "reason": "IC role lacks required seniority",
+                "reason": "Salary too low",
+                "mode": "required",
+                "extracted_value": 90000,
             },
+        }
+        mock_fit.return_value = {
+            "pass": True,
+            "reason": "n/a",
+            "mode": "optional",
+            "extracted_value": None,
         }
 
         final_state = run_job_evaluation_workflow(
@@ -95,15 +126,25 @@ class TestJobEvaluationWorkflow:
         assert final_state.extracted_info is not None
         assert final_state.evaluation_result is not None
 
+    @patch("src.agent.workflows.job_evaluation.main.load_preferences")
+    @patch("src.agent.workflows.job_evaluation.main.evaluate_fit")
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
     @patch(
         "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
     )
-    @patch("src.core.job_evaluation.evaluator.evaluate_job_against_criteria")
+    @patch("src.agent.workflows.job_evaluation.main.evaluate_job_against_criteria")
     def test_workflow_mixed_results(
-        self, mock_evaluate, mock_validate, mock_extract_schema
+        self,
+        mock_evaluate,
+        mock_validate,
+        mock_extract_schema,
+        mock_fit,
+        mock_load_prefs,
     ):
-        """Test workflow with mixed evaluation results."""
+        """Test workflow where a required criterion fails despite optional passes."""
+        from src.models.user import JobPreferences
+
+        mock_load_prefs.return_value = JobPreferences()
         mock_extract_schema.return_value = {
             "title": "Senior Software Engineer",
             "company": "TechCorp",
@@ -114,12 +155,24 @@ class TestJobEvaluationWorkflow:
         }
         mock_validate.return_value = True
         mock_evaluate.return_value = {
-            "salary": {"pass": True, "reason": "Salary meets requirement"},
-            "remote": {"pass": True, "reason": "Position is remote"},
-            "title_level": {
-                "pass": False,
-                "reason": "IC role lacks required seniority",
+            "salary": {
+                "pass": True,
+                "reason": "Salary meets requirement",
+                "mode": "required",
+                "extracted_value": 140000,
             },
+            "seniority": {
+                "pass": False,
+                "reason": "Seniority not acceptable",
+                "mode": "required",
+                "extracted_value": "mid",
+            },
+        }
+        mock_fit.return_value = {
+            "pass": True,
+            "reason": "n/a",
+            "mode": "optional",
+            "extracted_value": None,
         }
 
         final_state = run_job_evaluation_workflow(

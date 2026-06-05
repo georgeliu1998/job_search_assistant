@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from src.models.base import BaseDataModel
 from src.models.enums import JobSource, JobStatus
@@ -15,7 +15,9 @@ class JobDescription(BaseDataModel):
     title: Optional[str] = Field(None, description="Job title.")
     company: Optional[str] = Field(None, description="Company name.")
     description: Optional[str] = Field(None, description="Full job description text.")
-    is_remote: Optional[bool] = Field(False, description="Is the job remote?")
+    is_remote: Optional[bool] = Field(
+        None, description="Is the job remote? None = unknown."
+    )
     requirements: List[str] = Field(
         default_factory=list, description="Job requirements."
     )
@@ -100,19 +102,73 @@ class JobPostingExtractionSchema(BaseDataModel):
         examples=["ic", "manager", "unclear"],
     )
 
-    @field_validator("salary_max")
-    @classmethod
-    def salary_max_must_be_greater_than_min(
-        cls, v: Optional[int], info
-    ) -> Optional[int]:
-        """Validate that salary_max is greater than salary_min if both are provided."""
-        if v is not None and info.data.get("salary_min") is not None:
-            salary_min = info.data["salary_min"]
-            if v < salary_min:
-                raise ValueError(
-                    "salary_max must be greater than or equal to salary_min"
-                )
-        return v
+    seniority_level: Literal[
+        "junior", "mid", "senior", "staff", "principal", "lead", "unclear"
+    ] = Field(
+        default="unclear",
+        description="Seniority level inferred from the job title and description",
+        examples=["senior", "staff", "principal", "unclear"],
+    )
+
+    visa_sponsorship: Literal["yes", "no", "unclear"] = Field(
+        default="unclear",
+        description="Whether the posting mentions offering visa sponsorship",
+        examples=["yes", "no", "unclear"],
+    )
+
+    employment_type: Literal[
+        "full-time", "part-time", "contract", "internship", "unclear"
+    ] = Field(
+        default="unclear",
+        description="Employment type of the role",
+        examples=["full-time", "contract", "unclear"],
+    )
+
+    travel_required: Literal["yes", "no", "unclear"] = Field(
+        default="unclear",
+        description="Whether the role requires travel",
+        examples=["yes", "no", "unclear"],
+    )
+
+    education_requirement: Literal[
+        "associate", "bachelor", "master", "phd", "none", "unclear"
+    ] = Field(
+        default="unclear",
+        description=(
+            "Minimum education the posting requires. Use 'none' when the posting "
+            "explicitly states no degree is required, 'unclear' when not mentioned."
+        ),
+        examples=["bachelor", "master", "none", "unclear"],
+    )
+
+    equity_offered: List[Literal["stock_options", "rsus"]] = Field(
+        default_factory=list,
+        description="Equity types the posting mentions offering (empty if not mentioned)",
+        examples=[["rsus"], ["stock_options"], []],
+    )
+
+    benefits_offered: List[
+        Literal["health", "vision", "dental", "life", "std", "ltd", "401k", "pto"]
+    ] = Field(
+        default_factory=list,
+        description="Benefits the posting mentions offering (empty if not mentioned)",
+        examples=[["health", "dental", "401k", "pto"], []],
+    )
+
+    @model_validator(mode="after")
+    def salary_max_must_be_greater_than_min(self) -> "JobPostingExtractionSchema":
+        """Validate that salary_max >= salary_min when both are provided.
+
+        Uses an after-model validator so the check reads the fully-populated
+        fields and does not depend on field declaration order.
+        """
+        if (
+            self.salary_max is not None
+            and self.salary_min is not None
+            and self.salary_max < self.salary_min
+        ):
+            raise ValueError("salary_max must be greater than or equal to salary_min")
+        return self
 
     model_config = ConfigDict(
         # Enable JSON schema generation with examples
