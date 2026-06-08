@@ -4,8 +4,6 @@ Tests for environment check component functionality
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from ui.components.environment_check import check_environment_setup
 
 

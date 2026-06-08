@@ -32,9 +32,7 @@ class TestExtractJobPosting:
         }
         mock_extract_with_schema.return_value = expected_result
 
-        result = extract_job_posting(
-            "Software Engineer at TechCorp, remote, $140k-$170k"
-        )
+        result = extract_job_posting("Software Engineer at TechCorp, remote, $140k-$170k")
 
         assert result == expected_result
         mock_extract_with_schema.assert_called_once()

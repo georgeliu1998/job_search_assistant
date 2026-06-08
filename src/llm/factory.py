@@ -6,7 +6,6 @@ directly, eliminating the need for a custom wrapper layer.
 """
 
 import os
-from typing import Any
 
 from langchain_core.language_models import BaseChatModel
 
@@ -29,7 +28,8 @@ def _ensure_api_key(config: LLMProfileConfig, env_var_name: str) -> str:
         api_key = os.getenv(env_var_name)
     if not api_key:
         raise LLMProviderError(
-            f"API key not found. Please set {env_var_name} in your environment or .env file. "
+            f"API key not found. Please set {env_var_name} in your "
+            f"environment or .env file. "
             f"See README.md for setup instructions."
         )
     return api_key
@@ -78,8 +78,7 @@ def get_chat_model(config: LLMProfileConfig) -> BaseChatModel:
     if constructor_name is None:
         available = ", ".join(sorted(_PROVIDER_CONSTRUCTORS.keys()))
         raise LLMProviderError(
-            f"Unsupported LLM provider: '{provider}'. "
-            f"Available providers: {available}."
+            f"Unsupported LLM provider: '{provider}'. Available providers: {available}."
         )
 
     try:
@@ -95,9 +94,7 @@ def get_chat_model(config: LLMProfileConfig) -> BaseChatModel:
             f"Make sure the required packages are installed."
         ) from e
     except Exception as e:
-        raise LLMProviderError(
-            f"Failed to create chat model for provider '{provider}': {e}"
-        ) from e
+        raise LLMProviderError(f"Failed to create chat model for provider '{provider}': {e}") from e
 
 
 def get_chat_model_by_profile_name(profile_name: str) -> BaseChatModel:

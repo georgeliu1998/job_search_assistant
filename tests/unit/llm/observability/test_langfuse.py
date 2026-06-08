@@ -5,8 +5,6 @@ Unit tests for Langfuse manager functionality.
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.llm import LangfuseManager, langfuse_manager
 
 
@@ -113,7 +111,8 @@ class TestLangfuseManager:
 
     @patch("src.llm.langfuse._workflow_context")
     def test_get_config_force_tracing_in_workflow_context(self, mock_context):
-        """Test get_config with force_tracing=True includes tracing even in workflow context."""
+        """Test get_config with force_tracing=True includes tracing even in
+        workflow context."""
         mock_context.get.return_value = True
         mock_handler = MagicMock()
 

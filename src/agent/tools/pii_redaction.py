@@ -3,7 +3,6 @@
 import logging
 import os
 import re
-from typing import Dict, List, Optional
 
 from src.models.interview import PIIRedactionResult
 
@@ -68,18 +67,12 @@ class PIIRedactionPipeline:
             self.anonymizer = AnonymizerEngine()
 
             # Test Presidio functionality
-            test_result = self.analyzer.analyze(
-                text="test email: test@example.com", language="en"
-            )
+            self.analyzer.analyze(text="test email: test@example.com", language="en")
 
             # Configure anonymization operators for phone numbers and email only
             self.anonymization_config = {
-                "EMAIL_ADDRESS": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_EMAIL]"}
-                ),
-                "PHONE_NUMBER": OperatorConfig(
-                    "replace", {"new_value": "[REDACTED_PHONE]"}
-                ),
+                "EMAIL_ADDRESS": OperatorConfig("replace", {"new_value": "[REDACTED_EMAIL]"}),
+                "PHONE_NUMBER": OperatorConfig("replace", {"new_value": "[REDACTED_PHONE]"}),
             }
 
             # Supported entity types for detection (phone numbers and email only)
@@ -132,16 +125,12 @@ class PIIRedactionPipeline:
                 end = result.end
                 original_text = resume_text[start:end]
 
-                redaction_key = self.anonymization_config[entity_type].params[
-                    "new_value"
-                ]
+                redaction_key = self.anonymization_config[entity_type].params["new_value"]
                 redactions_map[f"{redaction_key}_{i}"] = (
                     f"{entity_type}: {len(original_text)} chars, confidence: {confidence:.2f}"
                 )
 
-                redaction_log.append(
-                    f"Detected {entity_type} (confidence: {confidence:.2f})"
-                )
+                redaction_log.append(f"Detected {entity_type} (confidence: {confidence:.2f})")
 
             # Anonymize the text
             anonymized_result = self.anonymizer.anonymize(
@@ -153,9 +142,7 @@ class PIIRedactionPipeline:
             redacted_text = anonymized_result.text
 
             # Validate redaction completeness
-            complete = self._validate_redaction_complete(
-                redacted_text, analysis_results
-            )
+            complete = self._validate_redaction_complete(redacted_text, analysis_results)
 
             redaction_log.append(f"Redaction complete: {complete}")
             logger.info(f"Presidio PII redaction completed. Complete: {complete}")
@@ -189,7 +176,8 @@ class PIIRedactionPipeline:
                 matches = pattern.findall(redacted_text)
                 for i, match in enumerate(matches):
                     if isinstance(match, tuple):
-                        # For phone numbers, we need to find the full match, not just the groups
+                        # For phone numbers, we need to find the full match,
+                        # not just the groups
                         if pii_type == "PHONE":
                             full_phone_pattern = re.compile(
                                 r"(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}"
@@ -205,9 +193,7 @@ class PIIRedactionPipeline:
                         match_str = match
 
                     redaction_token = f"[REDACTED_{pii_type}_{len(redactions_map)}]"
-                    redactions_map[redaction_token] = (
-                        f"{pii_type}: {len(match_str)} chars"
-                    )
+                    redactions_map[redaction_token] = f"{pii_type}: {len(match_str)} chars"
                     redacted_text = redacted_text.replace(match_str, redaction_token, 1)
                     redaction_log.append(f"Detected {pii_type}")
 
@@ -236,9 +222,7 @@ class PIIRedactionPipeline:
                 redaction_log=redaction_log,
             )
 
-    def _validate_redaction_complete(
-        self, redacted_text: str, analysis_results
-    ) -> bool:
+    def _validate_redaction_complete(self, redacted_text: str, analysis_results) -> bool:
         """Validate that Presidio PII redaction is complete."""
         try:
             # Re-analyze the redacted text to check if any PII remains
@@ -255,11 +239,13 @@ class PIIRedactionPipeline:
 
             if high_confidence_remaining:
                 logger.warning(
-                    f"Found {len(high_confidence_remaining)} high-confidence PII entities in redacted text"
+                    f"Found {len(high_confidence_remaining)} high-confidence "
+                    "PII entities in redacted text"
                 )
                 return False
 
-            # Additional basic pattern checks for phone numbers and email that might slip through
+            # Additional basic pattern checks for phone numbers and email that
+            # might slip through
             suspicious_patterns = [
                 (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "email"),
                 (

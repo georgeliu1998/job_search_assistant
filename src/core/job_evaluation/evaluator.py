@@ -40,9 +40,7 @@ def _result(
     }
 
 
-def _none_result(
-    config: CriterionConfig, extracted_value: Any, label: str
-) -> Dict[str, Any]:
+def _none_result(config: CriterionConfig, extracted_value: Any, label: str) -> Dict[str, Any]:
     """Build a result for a criterion whose data is missing from the posting."""
     passed = config.none_policy == NonePolicy.PASS
     decision = "pass" if passed else "fail"
@@ -77,16 +75,10 @@ def _evaluate_salary(info: Dict[str, Any], prefs: JobPreferences) -> Dict[str, A
         return _none_result(config, None, "Salary")
 
     if salary_max >= prefs.min_salary:
-        reason = (
-            f"Top-of-range salary (${salary_max:,}) meets minimum "
-            f"(${prefs.min_salary:,})"
-        )
+        reason = f"Top-of-range salary (${salary_max:,}) meets minimum (${prefs.min_salary:,})"
         return _result(True, reason, config, salary_max)
 
-    reason = (
-        f"Top-of-range salary (${salary_max:,}) is below minimum "
-        f"(${prefs.min_salary:,})"
-    )
+    reason = f"Top-of-range salary (${salary_max:,}) is below minimum (${prefs.min_salary:,})"
     return _result(False, reason, config, salary_max)
 
 
@@ -159,9 +151,7 @@ def _evaluate_travel(info: Dict[str, Any], prefs: JobPreferences) -> Dict[str, A
         return _none_result(config, value, "Travel requirement")
 
     if value == "yes":
-        return _result(
-            False, "Role requires travel but user is not willing", config, value
-        )
+        return _result(False, "Role requires travel but user is not willing", config, value)
     return _result(True, "Role does not require travel", config, value)
 
 

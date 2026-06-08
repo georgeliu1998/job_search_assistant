@@ -6,16 +6,13 @@ ConfigManager, and the singleton pattern.
 """
 
 import os
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from src.config import ConfigLoader, ConfigManager, config
+from src.config import ConfigLoader, ConfigManager
 from src.config.models import AppConfig
 from src.exceptions.config import (
-    ConfigError,
     ConfigFileError,
     ConfigValidationError,
     EnvironmentError,
@@ -98,9 +95,7 @@ level = "DEBUG"
 
         with patch.dict(os.environ, {}, clear=True):
             loader = ConfigLoader(config_dir=tmp_path)
-            with pytest.raises(
-                EnvironmentError, match="APP_ENV environment variable is not set"
-            ):
+            with pytest.raises(EnvironmentError, match="APP_ENV environment variable is not set"):
                 loader.get_environment()
 
     def test_invalid_app_env_raises_error(self, tmp_path):
@@ -125,9 +120,7 @@ level = "DEBUG"
 
         with patch.dict(os.environ, {"APP_ENV": "dev"}):
             loader = ConfigLoader(config_dir=tmp_path)
-            with pytest.raises(
-                ConfigFileError, match="Environment configuration file not found"
-            ):
+            with pytest.raises(ConfigFileError, match="Environment configuration file not found"):
                 loader.load_raw_config()
 
     def test_secrets_loading(self, tmp_path):
@@ -174,17 +167,10 @@ enabled = true
             raw_config = loader.load_raw_config()
 
             assert (
-                raw_config["llm_profiles"]["anthropic_profile"]["api_key"]
-                == "test_anthropic_key"
+                raw_config["llm_profiles"]["anthropic_profile"]["api_key"] == "test_anthropic_key"
             )
-            assert (
-                raw_config["observability"]["langfuse"]["public_key"]
-                == "test_public_key"
-            )
-            assert (
-                raw_config["observability"]["langfuse"]["secret_key"]
-                == "test_secret_key"
-            )
+            assert raw_config["observability"]["langfuse"]["public_key"] == "test_public_key"
+            assert raw_config["observability"]["langfuse"]["secret_key"] == "test_secret_key"
 
     def test_config_merging(self, tmp_path):
         """Test that configurations are properly merged."""
@@ -310,9 +296,7 @@ enabled = false
 
             # Different parameters should create different instances
             manager3 = ConfigManager()  # No config_dir parameter
-            assert (
-                manager1 is not manager3
-            )  # Different instances due to different params
+            assert manager1 is not manager3  # Different instances due to different params
 
     def test_reload_functionality(self, tmp_path):
         """Test that configuration can be reloaded."""
@@ -583,15 +567,9 @@ temperature = 0.0
             assert settings.general.name == "integration-test"
             assert settings.general.debug is True  # Overridden by dev.toml
             assert settings.logging.level == "DEBUG"  # Overridden by dev.toml
-            assert (
-                settings.llm_profiles["claude_profile"].temperature == 0.0
-            )  # Overridden
-            assert (
-                settings.llm_profiles["claude_profile"].api_key == "test-key"
-            )  # From env
-            assert (
-                settings.observability.langfuse.public_key == "test-public"
-            )  # From env
+            assert settings.llm_profiles["claude_profile"].temperature == 0.0  # Overridden
+            assert settings.llm_profiles["claude_profile"].api_key == "test-key"  # From env
+            assert settings.observability.langfuse.public_key == "test-public"  # From env
 
             # Test model methods
             profile = settings.get_llm_profile("claude_profile")

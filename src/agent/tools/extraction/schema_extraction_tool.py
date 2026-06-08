@@ -5,7 +5,7 @@ This module provides functions for extracting structured data from job posting t
 These functions can be used directly by LangGraph workflows and other components.
 """
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 from langchain_core.messages import HumanMessage
 
@@ -74,14 +74,10 @@ def extract_job_posting(job_text: str) -> Dict[str, Any]:
         - location_policy: remote/hybrid/onsite/unclear
         - role_type: ic/manager/unclear
     """
-    return _extract_with_schema(
-        job_text, JobPostingExtractionSchema, JOB_POSTING_EXTRACTION_PROMPT
-    )
+    return _extract_with_schema(job_text, JobPostingExtractionSchema, JOB_POSTING_EXTRACTION_PROMPT)
 
 
-def validate_extraction_result(
-    extraction_result: Dict[str, Any], schema_name: str
-) -> bool:
+def validate_extraction_result(extraction_result: Dict[str, Any], schema_name: str) -> bool:
     """
     Validate that a job posting extraction result contains meaningful data.
 
@@ -122,7 +118,9 @@ def validate_extraction_result(
     is_valid = basic_info and additional_info
 
     logger.debug(
-        f"Job posting validation: {is_valid} (title={has_title}, company={has_company}, salary={has_salary}, policy={has_clear_policy}, role={has_clear_role})"
+        f"Job posting validation: {is_valid} (title={has_title}, "
+        f"company={has_company}, salary={has_salary}, "
+        f"policy={has_clear_policy}, role={has_clear_role})"
     )
 
     return bool(is_valid)

@@ -12,12 +12,8 @@ class EvaluationResult(BaseDataModel):
     """Model representing the result of evaluating a job against user preferences."""
 
     job: JobDescription = Field(..., description="The job description being evaluated.")
-    is_good_fit: bool = Field(
-        ..., description="Whether the job is considered a good fit."
-    )
-    score: float = Field(
-        ..., description="Numerical score of the evaluation (0.0 to 1.0)."
-    )
+    is_good_fit: bool = Field(..., description="Whether the job is considered a good fit.")
+    score: float = Field(..., description="Numerical score of the evaluation (0.0 to 1.0).")
     reasoning: str = Field(..., description="Reasoning behind the evaluation outcome.")
     matching_skills: List[str] = Field(
         default_factory=list, description="Skills that match the job requirements."

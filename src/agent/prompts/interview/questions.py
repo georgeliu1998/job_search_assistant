@@ -9,7 +9,9 @@ from langchain_core.prompts import PromptTemplate
 
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 
-QUESTION_GENERATION_SYSTEM_TEMPLATE = """You are an expert interview preparation assistant. Your task is to generate relevant interview questions based on the job description, interview type, and company information.
+QUESTION_GENERATION_SYSTEM_TEMPLATE = """You are an expert interview preparation \
+assistant. Your task is to generate relevant interview questions based on \
+the job description, interview type, and company information.
 
 Interview Type: {interview_type}
 Interview Format: {interview_format}
@@ -17,7 +19,8 @@ Company: {company}
 Role: {role}
 Duration: {duration} minutes
 
-CRITICAL REQUIREMENT: You MUST generate EXACTLY the specified number of questions for each category:
+CRITICAL REQUIREMENT: You MUST generate EXACTLY the specified number of \
+questions for each category:
 {question_breakdown}
 
 Total questions: {total_questions}
@@ -34,7 +37,8 @@ Category: [general/behavioral/technical/culture/situational]
 Difficulty: [easy/medium/hard]
 Rationale: [Why this question is relevant]
 
-REMEMBER: You must provide exactly the requested number of questions per category. Double-check your count before submitting your response.
+REMEMBER: You must provide exactly the requested number of questions per \
+category. Double-check your count before submitting your response.
 
 ---"""
 
@@ -45,18 +49,18 @@ QUESTION_GENERATION_USER_TEMPLATE = """Job Description:
 Redacted Resume Context:
 {redacted_resume}
 
-{research_context}Please generate interview questions for this {interview_type} interview.
+{research_context}Please generate interview questions for this \
+{interview_type} interview.
 
-CRITICAL: Generate exactly {num_questions} questions in total as specified in the system prompt."""
+CRITICAL: Generate exactly {num_questions} questions in total as specified \
+in the system prompt."""
 
 
 QUESTION_GENERATION_SYSTEM_PROMPT = PromptTemplate.from_template(
     QUESTION_GENERATION_SYSTEM_TEMPLATE
 )
 
-QUESTION_GENERATION_USER_PROMPT = PromptTemplate.from_template(
-    QUESTION_GENERATION_USER_TEMPLATE
-)
+QUESTION_GENERATION_USER_PROMPT = PromptTemplate.from_template(QUESTION_GENERATION_USER_TEMPLATE)
 
 
 def create_question_system_prompt(state: InterviewPrepState) -> str:

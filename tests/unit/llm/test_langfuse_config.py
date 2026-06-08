@@ -5,7 +5,7 @@ Unit tests for Langfuse configuration via centralized configuration.
 import os
 from unittest.mock import patch
 
-from src.config import ConfigManager, config
+from src.config import config
 
 
 class TestLangfuseConfig:
@@ -27,11 +27,7 @@ class TestLangfuseConfig:
         langfuse_config = config.observability.langfuse
 
         # With mocked keys, should be valid if enabled
-        if (
-            langfuse_config.enabled
-            and langfuse_config.public_key
-            and langfuse_config.secret_key
-        ):
+        if langfuse_config.enabled and langfuse_config.public_key and langfuse_config.secret_key:
             assert langfuse_config.is_valid() is True
         else:
             # If disabled or missing keys, should be invalid
@@ -48,8 +44,10 @@ class TestLangfuseConfig:
             os.environ,
             {
                 "APP_ENV": "dev",
-                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
-                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
+                # Required for dev environment
+                "ANTHROPIC_API_KEY": "test-anthropic-key",
+                # Required for google_extraction profile
+                "GOOGLE_API_KEY": "test-google-key",
                 "LANGFUSE_PUBLIC_KEY": "test_public_key",
                 "LANGFUSE_SECRET_KEY": "test_secret_key",
             },
@@ -67,8 +65,10 @@ class TestLangfuseConfig:
             os.environ,
             {
                 "APP_ENV": "dev",
-                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for dev environment
-                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
+                # Required for dev environment
+                "ANTHROPIC_API_KEY": "test-anthropic-key",
+                # Required for google_extraction profile
+                "GOOGLE_API_KEY": "test-google-key",
             },
         ):
             test_config = config.reload()
@@ -92,8 +92,10 @@ class TestLangfuseConfig:
             os.environ,
             {
                 "APP_ENV": "prod",
-                "ANTHROPIC_API_KEY": "test-anthropic-key",  # Required for prod environment
-                "GOOGLE_API_KEY": "test-google-key",  # Required for google_extraction profile
+                # Required for prod environment
+                "ANTHROPIC_API_KEY": "test-anthropic-key",
+                # Required for google_extraction profile
+                "GOOGLE_API_KEY": "test-google-key",
             },
         ):
             test_config = config.reload()

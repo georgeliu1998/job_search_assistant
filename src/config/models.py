@@ -77,9 +77,7 @@ class LLMProfileConfig(BaseModel):
 
     provider: str = Field(..., description="LLM provider")
     model: str = Field(..., description="Model identifier")
-    temperature: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Sampling temperature"
-    )
+    temperature: float = Field(default=0.0, ge=0.0, le=1.0, description="Sampling temperature")
     max_tokens: int = Field(default=512, gt=0, description="Maximum tokens to generate")
     api_key: Optional[str] = Field(
         default=None, description="API key for the provider (from env var)"
@@ -153,7 +151,8 @@ class LLMProfileConfig(BaseModel):
             provider = info.data.get("provider", "unknown")
             raise ValueError(
                 f"API key is required for {provider} provider. "
-                f"Please set {provider.upper()}_API_KEY in your environment or .env file."
+                f"Please set {provider.upper()}_API_KEY in your environment "
+                "or .env file."
             )
 
         return v
@@ -187,9 +186,7 @@ class LangfuseConfig(BaseModel):
     """Langfuse observability configuration."""
 
     enabled: bool = Field(default=False, description="Enable Langfuse tracing")
-    host: str = Field(
-        default="https://us.cloud.langfuse.com", description="Langfuse host URL"
-    )
+    host: str = Field(default="https://us.cloud.langfuse.com", description="Langfuse host URL")
     public_key: Optional[str] = Field(
         default=None, description="Langfuse public key (from env var)"
     )
@@ -216,20 +213,15 @@ class AppConfig(BaseModel):
     general: GeneralConfig = Field(..., description="General application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
     agents: AgentConfig = Field(..., description="Agent configuration")
-    llm_profiles: Dict[str, LLMProfileConfig] = Field(
-        ..., description="LLM profile configurations"
-    )
-    observability: ObservabilityConfig = Field(
-        ..., description="Observability configuration"
-    )
+    llm_profiles: Dict[str, LLMProfileConfig] = Field(..., description="LLM profile configurations")
+    observability: ObservabilityConfig = Field(..., description="Observability configuration")
 
     def get_llm_profile(self, profile_name: str) -> LLMProfileConfig:
         """Get LLM profile by name with validation."""
         if profile_name not in self.llm_profiles:
             available = ", ".join(self.llm_profiles.keys())
             raise ValueError(
-                f"LLM profile '{profile_name}' not found. "
-                f"Available profiles: {available}"
+                f"LLM profile '{profile_name}' not found. Available profiles: {available}"
             )
         return self.llm_profiles[profile_name]
 

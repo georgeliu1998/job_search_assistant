@@ -34,12 +34,12 @@ jobs:
         uv sync --extra dev --frozen
       timeout-minutes: 8
 
-    - name: Lint with black
-      run: uv run black --check src tests ui
+    - name: Lint with ruff
+      run: uv run ruff check src tests ui
       timeout-minutes: 3
 
-    - name: Check imports with isort
-      run: uv run isort --check-only --profile black src tests ui
+    - name: Check formatting with ruff
+      run: uv run ruff format --check src tests ui
       timeout-minutes: 3
 
     # Temporarily disabled for prototyping - re-enable during refactoring

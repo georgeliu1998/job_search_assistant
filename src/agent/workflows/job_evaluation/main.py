@@ -140,9 +140,7 @@ def generate_recommendation(state: JobEvaluationState) -> Dict[str, Any]:
         }
 
     try:
-        recommendation, reasoning = generate_recommendation_from_evaluation(
-            evaluation_result
-        )
+        recommendation, reasoning = generate_recommendation_from_evaluation(evaluation_result)
 
         logger.info(f"Recommendation generated: {recommendation}")
         return {

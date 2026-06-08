@@ -2,7 +2,6 @@
 Main Streamlit application for Job Search Assistant
 """
 
-import os
 import sys
 from pathlib import Path
 

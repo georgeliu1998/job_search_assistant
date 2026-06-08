@@ -1,7 +1,5 @@
 """Unit tests for data models."""
 
-from datetime import datetime
-
 import pytest
 from pydantic import ValidationError
 
@@ -311,9 +309,7 @@ class TestResumeModel:
             "address": "123 Main St, City, State 12345",
         }
 
-        education = [
-            Education(institution="MIT", degree="BS", field_of_study="Computer Science")
-        ]
+        education = [Education(institution="MIT", degree="BS", field_of_study="Computer Science")]
 
         experience = [
             Experience(
@@ -466,9 +462,7 @@ class TestJobDescriptionModel:
         assert job.url is None
         assert job.date_posted is None
         assert job.date_scraped is None
-        assert (
-            job.status == JobStatus.PENDING_EVALUATION
-        )  # Default values remain as enum objects
+        assert job.status == JobStatus.PENDING_EVALUATION  # Default values remain as enum objects
         assert job.evaluation_score is None
         assert job.evaluation_notes is None
 
@@ -525,22 +519,16 @@ class TestJobDescriptionModel:
         assert job3.evaluation_score == 0.5
 
         # Invalid scores
-        with pytest.raises(
-            ValidationError, match="Evaluation score must be between 0 and 1"
-        ):
+        with pytest.raises(ValidationError, match="Evaluation score must be between 0 and 1"):
             JobDescription(raw_text="test", evaluation_score=-0.1)
 
-        with pytest.raises(
-            ValidationError, match="Evaluation score must be between 0 and 1"
-        ):
+        with pytest.raises(ValidationError, match="Evaluation score must be between 0 and 1"):
             JobDescription(raw_text="test", evaluation_score=1.1)
 
     def test_job_description_default_status(self):
         """Test JobDescription default status."""
         job = JobDescription(raw_text="test")
-        assert (
-            job.status == JobStatus.PENDING_EVALUATION
-        )  # Default values remain as enum objects
+        assert job.status == JobStatus.PENDING_EVALUATION  # Default values remain as enum objects
 
     def test_job_description_serialization(self):
         """Test JobDescription model serialization."""
@@ -620,14 +608,10 @@ class TestEvaluationResultModel:
         job = JobDescription(raw_text="test")
 
         # Valid scores
-        result1 = EvaluationResult(
-            job=job, is_good_fit=True, score=0.0, reasoning="test"
-        )
+        result1 = EvaluationResult(job=job, is_good_fit=True, score=0.0, reasoning="test")
         assert result1.score == 0.0
 
-        result2 = EvaluationResult(
-            job=job, is_good_fit=True, score=1.0, reasoning="test"
-        )
+        result2 = EvaluationResult(job=job, is_good_fit=True, score=1.0, reasoning="test")
         assert result2.score == 1.0
 
         # Invalid scores
@@ -731,8 +715,9 @@ class TestModelInteroperability:
         """Test that validation errors cascade through nested models."""
         # Create an invalid job (score out of range)
         with pytest.raises(ValidationError):
-            invalid_job = JobDescription(
-                raw_text="test", evaluation_score=1.5  # Invalid score
+            JobDescription(
+                raw_text="test",
+                evaluation_score=1.5,  # Invalid score
             )
 
         # Create a valid job

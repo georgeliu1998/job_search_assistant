@@ -7,7 +7,6 @@ including edge cases and thread safety.
 
 import threading
 import time
-from unittest.mock import patch
 
 import pytest
 
@@ -185,9 +184,7 @@ class TestSingletonDecorator:
         original_time = instance1.created_at
 
         # First reload with parameters to establish the _singleton_key
-        instance2 = instance1.reload_singleton(
-            value="first_reload", other="test_reload"
-        )
+        instance2 = instance1.reload_singleton(value="first_reload", other="test_reload")
 
         time.sleep(0.01)
 
@@ -274,7 +271,8 @@ class TestSingletonDecorator:
                 # The _singleton_reload parameter should not be passed to __init__
                 # This test ensures it's properly filtered out
 
-        # This should work without the _singleton_reload parameter being passed to __init__
+        # This should work without the _singleton_reload parameter being
+        # passed to __init__
         instance1 = TestClass(value="test")
         instance2 = instance1.reload_singleton(value="reloaded")
 
@@ -353,8 +351,10 @@ class TestSingletonEdgeCases:
             def __init__(self, data):
                 self.data = data
 
-        # Lists and dicts are unhashable and should cause an error when used as dict keys
-        # The singleton decorator should raise TypeError when trying to use unhashable types
+        # Lists and dicts are unhashable and should cause an error when used
+        # as dict keys
+        # The singleton decorator should raise TypeError when trying to use
+        # unhashable types
         with pytest.raises(TypeError, match="unhashable type"):
             TestClass([1, 2, 3])
 
@@ -362,7 +362,8 @@ class TestSingletonEdgeCases:
             TestClass({"key": "value"})
 
     def test_singleton_memory_behavior(self):
-        """Test that singleton doesn't cause memory leaks by holding too many instances."""
+        """Test that singleton doesn't cause memory leaks by holding too many
+        instances."""
 
         @singleton
         class TestClass:

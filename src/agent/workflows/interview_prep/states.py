@@ -1,6 +1,6 @@
 """State management for interview preparation workflow."""
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import ConfigDict, Field
 
@@ -26,9 +26,7 @@ class InterviewPrepState(BaseDataModel):
     # Inputs
     job_description: str = Field(..., description="Job posting text")
     resume_text: str = Field(..., description="Original resume content")
-    interview_details: InterviewDetails = Field(
-        ..., description="Interview specifications"
-    )
+    interview_details: InterviewDetails = Field(..., description="Interview specifications")
 
     # CRITICAL: Error handling for workflow short-circuiting
     error: Optional[str] = Field(default=None, description="Workflow error message")

@@ -5,12 +5,11 @@ This module contains comprehensive integration tests that verify
 the entire workflow from job posting text to final recommendation.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from src.agent.workflows.job_evaluation import (
-    JobEvaluationState,
     run_job_evaluation_workflow,
 )
 from src.exceptions.llm import LLMProviderError
@@ -22,9 +21,7 @@ class TestJobEvaluationWorkflow:
     @patch("src.agent.workflows.job_evaluation.main.load_preferences")
     @patch("src.agent.workflows.job_evaluation.main.evaluate_fit")
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
-    @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
-    )
+    @patch("src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result")
     @patch("src.agent.workflows.job_evaluation.main.evaluate_job_against_criteria")
     def test_workflow_should_apply(
         self,
@@ -77,9 +74,7 @@ class TestJobEvaluationWorkflow:
     @patch("src.agent.workflows.job_evaluation.main.load_preferences")
     @patch("src.agent.workflows.job_evaluation.main.evaluate_fit")
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
-    @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
-    )
+    @patch("src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result")
     @patch("src.agent.workflows.job_evaluation.main.evaluate_job_against_criteria")
     def test_workflow_should_not_apply(
         self,
@@ -129,9 +124,7 @@ class TestJobEvaluationWorkflow:
     @patch("src.agent.workflows.job_evaluation.main.load_preferences")
     @patch("src.agent.workflows.job_evaluation.main.evaluate_fit")
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
-    @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
-    )
+    @patch("src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result")
     @patch("src.agent.workflows.job_evaluation.main.evaluate_job_against_criteria")
     def test_workflow_mixed_results(
         self,
@@ -224,9 +217,7 @@ class TestJobEvaluationWorkflow:
         assert final_state.evaluation_result == {}
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
-    @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
-    )
+    @patch("src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result")
     def test_workflow_extraction_failure(self, mock_validate, mock_extract_schema):
         """Test evaluation when extraction fails."""
         mock_extract_schema.side_effect = LLMProviderError("API error")
@@ -239,9 +230,7 @@ class TestJobEvaluationWorkflow:
         assert final_state.evaluation_result is None
 
     @patch("src.agent.tools.extraction.schema_extraction_tool._extract_with_schema")
-    @patch(
-        "src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result"
-    )
+    @patch("src.agent.tools.extraction.schema_extraction_tool.validate_extraction_result")
     def test_workflow_invalid_extraction(self, mock_validate, mock_extract_schema):
         """Test evaluation when extraction is invalid."""
         mock_extract_schema.return_value = {"title": "", "company": ""}
@@ -254,9 +243,7 @@ class TestJobEvaluationWorkflow:
         assert final_state.extracted_info is None
         assert final_state.evaluation_result is None
 
-    @pytest.mark.parametrize(
-        "sample_job_description", ["software_engineer"], indirect=True
-    )
+    @pytest.mark.parametrize("sample_job_description", ["software_engineer"], indirect=True)
     def test_workflow_with_sample_data(self, sample_job_description):
         """Test evaluation with real sample job description."""
         final_state = run_job_evaluation_workflow(sample_job_description)

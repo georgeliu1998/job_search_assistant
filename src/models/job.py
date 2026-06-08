@@ -1,6 +1,6 @@
 """Job-related models for the job search assistant."""
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -15,12 +15,8 @@ class JobDescription(BaseDataModel):
     title: Optional[str] = Field(None, description="Job title.")
     company: Optional[str] = Field(None, description="Company name.")
     description: Optional[str] = Field(None, description="Full job description text.")
-    is_remote: Optional[bool] = Field(
-        None, description="Is the job remote? None = unknown."
-    )
-    requirements: List[str] = Field(
-        default_factory=list, description="Job requirements."
-    )
+    is_remote: Optional[bool] = Field(None, description="Is the job remote? None = unknown.")
+    requirements: List[str] = Field(default_factory=list, description="Job requirements.")
 
     raw_text: str = Field(..., description="Raw text of the job description.")
     # extracted_info: Optional[Dict[str, Any]] = Field(
@@ -44,9 +40,7 @@ class JobDescription(BaseDataModel):
     evaluation_score: Optional[float] = Field(
         None, description="Score assigned by the evaluation agent."
     )
-    evaluation_notes: Optional[str] = Field(
-        None, description="Notes from the evaluation agent."
-    )
+    evaluation_notes: Optional[str] = Field(None, description="Notes from the evaluation agent.")
 
     @field_validator("evaluation_score")
     @classmethod
@@ -102,12 +96,12 @@ class JobPostingExtractionSchema(BaseDataModel):
         examples=["ic", "manager", "unclear"],
     )
 
-    seniority_level: Literal[
-        "junior", "mid", "senior", "staff", "principal", "lead", "unclear"
-    ] = Field(
-        default="unclear",
-        description="Seniority level inferred from the job title and description",
-        examples=["senior", "staff", "principal", "unclear"],
+    seniority_level: Literal["junior", "mid", "senior", "staff", "principal", "lead", "unclear"] = (
+        Field(
+            default="unclear",
+            description="Seniority level inferred from the job title and description",
+            examples=["senior", "staff", "principal", "unclear"],
+        )
     )
 
     visa_sponsorship: Literal["yes", "no", "unclear"] = Field(
@@ -116,9 +110,7 @@ class JobPostingExtractionSchema(BaseDataModel):
         examples=["yes", "no", "unclear"],
     )
 
-    employment_type: Literal[
-        "full-time", "part-time", "contract", "internship", "unclear"
-    ] = Field(
+    employment_type: Literal["full-time", "part-time", "contract", "internship", "unclear"] = Field(
         default="unclear",
         description="Employment type of the role",
         examples=["full-time", "contract", "unclear"],
@@ -130,20 +122,20 @@ class JobPostingExtractionSchema(BaseDataModel):
         examples=["yes", "no", "unclear"],
     )
 
-    education_requirement: Literal[
-        "associate", "bachelor", "master", "phd", "none", "unclear"
-    ] = Field(
-        default="unclear",
-        description=(
-            "Minimum education the posting requires. Use 'none' when the posting "
-            "explicitly states no degree is required, 'unclear' when not mentioned."
-        ),
-        examples=["bachelor", "master", "none", "unclear"],
+    education_requirement: Literal["associate", "bachelor", "master", "phd", "none", "unclear"] = (
+        Field(
+            default="unclear",
+            description=(
+                "Minimum education the posting requires. Use 'none' when the posting "
+                "explicitly states no degree is required, 'unclear' when not mentioned."
+            ),
+            examples=["bachelor", "master", "none", "unclear"],
+        )
     )
 
     equity_offered: List[Literal["stock_options", "rsus"]] = Field(
         default_factory=list,
-        description="Equity types the posting mentions offering (empty if not mentioned)",
+        description=("Equity types the posting mentions offering (empty if not mentioned)"),
         examples=[["rsus"], ["stock_options"], []],
     )
 

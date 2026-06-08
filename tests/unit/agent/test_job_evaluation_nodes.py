@@ -27,7 +27,8 @@ class TestValidateInput:
 
 class TestExtractUsesBoundedText:
     def test_extract_does_not_re_truncate(self, monkeypatch):
-        """extract_job_info should pass state text straight through (already bounded)."""
+        """extract_job_info should pass state text straight through
+        (already bounded)."""
         captured = {}
 
         def fake_extract(text):
