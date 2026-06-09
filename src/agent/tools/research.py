@@ -45,7 +45,8 @@ class ResearchWithCitations:
             search_response = self.search.invoke(search_query)
 
             # Extract results from the Tavily response
-            # According to Tavily docs, response has structure: {'results': [...], 'query': '...', etc.}
+            # According to Tavily docs, response has structure:
+            # {'results': [...], 'query': '...', etc.}
             results = search_response.get("results", [])
 
             logger.debug(f"Tavily returned {len(results)} results")
@@ -64,7 +65,8 @@ class ResearchWithCitations:
                     )
                     citations.append(citation)
                     logger.info(
-                        f"Added citation: {result.get('title', 'No title')} (accessible: {is_accessible})"
+                        f"Added citation: {result.get('title', 'No title')} "
+                        f"(accessible: {is_accessible})"
                     )
 
                 except Exception as e:
@@ -94,15 +96,11 @@ class ResearchWithCitations:
 
                 # Extract results from the Tavily response
                 results = search_response.get("results", [])
-                logger.debug(
-                    f"Topic '{topic}' - Tavily returned {len(results)} results"
-                )
+                logger.debug(f"Topic '{topic}' - Tavily returned {len(results)} results")
 
                 for result in results:
                     try:
-                        is_accessible = self._check_url_accessibility(
-                            result.get("url", "")
-                        )
+                        is_accessible = self._check_url_accessibility(result.get("url", ""))
 
                         citation = ResearchCitation(
                             url=result.get("url", ""),
@@ -114,9 +112,7 @@ class ResearchWithCitations:
                         all_citations.append(citation)
 
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to process result for topic {topic}: {e}"
-                        )
+                        logger.warning(f"Failed to process result for topic {topic}: {e}")
                         continue
 
             except Exception as e:

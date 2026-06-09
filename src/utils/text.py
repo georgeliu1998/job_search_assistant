@@ -38,7 +38,5 @@ def truncate_text(text: str, max_chars: int, label: str = "input") -> str:
     if len(text) <= max_chars:
         return text
 
-    logger.warning(
-        "Truncating %s from %d to %d characters", label, len(text), max_chars
-    )
+    logger.warning("Truncating %s from %d to %d characters", label, len(text), max_chars)
     return text[:max_chars] + _TRUNCATION_MARKER

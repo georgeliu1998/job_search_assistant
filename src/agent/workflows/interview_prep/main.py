@@ -22,12 +22,10 @@ from src.llm import get_chat_model_by_profile_name, langfuse_manager
 from src.models.interview import (
     AnswerItem,
     AnswerStyle,
-    DifficultyLevel,
     InterviewGuide,
     InterviewQuestions,
     QAPair,
     QuestionCategory,
-    QuestionItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,15 +53,9 @@ def get_interview_prep_workflow() -> StateGraph:
     workflow.add_conditional_edges(
         "validate_and_redact", _route_on_error, {"continue": "research", END: END}
     )
-    workflow.add_conditional_edges(
-        "research", _route_on_error, {"continue": "questions", END: END}
-    )
-    workflow.add_conditional_edges(
-        "questions", _route_on_error, {"continue": "answers", END: END}
-    )
-    workflow.add_conditional_edges(
-        "answers", _route_on_error, {"continue": "compile", END: END}
-    )
+    workflow.add_conditional_edges("research", _route_on_error, {"continue": "questions", END: END})
+    workflow.add_conditional_edges("questions", _route_on_error, {"continue": "answers", END: END})
+    workflow.add_conditional_edges("answers", _route_on_error, {"continue": "compile", END: END})
     workflow.add_edge("compile", END)
 
     return workflow.compile()
@@ -124,13 +116,12 @@ def research_with_citations(state: InterviewPrepState) -> Dict[str, Any]:
 
 
 def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
-    """Generate interview questions based on role and interview type using structured output."""
+    """Generate interview questions based on role and interview type using
+    structured output."""
     logger.info("Generating interview questions")
 
     try:
-        llm = get_chat_model_by_profile_name(
-            config.agents.interview_question_generation
-        )
+        llm = get_chat_model_by_profile_name(config.agents.interview_question_generation)
         structured_llm = llm.with_structured_output(InterviewQuestions)
 
         # Create system prompt for question generation
@@ -148,17 +139,13 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
         config_dict = langfuse_manager.get_config()
 
         # Generate structured questions
-        logger.info(
-            f"Generating {state.num_questions} interview questions using structured output"
-        )
+        logger.info(f"Generating {state.num_questions} interview questions using structured output")
         result = structured_llm.invoke(messages, config=config_dict)
         logger.debug(f"Result: {result}")
 
         # Extract questions from structured result
         questions = (
-            result.questions
-            if hasattr(result, "questions")
-            else result.get("questions", [])
+            result.questions if hasattr(result, "questions") else result.get("questions", [])
         )
 
         logger.info(f"Generated {len(questions)} structured interview questions")
@@ -166,7 +153,8 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
         # Validate we got the expected number of questions
         if len(questions) != state.num_questions:
             logger.warning(
-                f"Generated {len(questions)} questions but requested {state.num_questions}. "
+                f"Generated {len(questions)} questions but requested "
+                f"{state.num_questions}. "
                 "Adjusting to match request."
             )
 
@@ -175,7 +163,8 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
                 questions = questions[: state.num_questions]
                 logger.info(f"Truncated to {state.num_questions} questions")
             else:
-                # Could implement retry logic here if needed, but structured output is typically more reliable
+                # Could implement retry logic here if needed, but structured
+                # output is typically more reliable
                 logger.warning(
                     f"Only got {len(questions)} questions, proceeding with available questions"
                 )
@@ -226,15 +215,11 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
                     HumanMessage(content=user_prompt),
                 ]
 
-                logger.debug(
-                    f"Generating answer for question: {qa_pair.question.question[:50]}..."
-                )
+                logger.debug(f"Generating answer for question: {qa_pair.question.question[:50]}...")
                 response = llm.invoke(messages, config=config_dict)
 
                 # Extract answer text from response
-                answer_text = (
-                    response.content if hasattr(response, "content") else str(response)
-                )
+                answer_text = response.content if hasattr(response, "content") else str(response)
 
                 # Determine answer style based on question category
                 answer_style = _determine_answer_style(qa_pair.question.category)
@@ -253,13 +238,12 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
                 )
 
                 updated_qa_pairs.append(updated_qa_pair)
-                logger.debug(
-                    f"Generated answer for question: {qa_pair.question.question[:50]}..."
-                )
+                logger.debug(f"Generated answer for question: {qa_pair.question.question[:50]}...")
 
             except Exception as e:
                 logger.error(
-                    f"Failed to generate answer for question '{qa_pair.question.question[:50]}...': {e}"
+                    f"Failed to generate answer for question "
+                    f"'{qa_pair.question.question[:50]}...': {e}"
                 )
                 # Keep the original QA pair with empty answer
                 updated_qa_pairs.append(qa_pair)
@@ -314,9 +298,7 @@ def _get_role_specific_topics(role: str) -> List[str]:
     if "engineer" in role_lower or "developer" in role_lower:
         topics.extend(["coding interview", "technical questions", "system design"])
     elif "manager" in role_lower:
-        topics.extend(
-            ["leadership interview", "team management", "conflict resolution"]
-        )
+        topics.extend(["leadership interview", "team management", "conflict resolution"])
     elif "product" in role_lower:
         topics.extend(["product management", "user experience", "roadmap planning"])
     elif "data" in role_lower:
@@ -358,7 +340,8 @@ def _generate_preparation_tips(state: InterviewPrepState) -> List[str]:
         "Prepare thoughtful questions to ask your interviewer",
     ]
 
-    # Add interview type specific tips - use string value directly since Pydantic converts enums
+    # Add interview type specific tips - use string value directly since
+    # Pydantic converts enums
     interview_type = state.interview_details.type
     if interview_type == "technical":
         tips.extend(

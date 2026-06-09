@@ -100,8 +100,7 @@ class ConfigLoader:
         if not env_str:
             valid_values = ", ".join([e.value for e in Environment])
             raise EnvironmentError(
-                f"APP_ENV environment variable is not set. "
-                f"Valid values: {valid_values}"
+                f"APP_ENV environment variable is not set. Valid values: {valid_values}"
             )
 
         try:
@@ -135,9 +134,7 @@ class ConfigLoader:
                 config_path=str(file_path),
             )
 
-    def merge_configs(
-        self, base: Dict[str, Any], override: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def merge_configs(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """
         Recursively merge configuration dictionaries.
 
@@ -151,11 +148,7 @@ class ConfigLoader:
         result = base.copy()
 
         for key, value in override.items():
-            if (
-                key in result
-                and isinstance(result[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                 result[key] = self.merge_configs(result[key], value)
             else:
                 result[key] = value

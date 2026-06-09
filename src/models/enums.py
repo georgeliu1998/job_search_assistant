@@ -41,9 +41,7 @@ class Environment(Enum):
             return full_form_mapping[env_str]
 
         valid_values = ", ".join([e.value for e in cls])
-        raise ValueError(
-            f"Invalid environment: '{env_str}'. Valid values: {valid_values}"
-        )
+        raise ValueError(f"Invalid environment: '{env_str}'. Valid values: {valid_values}")
 
 
 class JobSource(Enum):

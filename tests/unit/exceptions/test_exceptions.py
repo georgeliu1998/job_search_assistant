@@ -107,9 +107,11 @@ class TestConfigError:
         config_path = "/path/to/config.toml"
         details = {"line": 10, "column": 5}
 
-        # ConfigError inherits from JobSearchAssistantError, so it should support details
+        # ConfigError inherits from JobSearchAssistantError, so it should
+        # support details
         error = ConfigError(message, config_path)
-        error.details = details  # Set details manually since ConfigError doesn't take it in __init__
+        # Set details manually since ConfigError doesn't take it in __init__
+        error.details = details
 
         assert error.message == message
         assert error.config_path == config_path
@@ -170,7 +172,8 @@ class TestConfigError:
             raise EnvironmentError("env error")
 
     def test_config_error_subclasses_can_be_caught_as_base_error(self):
-        """Test that config error subclasses can be caught as JobSearchAssistantError."""
+        """Test that config error subclasses can be caught as
+        JobSearchAssistantError."""
         # Test ConfigError itself
         with pytest.raises(JobSearchAssistantError):
             raise ConfigError("config error")

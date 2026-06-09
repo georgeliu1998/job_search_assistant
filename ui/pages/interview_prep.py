@@ -7,7 +7,6 @@ import streamlit as st
 
 from src.agent.tools.pii_redaction import pii_pipeline
 from src.agent.workflows.interview_prep.main import (
-    get_interview_prep_workflow,
     run_interview_prep_workflow,
 )
 from src.agent.workflows.interview_prep.states import InterviewPrepState
@@ -136,19 +135,22 @@ def render_interview_prep_page():
         from src.agent.tools.pii_redaction import pii_pipeline
 
         if pii_pipeline.presidio_available is None:
-            pii_method = (
-                "Will be determined automatically (Presidio preferred, regex fallback)"
-            )
+            pii_method = "Will be determined automatically (Presidio preferred, regex fallback)"
         elif pii_pipeline.presidio_available:
             pii_method = "Microsoft Presidio (enterprise-grade NLP-based detection)"
         else:
             pii_method = "Regex patterns (basic pattern matching)"
         st.info(
-            f"🔒 **Privacy Notice**: Your resume will be automatically redacted to remove personal information (names, emails, phone numbers) before being processed by AI models.\n\n**PII Detection Method**: {pii_method}"
+            f"🔒 **Privacy Notice**: Your resume will be automatically "
+            f"redacted to remove personal information (names, emails, phone "
+            f"numbers) before being processed by AI models.\n\n"
+            f"**PII Detection Method**: {pii_method}"
         )
-    except:
+    except Exception:
         st.info(
-            "🔒 **Privacy Notice**: Your resume will be automatically redacted to remove personal information (names, emails, phone numbers) before being processed by AI models."
+            "🔒 **Privacy Notice**: Your resume will be automatically redacted "
+            "to remove personal information (names, emails, phone numbers) "
+            "before being processed by AI models."
         )
 
     # Generate button
@@ -248,7 +250,6 @@ def generate_interview_guide(
 
 def process_interview_workflow(initial_state: InterviewPrepState):
     """Process the interview preparation workflow."""
-    import threading
     import time
     from concurrent.futures import Future, ThreadPoolExecutor
 
@@ -291,9 +292,7 @@ def process_interview_workflow(initial_state: InterviewPrepState):
                 progress_bar.progress(progress_value)
 
                 # Wait a bit before next update, but check if workflow is done
-                for _ in range(
-                    10
-                ):  # Check every 0.5 seconds for 5 seconds total per step
+                for _ in range(10):  # Check every 0.5 seconds for 5 seconds total per step
                     if workflow_future.done():
                         break
                     time.sleep(0.5)
@@ -379,9 +378,7 @@ def display_interview_guide():
             ]
         if difficulty_filter != "All":
             filtered_pairs = [
-                qa
-                for qa in filtered_pairs
-                if qa.question.difficulty == difficulty_filter
+                qa for qa in filtered_pairs if qa.question.difficulty == difficulty_filter
             ]
 
         # Display questions
@@ -393,7 +390,8 @@ def display_interview_guide():
                 with col2:
                     difficulty_colors = {"easy": "🟢", "medium": "🟡", "hard": "🔴"}
                     st.write(
-                        f"{difficulty_colors.get(qa_pair.question.difficulty, '⚪')} {qa_pair.question.difficulty.title()}"
+                        f"{difficulty_colors.get(qa_pair.question.difficulty, '⚪')} "
+                        f"{qa_pair.question.difficulty.title()}"
                     )
                 with col3:
                     st.write(f"Style: {qa_pair.answer.style.title()}")
@@ -412,16 +410,12 @@ def display_interview_guide():
 
     # Citations
     if guide.citations:
-        with st.expander(
-            f"📚 Research Sources ({len(guide.citations)} sources)", expanded=False
-        ):
+        with st.expander(f"📚 Research Sources ({len(guide.citations)} sources)", expanded=False):
             for citation in guide.citations:
                 accessibility_indicator = "✅" if citation.is_accessible else "❌"
                 st.markdown(f"{accessibility_indicator} **{citation.title}**")
                 st.markdown(f"🔗 [{citation.url}]({citation.url})")
-                st.markdown(
-                    f"📅 Accessed: {citation.accessed_at.strftime('%Y-%m-%d %H:%M')}"
-                )
+                st.markdown(f"📅 Accessed: {citation.accessed_at.strftime('%Y-%m-%d %H:%M')}")
                 if citation.content_snippet:
                     st.markdown(f"📄 *{citation.content_snippet}*")
                 st.markdown("---")
@@ -490,9 +484,7 @@ def format_guide_as_text(guide) -> str:
         for citation in guide.citations:
             text_parts.append(f"• {citation.title}")
             text_parts.append(f"  {citation.url}")
-            text_parts.append(
-                f"  Accessed: {citation.accessed_at.strftime('%Y-%m-%d %H:%M')}"
-            )
+            text_parts.append(f"  Accessed: {citation.accessed_at.strftime('%Y-%m-%d %H:%M')}")
             text_parts.append("")
 
     return "\n".join(text_parts)
@@ -517,11 +509,7 @@ def display_guide_stats(guide):
         accessible_sources = sum(1 for c in guide.citations if c.is_accessible)
         st.metric(
             "Accessible Sources",
-            (
-                f"{accessible_sources}/{len(guide.citations)}"
-                if guide.citations
-                else "0/0"
-            ),
+            (f"{accessible_sources}/{len(guide.citations)}" if guide.citations else "0/0"),
         )
 
     if guide.qa_pairs:

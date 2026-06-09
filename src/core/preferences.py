@@ -48,9 +48,7 @@ def load_preferences(
             return JobPreferences()
         return JobPreferences.model_validate(data)
     except (yaml.YAMLError, ValidationError, OSError) as e:
-        logger.warning(
-            "Failed to load preferences from %s (%s); using defaults", path, e
-        )
+        logger.warning("Failed to load preferences from %s (%s); using defaults", path, e)
         return JobPreferences()
 
 

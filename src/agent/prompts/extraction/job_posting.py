@@ -38,6 +38,4 @@ Job posting:
 {job_text}
 """
 
-JOB_POSTING_EXTRACTION_PROMPT = PromptTemplate.from_template(
-    JOB_POSTING_EXTRACTION_RAW_TEMPLATE
-)
+JOB_POSTING_EXTRACTION_PROMPT = PromptTemplate.from_template(JOB_POSTING_EXTRACTION_RAW_TEMPLATE)

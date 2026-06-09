@@ -1,11 +1,11 @@
 #!/bin/bash
-# Format all Python code using black and isort
+# Format and lint all Python code using ruff
 
-echo "Running Black formatter..."
-uv run black src tests ui
+echo "Running Ruff linter (with import sorting and autofix)..."
+uv run ruff check --fix src tests ui
 
-echo "Running isort import sorter..."
-uv run isort src tests ui
+echo "Running Ruff formatter..."
+uv run ruff format src tests ui
 
 echo "Checking with mypy..."
 uv run mypy src

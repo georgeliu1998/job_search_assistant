@@ -45,7 +45,8 @@ class TestAPIKeyValidation:
         assert model is not None
 
     def test_different_providers_require_different_api_keys(self):
-        """Test that different providers validate their specific API key environment variables."""
+        """Test that different providers validate their specific API key
+        environment variables."""
         anthropic_config = LLMProfileConfig(
             provider="anthropic",
             model="claude-haiku-4-5",

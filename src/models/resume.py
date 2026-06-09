@@ -35,9 +35,7 @@ class Resume(BaseDataModel):
     personal_info: Dict[str, Any] = Field(
         ..., description="Personal information (e.g., name, email, phone)."
     )
-    summary: Optional[str] = Field(
-        None, description="Professional summary or objective."
-    )
+    summary: Optional[str] = Field(None, description="Professional summary or objective.")
     education: List[Education] = Field(
         default_factory=list, description="List of educational qualifications."
     )

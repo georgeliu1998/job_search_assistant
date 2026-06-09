@@ -53,11 +53,11 @@ class JobPreferences(BaseModel):
         default_factory=lambda: ["ic", "manager"],
         description="Acceptable role types",
     )
-    acceptable_seniority: List[
-        Literal["junior", "mid", "senior", "staff", "principal", "lead"]
-    ] = Field(
-        default_factory=lambda: ["senior", "staff", "principal", "lead"],
-        description="Acceptable seniority levels",
+    acceptable_seniority: List[Literal["junior", "mid", "senior", "staff", "principal", "lead"]] = (
+        Field(
+            default_factory=lambda: ["senior", "staff", "principal", "lead"],
+            description="Acceptable seniority levels",
+        )
     )
     visa_sponsorship_required: bool = Field(
         default=False, description="Whether the user requires visa sponsorship"
@@ -93,9 +93,7 @@ class JobPreferences(BaseModel):
         default="",
         description="Free-text description of the user's target role and focus",
     )
-    key_skills: List[str] = Field(
-        default_factory=list, description="The user's key skills"
-    )
+    key_skills: List[str] = Field(default_factory=list, description="The user's key skills")
 
     # --- Per-criterion configuration ---
     # Note: every criterion defaults to none_policy=PASS so that a posting only

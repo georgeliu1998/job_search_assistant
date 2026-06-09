@@ -26,16 +26,14 @@ class FitAssessment(BaseModel):
 
     verdict: Literal["good_fit", "poor_fit"] = Field(
         ...,
-        description="Whether the role's focus matches the candidate's target role/skills",
+        description=("Whether the role's focus matches the candidate's target role/skills"),
     )
     reasoning: str = Field(
         ..., description="Short explanation referring only to subject-matter alignment"
     )
 
 
-def _result(
-    passed: bool, reason: str, config_obj, extracted_value: Any
-) -> Dict[str, Any]:
+def _result(passed: bool, reason: str, config_obj, extracted_value: Any) -> Dict[str, Any]:
     """Build a criterion result dict matching the rule-based evaluator shape."""
     return {
         "pass": passed,

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, model_validator
 
 from src.models.base import BaseDataModel
 
@@ -79,9 +79,7 @@ class InterviewDetails(BaseDataModel):
     )
     company: Optional[str] = Field(None, description="Company name")
     role: Optional[str] = Field(None, description="Role being interviewed for")
-    duration: Optional[int] = Field(
-        None, description="Expected interview duration in minutes"
-    )
+    duration: Optional[int] = Field(None, description="Expected interview duration in minutes")
     question_mix: Dict[QuestionCategory, int] = Field(
         default_factory=dict, description="Question distribution by category"
     )
@@ -89,7 +87,8 @@ class InterviewDetails(BaseDataModel):
     @model_validator(mode="before")
     @classmethod
     def set_defaults(cls, data):
-        """Auto-populate question_mix and duration from defaults based on interview type."""
+        """Auto-populate question_mix and duration from defaults based on
+        interview type."""
         if isinstance(data, dict):
             interview_type = data.get("type")
 
@@ -197,15 +196,9 @@ class InterviewGuide(BaseDataModel):
     num_questions: int = Field(
         default=10, description="Number of questions requested for this guide"
     )
-    research_summary: Optional[str] = Field(
-        None, description="Company/role research summary"
-    )
-    qa_pairs: List[QAPair] = Field(
-        default_factory=list, description="Question and answer pairs"
-    )
+    research_summary: Optional[str] = Field(None, description="Company/role research summary")
+    qa_pairs: List[QAPair] = Field(default_factory=list, description="Question and answer pairs")
     preparation_tips: List[str] = Field(
         default_factory=list, description="General preparation advice"
     )
-    citations: List[ResearchCitation] = Field(
-        default_factory=list, description="Research sources"
-    )
+    citations: List[ResearchCitation] = Field(default_factory=list, description="Research sources")

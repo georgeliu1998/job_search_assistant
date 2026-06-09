@@ -42,9 +42,7 @@ class TestGetChatModel:
         mock_model = MagicMock()
         mock_create.return_value = mock_model
 
-        config = LLMProfileConfig(
-            provider="google", model="gemini-2.5-flash", api_key="test-key"
-        )
+        config = LLMProfileConfig(provider="google", model="gemini-2.5-flash", api_key="test-key")
 
         result = get_chat_model(config)
 

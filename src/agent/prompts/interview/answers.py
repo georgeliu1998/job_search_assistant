@@ -10,7 +10,9 @@ from langchain_core.prompts import PromptTemplate
 from src.agent.workflows.interview_prep.states import InterviewPrepState
 from src.models.interview import QuestionItem
 
-ANSWER_GENERATION_SYSTEM_TEMPLATE = """You are an expert interview coach. Generate personalized, compelling answers to interview questions based on the candidate's experience and the specific role.
+ANSWER_GENERATION_SYSTEM_TEMPLATE = """You are an expert interview coach. \
+Generate personalized, compelling answers to interview questions based on \
+the candidate's experience and the specific role.
 
 Guidelines:
 1. Use specific examples from the candidate's experience
@@ -38,13 +40,9 @@ Job Requirements:
 Please generate a personalized, compelling answer for this question."""
 
 
-ANSWER_GENERATION_SYSTEM_PROMPT = PromptTemplate.from_template(
-    ANSWER_GENERATION_SYSTEM_TEMPLATE
-)
+ANSWER_GENERATION_SYSTEM_PROMPT = PromptTemplate.from_template(ANSWER_GENERATION_SYSTEM_TEMPLATE)
 
-ANSWER_GENERATION_USER_PROMPT = PromptTemplate.from_template(
-    ANSWER_GENERATION_USER_TEMPLATE
-)
+ANSWER_GENERATION_USER_PROMPT = PromptTemplate.from_template(ANSWER_GENERATION_USER_TEMPLATE)
 
 
 def create_answer_system_prompt(state: InterviewPrepState) -> str:

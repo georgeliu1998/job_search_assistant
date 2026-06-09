@@ -68,9 +68,7 @@ def _multiselect(label, options_map, current, help_text=None, key=None):
     labels = list(options_map.values())
     label_to_value = {v: k for k, v in options_map.items()}
     default_labels = [options_map[v] for v in current if v in options_map]
-    selected = st.multiselect(
-        label, labels, default=default_labels, help=help_text, key=key
-    )
+    selected = st.multiselect(label, labels, default=default_labels, help=help_text, key=key)
     return [label_to_value[s] for s in selected]
 
 
@@ -219,17 +217,13 @@ def render_settings_page():
         help="Postings from these companies will fail the blacklist check.",
         key="pref_blacklist",
     )
-    company_blacklist = [
-        line.strip() for line in blacklist_text.splitlines() if line.strip()
-    ]
+    company_blacklist = [line.strip() for line in blacklist_text.splitlines() if line.strip()]
 
     st.subheader("🎯 Fit")
     target_role_description = st.text_area(
         "Target role description",
         value=prefs.target_role_description,
-        placeholder=(
-            "e.g. AI/ML Engineer focused on LLMs, RAG, and production ML systems"
-        ),
+        placeholder=("e.g. AI/ML Engineer focused on LLMs, RAG, and production ML systems"),
         help="Used by the AI fit assessment. Leave empty to skip fit evaluation.",
         key="pref_target_role",
     )
@@ -264,9 +258,7 @@ def render_settings_page():
                     f"{label} — if not in posting",
                     ["pass", "fail"],
                     index=["pass", "fail"].index(current.none_policy.value),
-                    format_func=lambda v: (
-                        "Count as pass" if v == "pass" else "Count as fail"
-                    ),
+                    format_func=lambda v: "Count as pass" if v == "pass" else "Count as fail",
                     key=f"{attr}_none",
                 )
             criteria_configs[attr] = CriterionConfig(mode=mode, none_policy=none_policy)

@@ -5,7 +5,6 @@ Job Evaluation page for analyzing job postings
 import streamlit as st
 
 from src.agent.workflows.job_evaluation import (
-    JobEvaluationState,
     run_job_evaluation_workflow,
 )
 from ui.components.environment_check import check_environment_setup
@@ -37,9 +36,7 @@ def render_job_evaluation_page():
     # Evaluation button and results
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        evaluate_btn = st.button(
-            "🚀 Evaluate Job", type="primary", use_container_width=True
-        )
+        evaluate_btn = st.button("🚀 Evaluate Job", type="primary", use_container_width=True)
 
     if evaluate_btn:
         if not job_description.strip():
@@ -47,15 +44,10 @@ def render_job_evaluation_page():
         else:
             env_ok, _ = check_environment_setup()
             if not env_ok:
-                st.error(
-                    "⚠️ Please configure your API keys first "
-                    "(see instructions above)."
-                )
+                st.error("⚠️ Please configure your API keys first (see instructions above).")
             else:
                 # Show loading state
-                with st.spinner(
-                    "🔍 Analyzing job posting... This may take several seconds."
-                ):
+                with st.spinner("🔍 Analyzing job posting... This may take several seconds."):
                     try:
                         # Run the job evaluation workflow
                         final_state = run_job_evaluation_workflow(job_description)

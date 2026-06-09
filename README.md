@@ -84,8 +84,7 @@ uv run pre-commit install
 
 ### Code Quality (Automated)
 Pre-commit hooks automatically handle:
-- **Black** code formatting
-- **isort** import sorting
+- **Ruff** linting, import sorting, and code formatting
 - **mypy** type checking
 - Basic file checks
 

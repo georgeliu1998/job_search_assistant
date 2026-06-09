@@ -5,8 +5,6 @@ import sys
 from io import StringIO
 from unittest.mock import Mock, patch
 
-import pytest
-
 from src.utils.logging import get_app_logger, get_logger, setup_logging
 
 
@@ -171,9 +169,6 @@ class TestSetupLogging:
         formatter = handler.formatter
 
         # Test that datetime format is applied
-        import datetime
-
-        test_time = datetime.datetime(2024, 1, 15, 14, 30, 45)
         formatted_time = formatter.formatTime(
             logging.LogRecord(
                 name="test",
@@ -287,9 +282,7 @@ class TestLoggingIntegration:
         # Create a custom handler to capture output
         captured_output = StringIO()
         test_handler = logging.StreamHandler(captured_output)
-        test_handler.setFormatter(
-            logging.Formatter("%(name)s [%(levelname)s] %(message)s")
-        )
+        test_handler.setFormatter(logging.Formatter("%(name)s [%(levelname)s] %(message)s"))
 
         # Setup logging with DEBUG level
         setup_logging(level="DEBUG")
@@ -349,9 +342,7 @@ class TestLoggingIntegration:
         # Create a custom handler to capture output
         captured_output = StringIO()
         test_handler = logging.StreamHandler(captured_output)
-        test_handler.setFormatter(
-            logging.Formatter("%(name)s [%(levelname)s] %(message)s")
-        )
+        test_handler.setFormatter(logging.Formatter("%(name)s [%(levelname)s] %(message)s"))
 
         setup_logging(level="ERROR")
 
