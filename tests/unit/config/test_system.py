@@ -19,6 +19,38 @@ from src.exceptions.config import (
 )
 from src.models.enums import Environment
 
+# Full set of agent LLM configs required by AppConfig.agents.
+# Uses a "stage-test-model" name so model validation is skipped, and the
+# anthropic provider so the local ANTHROPIC_API_KEY (from .env) satisfies
+# api-key validation when a fixture runs under the dev environment.
+AGENTS_TOML = """
+[agents.job_evaluation_extraction]
+provider = "anthropic"
+model = "stage-test-model"
+temperature = 0.0
+max_tokens = 100
+
+[agents.job_evaluation_fit]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agents.interview_research]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agents.interview_question_generation]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agents.interview_answer_generation]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agents.interview_compilation]
+provider = "anthropic"
+model = "stage-test-model"
+"""
+
 
 class TestConfigLoader:
     """Test the ConfigLoader class."""
@@ -27,7 +59,8 @@ class TestConfigLoader:
         """Test loading development configuration."""
         # Create test config files
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "test-app"
 tagline = "Test dev application"
@@ -36,24 +69,13 @@ debug = false
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-temperature = 0.0
-max_tokens = 100
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+        )
 
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text("""
@@ -126,7 +148,8 @@ level = "DEBUG"
     def test_secrets_loading(self, tmp_path):
         """Test that secrets are loaded from environment variables."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "test"
 tagline = "Test secrets application"
@@ -134,22 +157,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "anthropic_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.anthropic_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = true
-""")
+"""
+        )
 
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text("")
@@ -167,7 +181,7 @@ enabled = true
             raw_config = loader.load_raw_config()
 
             assert (
-                raw_config["llm_profiles"]["anthropic_profile"]["api_key"] == "test_anthropic_key"
+                raw_config["agents"]["job_evaluation_extraction"]["api_key"] == "test_anthropic_key"
             )
             assert raw_config["observability"]["langfuse"]["public_key"] == "test_public_key"
             assert raw_config["observability"]["langfuse"]["secret_key"] == "test_secret_key"
@@ -221,7 +235,8 @@ class TestConfigManager:
         """Test loading and validating configuration."""
         # Create minimal valid config
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "test-app"
 tagline = "Test application"
@@ -229,22 +244,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+        )
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -259,7 +265,8 @@ enabled = false
     def test_singleton_behavior(self, tmp_path):
         """Test that ConfigManager follows singleton pattern."""
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "test-app"
 tagline = "Test application"
@@ -267,22 +274,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+        )
 
         dev_config = tmp_path / "dev.toml"
         dev_config.write_text("")
@@ -302,7 +300,8 @@ enabled = false
         """Test that configuration can be reloaded."""
         # Create initial config
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "original-app"
 tagline = "Original application"
@@ -310,22 +309,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+        )
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -337,7 +327,8 @@ enabled = false
             assert initial_config.general.name == "original-app"
 
             # Modify the config file
-            base_config.write_text("""
+            base_config.write_text(
+                """
 [general]
 name = "updated-app"
 tagline = "Updated application"
@@ -345,22 +336,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+                + AGENTS_TOML
+                + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+            )
 
             # Reload and verify change
             reloaded_config = manager.reload()
@@ -392,7 +374,8 @@ class TestLazyConfigProxy:
         """Test that config attributes are accessible via lazy proxy."""
         # Create test config
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "proxy-test"
 tagline = "Proxy test application"
@@ -400,22 +383,13 @@ version = "1.0.0"
 
 [logging]
 level = "DEBUG"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 150000
-remote_required = false
-ic_title_requirements = ["staff", "principal"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = true
-""")
+"""
+        )
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -435,7 +409,8 @@ enabled = true
         """Test that proxy reload works correctly."""
         # Create initial config
         base_config = tmp_path / "base.toml"
-        base_config.write_text("""
+        base_config.write_text(
+            """
 [general]
 name = "initial"
 tagline = "Initial application"
@@ -443,22 +418,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+            + AGENTS_TOML
+            + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+        )
 
         stage_config = tmp_path / "stage.toml"
         stage_config.write_text("")
@@ -471,7 +437,8 @@ enabled = false
             assert test_config.general.name == "initial"
 
             # Modify config file
-            base_config.write_text("""
+            base_config.write_text(
+                """
 [general]
 name = "modified"
 tagline = "Modified application"
@@ -479,22 +446,13 @@ version = "1.0.0"
 
 [logging]
 level = "INFO"
-
-[agents]
-job_evaluation_extraction = "test_profile"
-
-[evaluation_criteria]
-min_salary = 100000
-remote_required = true
-ic_title_requirements = ["senior"]
-
-[llm_profiles.test_profile]
-provider = "anthropic"
-model = "stage-test-model"
-
+"""
+                + AGENTS_TOML
+                + """
 [observability.langfuse]
 enabled = false
-""")
+"""
+            )
 
             # Reload and verify
             test_config.reload(config_dir=tmp_path)
@@ -506,7 +464,7 @@ class TestConfigIntegration:
 
     def test_end_to_end_config_loading(self, tmp_path):
         """Test complete end-to-end configuration loading."""
-        # Create comprehensive config
+        # Create comprehensive config where each task directly defines its LLM
         base_config = tmp_path / "base.toml"
         base_config.write_text("""
 [general]
@@ -519,15 +477,37 @@ debug = false
 level = "INFO"
 format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 
-[agents]
-job_evaluation_extraction = "claude_profile"
+[agents.job_evaluation_extraction]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
 
-[evaluation_criteria]
-min_salary = 150000
-remote_required = true
-ic_title_requirements = ["senior", "staff", "principal"]
+[agents.job_evaluation_fit]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
 
-[llm_profiles.claude_profile]
+[agents.interview_research]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agents.interview_question_generation]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agents.interview_answer_generation]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agents.interview_compilation]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
@@ -546,7 +526,7 @@ debug = true
 [logging]
 level = "DEBUG"
 
-[llm_profiles.claude_profile]
+[agents.job_evaluation_extraction]
 temperature = 0.0
 """)
 
@@ -567,13 +547,15 @@ temperature = 0.0
             assert settings.general.name == "integration-test"
             assert settings.general.debug is True  # Overridden by dev.toml
             assert settings.logging.level == "DEBUG"  # Overridden by dev.toml
-            assert settings.llm_profiles["claude_profile"].temperature == 0.0  # Overridden
-            assert settings.llm_profiles["claude_profile"].api_key == "test-key"  # From env
+
+            # Per-task LLM config, with a surgical override applied to one task
+            extraction = settings.agents.job_evaluation_extraction
+            assert extraction.temperature == 0.0  # Overridden by dev.toml
+            assert extraction.api_key == "test-key"  # From env
+            assert extraction.provider == "anthropic"
+            assert extraction.model == "claude-haiku-4-5"
+
+            # Other tasks keep the base temperature (override was surgical)
+            assert settings.agents.interview_research.temperature == 0.1
+
             assert settings.observability.langfuse.public_key == "test-public"  # From env
-
-            # Test model methods
-            profile = settings.get_llm_profile("claude_profile")
-            assert profile.provider == "anthropic"
-
-            agent_profile = settings.get_agent_llm_profile("job_evaluation_extraction")
-            assert agent_profile.model == "claude-haiku-4-5"

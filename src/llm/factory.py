@@ -95,19 +95,3 @@ def get_chat_model(config: LLMProfileConfig) -> BaseChatModel:
         ) from e
     except Exception as e:
         raise LLMProviderError(f"Failed to create chat model for provider '{provider}': {e}") from e
-
-
-def get_chat_model_by_profile_name(profile_name: str) -> BaseChatModel:
-    """
-    Create a LangChain chat model by configuration profile name.
-
-    Args:
-        profile_name: Name of the LLM profile in the configuration
-
-    Returns:
-        A LangChain BaseChatModel instance
-    """
-    from src.config import config
-
-    profile = config.get_llm_profile(profile_name)
-    return get_chat_model(profile)

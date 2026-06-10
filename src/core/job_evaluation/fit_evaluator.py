@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from src.agent.prompts.evaluation.fit import FIT_ASSESSMENT_PROMPT
 from src.config import config
-from src.llm import get_chat_model_by_profile_name, langfuse_manager
+from src.llm import get_chat_model, langfuse_manager
 from src.models.user import JobPreferences, NonePolicy
 from src.utils.logging import get_logger
 from src.utils.text import MAX_ROLE_DESCRIPTION_CHARS, truncate_text
@@ -75,7 +75,7 @@ def evaluate_fit(job_posting_text: str, preferences: JobPreferences) -> Dict[str
     # isolation guarantee independent of how the caller wraps the call.
     logger.info("Assessing job fit via LLM")
     try:
-        model = get_chat_model_by_profile_name(config.agents.job_evaluation_fit)
+        model = get_chat_model(config.agents.job_evaluation_fit)
         structured_llm = model.with_structured_output(FitAssessment)
         prompt_content = FIT_ASSESSMENT_PROMPT.format(
             target_role_description=truncate_text(

@@ -212,11 +212,11 @@ VALID_MODELS: ClassVar[Dict[str, set]] = {
 }
 ```
 
-**Step 4**: Add configuration profile
+**Step 4**: Point an agent task at the new provider
 
 ```toml
 # configs/base.toml
-[llm_profiles.openai_extraction]
+[agents.job_evaluation_extraction]
 provider = "openai"
 model = "gpt-4"
 temperature = 0.0
@@ -323,33 +323,40 @@ register_provider("invalid", "path.to.InvalidClient")
 
 ## Configuration Integration
 
-### Profile-Based Usage
+### Task-Based Usage
 
-```python
+Each agent task defines its own LLM config inline; application code passes
+that config straight to the factory.
+
+```toml
 # configs/base.toml
-[agents]
-job_evaluation_extraction = "anthropic_extraction"
-
-[llm_profiles.anthropic_extraction]
+[agents.job_evaluation_extraction]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.0
 max_tokens = 512
-
-# Application code
-from src.llm import get_llm_client_by_profile_name
-client = get_llm_client_by_profile_name("anthropic_extraction")
 ```
 
-### Environment-Specific Providers
+```python
+# Application code
+from src.config import config
+from src.llm import get_chat_model
+
+model = get_chat_model(config.agents.job_evaluation_extraction)
+```
+
+### Environment-Specific Overrides
+
+Overrides apply per task, so you can change a single setting without
+affecting other tasks that happen to use the same model.
 
 ```toml
 # configs/dev.toml - Development environment
-[llm_profiles.extraction]
+[agents.job_evaluation_extraction]
 provider = "anthropic"  # Use real provider in dev
 
 # configs/stage.toml - Testing environment
-[llm_profiles.extraction]
+[agents.job_evaluation_extraction]
 provider = "mock"  # Use mock provider in testing
 ```
 

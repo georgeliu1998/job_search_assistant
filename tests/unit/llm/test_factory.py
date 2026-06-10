@@ -1,8 +1,8 @@
 """
 Unit tests for the LLM model factory.
 
-Tests get_chat_model and get_chat_model_by_profile_name functions
-including provider creation, error handling, and API key validation.
+Tests the get_chat_model function including provider creation, error
+handling, and API key validation.
 """
 
 from unittest.mock import MagicMock, patch
@@ -14,7 +14,6 @@ from src.exceptions.llm import LLMProviderError
 from src.llm.factory import (
     _ensure_api_key,
     get_chat_model,
-    get_chat_model_by_profile_name,
 )
 
 
@@ -106,27 +105,6 @@ class TestGetChatModel:
 
         with pytest.raises(LLMProviderError, match="API key not found"):
             get_chat_model(config)
-
-
-class TestGetChatModelByProfileName:
-    """Test the get_chat_model_by_profile_name function."""
-
-    @patch("src.llm.factory.get_chat_model")
-    @patch("src.config.config")
-    def test_loads_profile_and_creates_model(self, mock_config, mock_get_model):
-        """Test that profile is loaded and model is created."""
-        mock_profile = LLMProfileConfig(
-            provider="anthropic", model="claude-haiku-4-5", api_key="test-key"
-        )
-        mock_config.get_llm_profile.return_value = mock_profile
-        mock_model = MagicMock()
-        mock_get_model.return_value = mock_model
-
-        result = get_chat_model_by_profile_name("test_profile")
-
-        assert result is mock_model
-        mock_config.get_llm_profile.assert_called_once_with("test_profile")
-        mock_get_model.assert_called_once_with(mock_profile)
 
 
 class TestProviderConstructors:

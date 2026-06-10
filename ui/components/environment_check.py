@@ -13,17 +13,16 @@ def check_environment_setup() -> tuple[bool, str]:
         # Check if configs can be loaded
         # config is already imported at module level
 
-        missing_keys = []
+        missing_keys = set()
 
-        # Check each LLM profile for missing API keys
-        for profile_name, profile in config.llm_profiles.items():
-            if not profile.api_key:
-                provider = profile.provider.upper()
-                env_var = f"{provider}_API_KEY"
-                missing_keys.append(env_var)
+        # Check each agent task's LLM config for missing API keys
+        for _task_name, agent_llm in vars(config.agents).items():
+            if not agent_llm.api_key:
+                provider = agent_llm.provider.upper()
+                missing_keys.add(f"{provider}_API_KEY")
 
         if missing_keys:
-            missing_str = ", ".join(missing_keys)
+            missing_str = ", ".join(sorted(missing_keys))
             return False, f"Missing required API keys: {missing_str}"
 
         return True, "Environment is properly configured"

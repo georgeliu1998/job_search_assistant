@@ -174,17 +174,17 @@ class ConfigLoader:
             langfuse_config["public_key"] = os.getenv("LANGFUSE_PUBLIC_KEY")
             langfuse_config["secret_key"] = os.getenv("LANGFUSE_SECRET_KEY")
 
-        # Load LLM API keys for each profile
-        if "llm_profiles" in config:
-            for profile_name, profile_config in config["llm_profiles"].items():
-                provider = profile_config.get("provider", "").lower()
+        # Load LLM API keys for each agent task based on its provider
+        if "agents" in config:
+            for _task_name, agent_config in config["agents"].items():
+                provider = agent_config.get("provider", "").lower()
 
                 if provider == "anthropic":
-                    profile_config["api_key"] = os.getenv("ANTHROPIC_API_KEY")
+                    agent_config["api_key"] = os.getenv("ANTHROPIC_API_KEY")
                 elif provider == "fireworks":
-                    profile_config["api_key"] = os.getenv("FIREWORKS_API_KEY")
+                    agent_config["api_key"] = os.getenv("FIREWORKS_API_KEY")
                 elif provider == "google":
-                    profile_config["api_key"] = os.getenv("GOOGLE_API_KEY")
+                    agent_config["api_key"] = os.getenv("GOOGLE_API_KEY")
 
         return config
 

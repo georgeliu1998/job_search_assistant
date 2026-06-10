@@ -44,19 +44,22 @@ level = "INFO"
 format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 ```
 
-#### LLM Profiles
+#### Agent LLM Configuration
+Each agent task directly defines the LLM it uses (provider, model, and
+sampling settings). Two tasks can share the same model with different
+settings simply by repeating the model with different values.
 ```toml
-[llm_profiles.anthropic_extraction]
-provider = "anthropic"
-model = "claude-haiku-4-5"
+[agents.job_evaluation_extraction]
+provider = "google"
+model = "gemini-2.5-flash"
 temperature = 0.0
-max_tokens = 512
-```
+max_tokens = 4096
 
-#### Agent Mappings
-```toml
-[agents]
-job_evaluation_extraction = "anthropic_extraction"
+[agents.interview_question_generation]
+provider = "google"
+model = "gemini-2.5-flash-lite"
+temperature = 0.7
+max_tokens = 4096
 ```
 
 #### Business Logic Parameters
@@ -92,33 +95,29 @@ config.evaluation_criteria.min_salary        # ✅ Works
 config.evaluation_criteria.remote_required   # ✅ Works
 ```
 
-#### 2. Table Arrays → Dictionaries (Dictionary Access)
+#### 2. Per-Task LLM Config → Pydantic Models (Attribute Access)
 ```toml
-[llm_profiles.anthropic_extraction]
-provider = "anthropic"
-model = "claude-haiku-4-5"
+[agents.job_evaluation_extraction]
+provider = "google"
+model = "gemini-2.5-flash"
 
-[llm_profiles.another_profile]
-provider = "openai"
-model = "gpt-4"
+[agents.interview_question_generation]
+provider = "google"
+model = "gemini-2.5-flash-lite"
 ```
-Creates a **dictionary** of profile configurations:
+Each task becomes an `LLMProfileConfig` accessible via **attributes** on
+`config.agents`:
 ```python
-config.llm_profiles["anthropic_extraction"]  # ✅ Dictionary access required
-config.llm_profiles.anthropic_extraction     # ❌ AttributeError: 'dict' has no attribute
-
-# Each profile is then a Pydantic model:
-profile = config.llm_profiles["anthropic_extraction"]
-profile.provider  # ✅ Attribute access works on the individual profile
-profile.model     # ✅ Attribute access works on the individual profile
+config.agents.job_evaluation_extraction          # ✅ LLMProfileConfig
+config.agents.job_evaluation_extraction.provider  # ✅ Attribute access
+config.agents.job_evaluation_extraction.model     # ✅ Attribute access
 ```
 
 ### Why This Design?
 
-- **Dynamic Profile Names**: LLM profiles can have arbitrary names (e.g., "anthropic_extraction", "openai_chat")
-- **Type Safety**: Each profile is validated as an `LLMProfileConfig` Pydantic model
-- **Flexibility**: Easy to add new profiles without code changes
-- **Helper Methods**: Use `config.get_llm_profile(name)` for validated access with better error messages
+- **Intuitive**: The model a task uses is defined in one place, not via an indirection layer
+- **Type Safety**: Each task's LLM settings are validated as an `LLMProfileConfig` Pydantic model
+- **Per-task flexibility**: Two tasks can share a model with different settings (e.g. temperature) without inventing distinct profile names, and overrides in `dev.toml`/`prod.toml` apply per task
 
 ## Configuration Loading Strategy
 
@@ -159,13 +158,13 @@ Pydantic models in `src/config/models.py` define:
 from src.config.manager import config
 
 # Access typed configuration values directly
-llm_profile = config.llm_profiles["anthropic_extraction"]  # Dictionary access for profiles
 min_salary = config.evaluation_criteria.min_salary
 
 # The config proxy provides lazy loading - configuration is loaded automatically
-# on first access and cached for subsequent uses
-agent_profile_name = config.agents.job_evaluation_extraction
-agent_profile = config.get_llm_profile(agent_profile_name)  # Helper method handles dict access
+# on first access and cached for subsequent uses.
+# Each agent task carries its own LLM config (an LLMProfileConfig):
+extraction_llm = config.agents.job_evaluation_extraction
+model = get_chat_model(extraction_llm)
 ```
 
 ## Benefits of This Design

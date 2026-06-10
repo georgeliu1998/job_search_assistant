@@ -23,7 +23,7 @@ class TestEvaluateFit:
         result = evaluate_fit("some job text", prefs)
         assert result["pass"] is False
 
-    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model_by_profile_name")
+    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model")
     def test_good_fit_passes(self, mock_get_model):
         structured = Mock()
         structured.invoke.return_value = FitAssessment(
@@ -42,7 +42,7 @@ class TestEvaluateFit:
         assert result["pass"] is True
         assert result["extracted_value"] == "good_fit"
 
-    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model_by_profile_name")
+    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model")
     def test_poor_fit_fails(self, mock_get_model):
         structured = Mock()
         structured.invoke.return_value = FitAssessment(
@@ -58,7 +58,7 @@ class TestEvaluateFit:
         assert result["pass"] is False
         assert result["extracted_value"] == "poor_fit"
 
-    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model_by_profile_name")
+    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model")
     def test_llm_failure_falls_back_to_none_policy(self, mock_get_model):
         """A transient LLM failure must not raise; it returns a graceful result."""
         structured = Mock()
@@ -75,7 +75,7 @@ class TestEvaluateFit:
         assert "Fit assessment failed" in result["reason"]
         assert result["extracted_value"] is None
 
-    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model_by_profile_name")
+    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model")
     def test_llm_failure_with_fail_none_policy(self, mock_get_model):
         structured = Mock()
         structured.invoke.side_effect = RuntimeError("boom")
@@ -90,7 +90,7 @@ class TestEvaluateFit:
         assert result["pass"] is False
         assert "Fit assessment failed" in result["reason"]
 
-    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model_by_profile_name")
+    @patch("src.core.job_evaluation.fit_evaluator.get_chat_model")
     def test_model_construction_failure_does_not_raise(self, mock_get_model):
         """A failure before the LLM call (e.g. provider ImportError) is caught too."""
         mock_get_model.side_effect = ImportError("provider package missing")

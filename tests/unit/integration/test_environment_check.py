@@ -2,6 +2,7 @@
 Tests for environment check component functionality
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from ui.components.environment_check import check_environment_setup
@@ -16,7 +17,7 @@ class TestEnvironmentCheck:
         mock_config = MagicMock()
         mock_profile = MagicMock()
         mock_profile.api_key = "test-key"
-        mock_config.llm_profiles.items.return_value = [("test_profile", mock_profile)]
+        mock_config.agents = SimpleNamespace(job_evaluation_extraction=mock_profile)
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -31,7 +32,7 @@ class TestEnvironmentCheck:
         mock_profile = MagicMock()
         mock_profile.api_key = None
         mock_profile.provider = "anthropic"
-        mock_config.llm_profiles.items.return_value = [("test_profile", mock_profile)]
+        mock_config.agents = SimpleNamespace(job_evaluation_extraction=mock_profile)
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -41,7 +42,7 @@ class TestEnvironmentCheck:
 
     def test_environment_check_with_multiple_missing_keys(self):
         """Test environment check with multiple missing API keys"""
-        # Mock config with multiple profiles missing API keys
+        # Mock config with multiple tasks missing API keys for different providers
         mock_config = MagicMock()
 
         mock_profile1 = MagicMock()
@@ -50,12 +51,12 @@ class TestEnvironmentCheck:
 
         mock_profile2 = MagicMock()
         mock_profile2.api_key = None
-        mock_profile2.provider = "fireworks"
+        mock_profile2.provider = "google"
 
-        mock_config.llm_profiles.items.return_value = [
-            ("anthropic_profile", mock_profile1),
-            ("fireworks_profile", mock_profile2),
-        ]
+        mock_config.agents = SimpleNamespace(
+            job_evaluation_extraction=mock_profile1,
+            interview_research=mock_profile2,
+        )
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -63,15 +64,41 @@ class TestEnvironmentCheck:
             assert is_valid is False
             assert "Missing required API keys:" in message
             assert "ANTHROPIC_API_KEY" in message
-            assert "FIREWORKS_API_KEY" in message
+            assert "GOOGLE_API_KEY" in message
+
+    def test_environment_check_deduplicates_shared_provider(self):
+        """Test that a provider shared by multiple tasks is reported once"""
+        mock_config = MagicMock()
+
+        mock_profile1 = MagicMock()
+        mock_profile1.api_key = None
+        mock_profile1.provider = "google"
+
+        mock_profile2 = MagicMock()
+        mock_profile2.api_key = None
+        mock_profile2.provider = "google"
+
+        mock_config.agents = SimpleNamespace(
+            interview_research=mock_profile1,
+            interview_compilation=mock_profile2,
+        )
+
+        with patch("ui.components.environment_check.config", mock_config):
+            is_valid, message = check_environment_setup()
+
+            assert is_valid is False
+            assert message.count("GOOGLE_API_KEY") == 1
 
     def test_environment_check_handles_config_errors(self):
         """Test that environment check handles configuration errors gracefully"""
-        # Mock config that raises an exception
-        mock_config = MagicMock()
-        mock_config.llm_profiles.items.side_effect = Exception("Config error")
 
-        with patch("ui.components.environment_check.config", mock_config):
+        # Config object whose agents access raises an exception
+        class BadConfig:
+            @property
+            def agents(self):
+                raise Exception("Config error")
+
+        with patch("ui.components.environment_check.config", BadConfig()):
             is_valid, message = check_environment_setup()
 
             assert is_valid is False
