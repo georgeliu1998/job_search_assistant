@@ -9,9 +9,16 @@ from src.config import config
 
 def get_missing_api_keys() -> set[str]:
     """Return the set of API-key env var names required by configured tasks
-    that are currently missing."""
+    that are currently missing.
+
+    Iterates fields via Pydantic's public ``model_fields`` API rather than
+    ``vars()``/``__dict__``, which is an undocumented implementation detail
+    and could include non-field values in future Pydantic versions.
+    """
     missing_keys: set[str] = set()
-    for _task_name, agent_llm in vars(config.agent_tasks).items():
+    agent_tasks = config.agent_tasks
+    for field_name in type(agent_tasks).model_fields:
+        agent_llm = getattr(agent_tasks, field_name)
         if not agent_llm.api_key:
             provider = agent_llm.provider.upper()
             missing_keys.add(f"{provider}_API_KEY")

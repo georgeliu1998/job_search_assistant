@@ -2,25 +2,50 @@
 Tests for environment check component functionality
 """
 
-from types import SimpleNamespace
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
+from src.config.models import AgentTasksConfig, LLMProfileConfig
 from ui.components.environment_check import (
     build_setup_instructions,
     check_environment_setup,
 )
 
 
+def _make_profile(provider: str, api_key: Optional[str]) -> LLMProfileConfig:
+    """Build a profile for tests. APP_ENV=stage in conftest.py disables
+    model/api-key validators so api_key=None is allowed here."""
+    return LLMProfileConfig(
+        provider=provider,
+        model="stage-test-model",
+        api_key=api_key,
+    )
+
+
+def _make_agent_tasks(**overrides: LLMProfileConfig) -> AgentTasksConfig:
+    """Build a real AgentTasksConfig. Defaults to anthropic+valid key for
+    every task; tests override only the tasks they care about so a real
+    Pydantic model is exercised in every code path."""
+    default = _make_profile("anthropic", "default-key")
+    fields = {
+        "job_evaluation_extraction": default,
+        "job_evaluation_fit": default,
+        "interview_research": default,
+        "interview_question_generation": default,
+        "interview_answer_generation": default,
+        "interview_compilation": default,
+    }
+    fields.update(overrides)
+    return AgentTasksConfig(**fields)
+
+
 class TestEnvironmentCheck:
     """Test environment check functionality"""
 
     def test_environment_check_with_valid_api_keys(self):
-        """Test that environment check passes when API keys are present"""
-        # Mock config with valid API keys
+        """All tasks have api_key set → environment reports as valid"""
         mock_config = MagicMock()
-        mock_profile = MagicMock()
-        mock_profile.api_key = "test-key"
-        mock_config.agent_tasks = SimpleNamespace(job_evaluation_extraction=mock_profile)
+        mock_config.agent_tasks = _make_agent_tasks()
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -29,13 +54,11 @@ class TestEnvironmentCheck:
             assert message == "Environment is properly configured"
 
     def test_environment_check_with_missing_api_keys(self):
-        """Test that environment check fails when API keys are missing"""
-        # Mock config with missing API keys
+        """One task missing its api_key → that provider's env var is reported"""
         mock_config = MagicMock()
-        mock_profile = MagicMock()
-        mock_profile.api_key = None
-        mock_profile.provider = "anthropic"
-        mock_config.agent_tasks = SimpleNamespace(job_evaluation_extraction=mock_profile)
+        mock_config.agent_tasks = _make_agent_tasks(
+            job_evaluation_extraction=_make_profile("anthropic", None),
+        )
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -44,21 +67,11 @@ class TestEnvironmentCheck:
             assert "Missing required API keys: ANTHROPIC_API_KEY" in message
 
     def test_environment_check_with_multiple_missing_keys(self):
-        """Test environment check with multiple missing API keys"""
-        # Mock config with multiple tasks missing API keys for different providers
+        """Tasks missing keys for different providers → all are reported"""
         mock_config = MagicMock()
-
-        mock_profile1 = MagicMock()
-        mock_profile1.api_key = None
-        mock_profile1.provider = "anthropic"
-
-        mock_profile2 = MagicMock()
-        mock_profile2.api_key = None
-        mock_profile2.provider = "google"
-
-        mock_config.agent_tasks = SimpleNamespace(
-            job_evaluation_extraction=mock_profile1,
-            interview_research=mock_profile2,
+        mock_config.agent_tasks = _make_agent_tasks(
+            job_evaluation_extraction=_make_profile("anthropic", None),
+            interview_research=_make_profile("google", None),
         )
 
         with patch("ui.components.environment_check.config", mock_config):
@@ -70,20 +83,11 @@ class TestEnvironmentCheck:
             assert "GOOGLE_API_KEY" in message
 
     def test_environment_check_deduplicates_shared_provider(self):
-        """Test that a provider shared by multiple tasks is reported once"""
+        """Multiple tasks sharing one provider → env var is reported once"""
         mock_config = MagicMock()
-
-        mock_profile1 = MagicMock()
-        mock_profile1.api_key = None
-        mock_profile1.provider = "google"
-
-        mock_profile2 = MagicMock()
-        mock_profile2.api_key = None
-        mock_profile2.provider = "google"
-
-        mock_config.agent_tasks = SimpleNamespace(
-            interview_research=mock_profile1,
-            interview_compilation=mock_profile2,
+        mock_config.agent_tasks = _make_agent_tasks(
+            interview_research=_make_profile("google", None),
+            interview_compilation=_make_profile("google", None),
         )
 
         with patch("ui.components.environment_check.config", mock_config):
