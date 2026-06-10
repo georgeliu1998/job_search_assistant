@@ -17,7 +17,7 @@ class TestEnvironmentCheck:
         mock_config = MagicMock()
         mock_profile = MagicMock()
         mock_profile.api_key = "test-key"
-        mock_config.agents = SimpleNamespace(job_evaluation_extraction=mock_profile)
+        mock_config.agent_tasks = SimpleNamespace(job_evaluation_extraction=mock_profile)
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -32,7 +32,7 @@ class TestEnvironmentCheck:
         mock_profile = MagicMock()
         mock_profile.api_key = None
         mock_profile.provider = "anthropic"
-        mock_config.agents = SimpleNamespace(job_evaluation_extraction=mock_profile)
+        mock_config.agent_tasks = SimpleNamespace(job_evaluation_extraction=mock_profile)
 
         with patch("ui.components.environment_check.config", mock_config):
             is_valid, message = check_environment_setup()
@@ -53,7 +53,7 @@ class TestEnvironmentCheck:
         mock_profile2.api_key = None
         mock_profile2.provider = "google"
 
-        mock_config.agents = SimpleNamespace(
+        mock_config.agent_tasks = SimpleNamespace(
             job_evaluation_extraction=mock_profile1,
             interview_research=mock_profile2,
         )
@@ -78,7 +78,7 @@ class TestEnvironmentCheck:
         mock_profile2.api_key = None
         mock_profile2.provider = "google"
 
-        mock_config.agents = SimpleNamespace(
+        mock_config.agent_tasks = SimpleNamespace(
             interview_research=mock_profile1,
             interview_compilation=mock_profile2,
         )
@@ -92,10 +92,10 @@ class TestEnvironmentCheck:
     def test_environment_check_handles_config_errors(self):
         """Test that environment check handles configuration errors gracefully"""
 
-        # Config object whose agents access raises an exception
+        # Config object whose agent_tasks access raises an exception
         class BadConfig:
             @property
-            def agents(self):
+            def agent_tasks(self):
                 raise Exception("Config error")
 
         with patch("ui.components.environment_check.config", BadConfig()):

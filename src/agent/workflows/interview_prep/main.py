@@ -121,7 +121,7 @@ def generate_questions(state: InterviewPrepState) -> Dict[str, Any]:
     logger.info("Generating interview questions")
 
     try:
-        llm = get_chat_model(config.agents.interview_question_generation)
+        llm = get_chat_model(config.agent_tasks.interview_question_generation)
         structured_llm = llm.with_structured_output(InterviewQuestions)
 
         # Create system prompt for question generation
@@ -199,7 +199,7 @@ def generate_answers(state: InterviewPrepState) -> Dict[str, Any]:
         return {"error": "No questions available for answer generation"}
 
     try:
-        llm = get_chat_model(config.agents.interview_answer_generation)
+        llm = get_chat_model(config.agent_tasks.interview_answer_generation)
 
         updated_qa_pairs = []
 

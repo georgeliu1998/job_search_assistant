@@ -216,7 +216,7 @@ VALID_MODELS: ClassVar[Dict[str, set]] = {
 
 ```toml
 # configs/base.toml
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "openai"
 model = "gpt-4"
 temperature = 0.0
@@ -330,7 +330,7 @@ that config straight to the factory.
 
 ```toml
 # configs/base.toml
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.0
@@ -342,7 +342,7 @@ max_tokens = 512
 from src.config import config
 from src.llm import get_chat_model
 
-model = get_chat_model(config.agents.job_evaluation_extraction)
+model = get_chat_model(config.agent_tasks.job_evaluation_extraction)
 ```
 
 ### Environment-Specific Overrides
@@ -352,11 +352,11 @@ affecting other tasks that happen to use the same model.
 
 ```toml
 # configs/dev.toml - Development environment
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "anthropic"  # Use real provider in dev
 
 # configs/stage.toml - Testing environment
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "mock"  # Use mock provider in testing
 ```
 

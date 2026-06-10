@@ -151,7 +151,7 @@ class LLMProfileConfig(BaseModel):
         )
 
 
-class AgentConfig(BaseModel):
+class AgentTasksConfig(BaseModel):
     """LLM configuration for each agent task.
 
     Each task directly carries its own provider, model, and sampling settings.
@@ -207,5 +207,5 @@ class AppConfig(BaseModel):
 
     general: GeneralConfig = Field(..., description="General application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
-    agents: AgentConfig = Field(..., description="Agent configuration")
+    agent_tasks: AgentTasksConfig = Field(..., description="Per-task LLM configuration")
     observability: ObservabilityConfig = Field(..., description="Observability configuration")

@@ -75,7 +75,7 @@ def evaluate_fit(job_posting_text: str, preferences: JobPreferences) -> Dict[str
     # isolation guarantee independent of how the caller wraps the call.
     logger.info("Assessing job fit via LLM")
     try:
-        model = get_chat_model(config.agents.job_evaluation_fit)
+        model = get_chat_model(config.agent_tasks.job_evaluation_fit)
         structured_llm = model.with_structured_output(FitAssessment)
         prompt_content = FIT_ASSESSMENT_PROMPT.format(
             target_role_description=truncate_text(

@@ -49,13 +49,13 @@ Each agent task directly defines the LLM it uses (provider, model, and
 sampling settings). Two tasks can share the same model with different
 settings simply by repeating the model with different values.
 ```toml
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "google"
 model = "gemini-2.5-flash"
 temperature = 0.0
 max_tokens = 4096
 
-[agents.interview_question_generation]
+[agent_tasks.interview_question_generation]
 provider = "google"
 model = "gemini-2.5-flash-lite"
 temperature = 0.7
@@ -97,20 +97,20 @@ config.evaluation_criteria.remote_required   # ✅ Works
 
 #### 2. Per-Task LLM Config → Pydantic Models (Attribute Access)
 ```toml
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "google"
 model = "gemini-2.5-flash"
 
-[agents.interview_question_generation]
+[agent_tasks.interview_question_generation]
 provider = "google"
 model = "gemini-2.5-flash-lite"
 ```
 Each task becomes an `LLMProfileConfig` accessible via **attributes** on
-`config.agents`:
+`config.agent_tasks`:
 ```python
-config.agents.job_evaluation_extraction          # ✅ LLMProfileConfig
-config.agents.job_evaluation_extraction.provider  # ✅ Attribute access
-config.agents.job_evaluation_extraction.model     # ✅ Attribute access
+config.agent_tasks.job_evaluation_extraction          # ✅ LLMProfileConfig
+config.agent_tasks.job_evaluation_extraction.provider  # ✅ Attribute access
+config.agent_tasks.job_evaluation_extraction.model     # ✅ Attribute access
 ```
 
 ### Why This Design?
@@ -163,7 +163,7 @@ min_salary = config.evaluation_criteria.min_salary
 # The config proxy provides lazy loading - configuration is loaded automatically
 # on first access and cached for subsequent uses.
 # Each agent task carries its own LLM config (an LLMProfileConfig):
-extraction_llm = config.agents.job_evaluation_extraction
+extraction_llm = config.agent_tasks.job_evaluation_extraction
 model = get_chat_model(extraction_llm)
 ```
 

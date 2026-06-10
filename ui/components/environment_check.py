@@ -16,7 +16,7 @@ def check_environment_setup() -> tuple[bool, str]:
         missing_keys = set()
 
         # Check each agent task's LLM config for missing API keys
-        for _task_name, agent_llm in vars(config.agents).items():
+        for _task_name, agent_llm in vars(config.agent_tasks).items():
             if not agent_llm.api_key:
                 provider = agent_llm.provider.upper()
                 missing_keys.add(f"{provider}_API_KEY")

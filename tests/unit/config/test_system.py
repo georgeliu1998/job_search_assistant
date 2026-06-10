@@ -19,34 +19,34 @@ from src.exceptions.config import (
 )
 from src.models.enums import Environment
 
-# Full set of agent LLM configs required by AppConfig.agents.
+# Full set of agent task LLM configs required by AppConfig.agent_tasks.
 # Uses a "stage-test-model" name so model validation is skipped, and the
 # anthropic provider so the local ANTHROPIC_API_KEY (from .env) satisfies
 # api-key validation when a fixture runs under the dev environment.
-AGENTS_TOML = """
-[agents.job_evaluation_extraction]
+AGENT_TASKS_TOML = """
+[agent_tasks.job_evaluation_extraction]
 provider = "anthropic"
 model = "stage-test-model"
 temperature = 0.0
 max_tokens = 100
 
-[agents.job_evaluation_fit]
+[agent_tasks.job_evaluation_fit]
 provider = "anthropic"
 model = "stage-test-model"
 
-[agents.interview_research]
+[agent_tasks.interview_research]
 provider = "anthropic"
 model = "stage-test-model"
 
-[agents.interview_question_generation]
+[agent_tasks.interview_question_generation]
 provider = "anthropic"
 model = "stage-test-model"
 
-[agents.interview_answer_generation]
+[agent_tasks.interview_answer_generation]
 provider = "anthropic"
 model = "stage-test-model"
 
-[agents.interview_compilation]
+[agent_tasks.interview_compilation]
 provider = "anthropic"
 model = "stage-test-model"
 """
@@ -70,7 +70,7 @@ debug = false
 [logging]
 level = "INFO"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = false
@@ -158,7 +158,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = true
@@ -181,7 +181,8 @@ enabled = true
             raw_config = loader.load_raw_config()
 
             assert (
-                raw_config["agents"]["job_evaluation_extraction"]["api_key"] == "test_anthropic_key"
+                raw_config["agent_tasks"]["job_evaluation_extraction"]["api_key"]
+                == "test_anthropic_key"
             )
             assert raw_config["observability"]["langfuse"]["public_key"] == "test_public_key"
             assert raw_config["observability"]["langfuse"]["secret_key"] == "test_secret_key"
@@ -245,7 +246,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = false
@@ -275,7 +276,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = false
@@ -310,7 +311,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = false
@@ -337,7 +338,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-                + AGENTS_TOML
+                + AGENT_TASKS_TOML
                 + """
 [observability.langfuse]
 enabled = false
@@ -384,7 +385,7 @@ version = "1.0.0"
 [logging]
 level = "DEBUG"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = true
@@ -419,7 +420,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-            + AGENTS_TOML
+            + AGENT_TASKS_TOML
             + """
 [observability.langfuse]
 enabled = false
@@ -447,7 +448,7 @@ version = "1.0.0"
 [logging]
 level = "INFO"
 """
-                + AGENTS_TOML
+                + AGENT_TASKS_TOML
                 + """
 [observability.langfuse]
 enabled = false
@@ -477,37 +478,37 @@ debug = false
 level = "INFO"
 format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
 max_tokens = 2048
 
-[agents.job_evaluation_fit]
+[agent_tasks.job_evaluation_fit]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
 max_tokens = 2048
 
-[agents.interview_research]
+[agent_tasks.interview_research]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
 max_tokens = 2048
 
-[agents.interview_question_generation]
+[agent_tasks.interview_question_generation]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
 max_tokens = 2048
 
-[agents.interview_answer_generation]
+[agent_tasks.interview_answer_generation]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
 max_tokens = 2048
 
-[agents.interview_compilation]
+[agent_tasks.interview_compilation]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1
@@ -526,7 +527,7 @@ debug = true
 [logging]
 level = "DEBUG"
 
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 temperature = 0.0
 """)
 
@@ -549,13 +550,13 @@ temperature = 0.0
             assert settings.logging.level == "DEBUG"  # Overridden by dev.toml
 
             # Per-task LLM config, with a surgical override applied to one task
-            extraction = settings.agents.job_evaluation_extraction
+            extraction = settings.agent_tasks.job_evaluation_extraction
             assert extraction.temperature == 0.0  # Overridden by dev.toml
             assert extraction.api_key == "test-key"  # From env
             assert extraction.provider == "anthropic"
             assert extraction.model == "claude-haiku-4-5"
 
             # Other tasks keep the base temperature (override was surgical)
-            assert settings.agents.interview_research.temperature == 0.1
+            assert settings.agent_tasks.interview_research.temperature == 0.1
 
             assert settings.observability.langfuse.public_key == "test-public"  # From env

@@ -175,8 +175,8 @@ class ConfigLoader:
             langfuse_config["secret_key"] = os.getenv("LANGFUSE_SECRET_KEY")
 
         # Load LLM API keys for each agent task based on its provider
-        if "agents" in config:
-            for _task_name, agent_config in config["agents"].items():
+        if "agent_tasks" in config:
+            for _task_name, agent_config in config["agent_tasks"].items():
                 provider = agent_config.get("provider", "").lower()
 
                 if provider == "anthropic":

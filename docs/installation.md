@@ -108,7 +108,7 @@ The application uses TOML configuration files in the `configs/` directory:
 #### LLM Settings
 Each agent task defines its own LLM provider, model, and sampling settings.
 ```toml
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "google"
 model = "gemini-2.5-flash"
 temperature = 0.0

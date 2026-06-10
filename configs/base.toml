@@ -15,37 +15,37 @@ format = "%(asctime)s %(name)s [%(levelname)s] %(message)s"
 # Each agent task directly defines the LLM it uses (provider, model, and settings).
 # Tasks may share the same model with different settings (e.g. temperature) simply
 # by repeating the model with different values below.
-[agents.job_evaluation_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "google"
 model = "gemini-2.5-flash"
 temperature = 0.0
 max_tokens = 4096
 
-[agents.job_evaluation_fit]
+[agent_tasks.job_evaluation_fit]
 provider = "google"
 model = "gemini-2.5-flash"
 temperature = 0.0
 max_tokens = 4096
 
-[agents.interview_research]
+[agent_tasks.interview_research]
 provider = "google"
 model = "gemini-2.5-flash-lite"
 temperature = 0.7
 max_tokens = 4096
 
-[agents.interview_question_generation]
+[agent_tasks.interview_question_generation]
 provider = "google"
 model = "gemini-2.5-flash-lite"
 temperature = 0.7
 max_tokens = 4096
 
-[agents.interview_answer_generation]
+[agent_tasks.interview_answer_generation]
 provider = "google"
 model = "gemini-2.5-flash-lite"
 temperature = 0.7
 max_tokens = 4096
 
-[agents.interview_compilation]
+[agent_tasks.interview_compilation]
 provider = "google"
 model = "gemini-2.5-flash-lite"
 temperature = 0.7

@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 
 def _get_extraction_model():
     """Get the LangChain chat model configured for extraction."""
-    return get_chat_model(config.agents.job_evaluation_extraction)
+    return get_chat_model(config.agent_tasks.job_evaluation_extraction)
 
 
 def _extract_with_schema(
