@@ -5,7 +5,10 @@ Tests for environment check component functionality
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from ui.components.environment_check import check_environment_setup
+from ui.components.environment_check import (
+    build_setup_instructions,
+    check_environment_setup,
+)
 
 
 class TestEnvironmentCheck:
@@ -103,3 +106,37 @@ class TestEnvironmentCheck:
 
             assert is_valid is False
             assert "Configuration error: Config error" in message
+
+
+class TestBuildSetupInstructions:
+    """Test setup-instruction rendering stays in sync with detected
+    missing keys, so the UI does not contradict the warning banner."""
+
+    def test_instructions_reference_each_missing_key(self):
+        """When the detector reports a key, instructions must mention it."""
+        instructions = build_setup_instructions({"GOOGLE_API_KEY"})
+
+        assert "GOOGLE_API_KEY" in instructions
+        # And do not invent a different key the detector did not report
+        assert "ANTHROPIC_API_KEY" not in instructions
+
+    def test_instructions_list_multiple_missing_keys(self):
+        instructions = build_setup_instructions({"ANTHROPIC_API_KEY", "GOOGLE_API_KEY"})
+
+        assert "ANTHROPIC_API_KEY" in instructions
+        assert "GOOGLE_API_KEY" in instructions
+
+    def test_instructions_have_generic_fallback_when_no_keys_known(self):
+        """If the detector could not enumerate keys (e.g. config error),
+        instructions still render without naming the wrong provider."""
+        instructions = build_setup_instructions(set())
+
+        assert "ANTHROPIC_API_KEY" not in instructions
+        assert "GOOGLE_API_KEY" not in instructions
+        assert ".env" in instructions
+
+    def test_instructions_keep_langfuse_optional_section(self):
+        instructions = build_setup_instructions({"GOOGLE_API_KEY"})
+
+        assert "LANGFUSE_PUBLIC_KEY" in instructions
+        assert "LANGFUSE_SECRET_KEY" in instructions
