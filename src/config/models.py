@@ -41,39 +41,8 @@ class LoggingConfig(BaseModel):
         return v.upper()
 
 
-class AgentConfig(BaseModel):
-    """Agent task to LLM profile mappings."""
-
-    # Existing
-    job_evaluation_extraction: str = Field(
-        ..., description="LLM profile for job information extraction"
-    )
-    job_evaluation_fit: str = Field(
-        default="google_job_evaluation",
-        description="LLM profile for the job fit assessment",
-    )
-
-    # New interview preparation agents
-    interview_research: str = Field(
-        default="google_interview_research",
-        description="LLM profile for interview research",
-    )
-    interview_question_generation: str = Field(
-        default="google_interview_generation",
-        description="LLM profile for question generation",
-    )
-    interview_answer_generation: str = Field(
-        default="google_interview_generation",
-        description="LLM profile for answer generation",
-    )
-    interview_compilation: str = Field(
-        default="google_interview_generation",
-        description="LLM profile for guide compilation",
-    )
-
-
-class LLMProfileConfig(BaseModel):
-    """Configuration for a single LLM profile."""
+class LLMConfig(BaseModel):
+    """Configuration for a single LLM (provider, model, and sampling settings)."""
 
     provider: str = Field(..., description="LLM provider")
     model: str = Field(..., description="Model identifier")
@@ -158,7 +127,7 @@ class LLMProfileConfig(BaseModel):
         return v
 
     def __hash__(self) -> int:
-        """Make LLMProfileConfig hashable for use in singleton pattern."""
+        """Make LLMConfig hashable for use in singleton pattern."""
         return hash(
             (
                 self.provider,
@@ -170,8 +139,8 @@ class LLMProfileConfig(BaseModel):
         )
 
     def __eq__(self, other) -> bool:
-        """Define equality for LLMProfileConfig objects."""
-        if not isinstance(other, LLMProfileConfig):
+        """Define equality for LLMConfig objects."""
+        if not isinstance(other, LLMConfig):
             return False
         return (
             self.provider == other.provider
@@ -180,6 +149,26 @@ class LLMProfileConfig(BaseModel):
             and self.max_tokens == other.max_tokens
             and self.api_key == other.api_key
         )
+
+
+class AgentTasksConfig(BaseModel):
+    """LLM configuration for each agent task.
+
+    Each task directly carries its own provider, model, and sampling settings.
+    """
+
+    job_evaluation_extraction: LLMConfig = Field(
+        ..., description="LLM config for job information extraction"
+    )
+    job_evaluation_fit: LLMConfig = Field(..., description="LLM config for the job fit assessment")
+    interview_research: LLMConfig = Field(..., description="LLM config for interview research")
+    interview_question_generation: LLMConfig = Field(
+        ..., description="LLM config for question generation"
+    )
+    interview_answer_generation: LLMConfig = Field(
+        ..., description="LLM config for answer generation"
+    )
+    interview_compilation: LLMConfig = Field(..., description="LLM config for guide compilation")
 
 
 class LangfuseConfig(BaseModel):
@@ -212,23 +201,5 @@ class AppConfig(BaseModel):
 
     general: GeneralConfig = Field(..., description="General application configuration")
     logging: LoggingConfig = Field(..., description="Logging configuration")
-    agents: AgentConfig = Field(..., description="Agent configuration")
-    llm_profiles: Dict[str, LLMProfileConfig] = Field(..., description="LLM profile configurations")
+    agent_tasks: AgentTasksConfig = Field(..., description="Per-task LLM configuration")
     observability: ObservabilityConfig = Field(..., description="Observability configuration")
-
-    def get_llm_profile(self, profile_name: str) -> LLMProfileConfig:
-        """Get LLM profile by name with validation."""
-        if profile_name not in self.llm_profiles:
-            available = ", ".join(self.llm_profiles.keys())
-            raise ValueError(
-                f"LLM profile '{profile_name}' not found. Available profiles: {available}"
-            )
-        return self.llm_profiles[profile_name]
-
-    def get_agent_llm_profile(self, agent_task: str) -> LLMProfileConfig:
-        """Get LLM profile for a specific agent task."""
-        if not hasattr(self.agents, agent_task):
-            raise ValueError(f"Unknown agent task: {agent_task}")
-
-        profile_name = getattr(self.agents, agent_task)
-        return self.get_llm_profile(profile_name)

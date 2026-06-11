@@ -106,12 +106,13 @@ The application uses TOML configuration files in the `configs/` directory:
 ### Key Configuration Areas
 
 #### LLM Settings
+Each agent task defines its own LLM provider, model, and sampling settings.
 ```toml
-[llm_profiles.anthropic_extraction]
-provider = "anthropic"
-model = "claude-haiku-4-5"
+[agent_tasks.job_evaluation_extraction]
+provider = "google"
+model = "gemini-2.5-flash"
 temperature = 0.0
-max_tokens = 512
+max_tokens = 4096
 ```
 
 #### Evaluation Criteria

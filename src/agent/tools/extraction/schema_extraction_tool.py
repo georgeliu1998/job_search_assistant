@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.prompts.extraction.job_posting import JOB_POSTING_EXTRACTION_PROMPT
 from src.config import config
-from src.llm import get_chat_model_by_profile_name, langfuse_manager
+from src.llm import get_chat_model, langfuse_manager
 from src.models.job import JobPostingExtractionSchema
 from src.utils.logging import get_logger
 
@@ -20,8 +20,7 @@ logger = get_logger(__name__)
 
 def _get_extraction_model():
     """Get the LangChain chat model configured for extraction."""
-    profile_name = config.agents.job_evaluation_extraction
-    return get_chat_model_by_profile_name(profile_name)
+    return get_chat_model(config.agent_tasks.job_evaluation_extraction)
 
 
 def _extract_with_schema(

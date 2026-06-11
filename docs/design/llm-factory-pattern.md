@@ -68,10 +68,10 @@ graph TD
 
 ```python
 from src.llm import get_llm_client
-from src.config.models import LLMProfileConfig
+from src.config.models import LLMConfig
 
 # Create client via factory
-config = LLMProfileConfig(
+config = LLMConfig(
     provider="anthropic",
     model="claude-haiku-4-5",
     api_key="your-api-key"
@@ -170,7 +170,7 @@ from src.utils.singleton import singleton
 class OpenAIClient(BaseLLMClient):
     """OpenAI LLM client implementation."""
 
-    def __init__(self, config: LLMProfileConfig):
+    def __init__(self, config: LLMConfig):
         super().__init__(config)
 
         if config.provider != "openai":
@@ -212,11 +212,11 @@ VALID_MODELS: ClassVar[Dict[str, set]] = {
 }
 ```
 
-**Step 4**: Add configuration profile
+**Step 4**: Point an agent task at the new provider
 
 ```toml
 # configs/base.toml
-[llm_profiles.openai_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "openai"
 model = "gpt-4"
 temperature = 0.0
@@ -279,7 +279,7 @@ def test_feature_with_mock_llm():
     factory = LLMClientFactory()
     factory.register_provider("mock", "tests.mocks.mock_client.MockLLMClient")
 
-    config = LLMProfileConfig(provider="mock", model="test", api_key="test")
+    config = LLMConfig(provider="mock", model="test", api_key="test")
     client = factory.create_client(config)
     # Test your feature...
 ```
@@ -323,33 +323,40 @@ register_provider("invalid", "path.to.InvalidClient")
 
 ## Configuration Integration
 
-### Profile-Based Usage
+### Task-Based Usage
 
-```python
+Each agent task defines its own LLM config inline; application code passes
+that config straight to the factory.
+
+```toml
 # configs/base.toml
-[agents]
-job_evaluation_extraction = "anthropic_extraction"
-
-[llm_profiles.anthropic_extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.0
 max_tokens = 512
-
-# Application code
-from src.llm import get_llm_client_by_profile_name
-client = get_llm_client_by_profile_name("anthropic_extraction")
 ```
 
-### Environment-Specific Providers
+```python
+# Application code
+from src.config import config
+from src.llm import get_chat_model
+
+model = get_chat_model(config.agent_tasks.job_evaluation_extraction)
+```
+
+### Environment-Specific Overrides
+
+Overrides apply per task, so you can change a single setting without
+affecting other tasks that happen to use the same model.
 
 ```toml
 # configs/dev.toml - Development environment
-[llm_profiles.extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "anthropic"  # Use real provider in dev
 
 # configs/stage.toml - Testing environment
-[llm_profiles.extraction]
+[agent_tasks.job_evaluation_extraction]
 provider = "mock"  # Use mock provider in testing
 ```
 

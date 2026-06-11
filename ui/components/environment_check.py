@@ -7,23 +7,30 @@ import streamlit as st
 from src.config import config
 
 
+def get_missing_api_keys() -> set[str]:
+    """Return the set of API-key env var names required by configured tasks
+    that are currently missing.
+
+    Iterates fields via Pydantic's public ``model_fields`` API rather than
+    ``vars()``/``__dict__``, which is an undocumented implementation detail
+    and could include non-field values in future Pydantic versions.
+    """
+    missing_keys: set[str] = set()
+    agent_tasks = config.agent_tasks
+    for field_name in type(agent_tasks).model_fields:
+        agent_llm = getattr(agent_tasks, field_name)
+        if not agent_llm.api_key:
+            provider = agent_llm.provider.upper()
+            missing_keys.add(f"{provider}_API_KEY")
+    return missing_keys
+
+
 def check_environment_setup() -> tuple[bool, str]:
     """Check if the environment is properly configured"""
     try:
-        # Check if configs can be loaded
-        # config is already imported at module level
-
-        missing_keys = []
-
-        # Check each LLM profile for missing API keys
-        for profile_name, profile in config.llm_profiles.items():
-            if not profile.api_key:
-                provider = profile.provider.upper()
-                env_var = f"{provider}_API_KEY"
-                missing_keys.append(env_var)
-
+        missing_keys = get_missing_api_keys()
         if missing_keys:
-            missing_str = ", ".join(missing_keys)
+            missing_str = ", ".join(sorted(missing_keys))
             return False, f"Missing required API keys: {missing_str}"
 
         return True, "Environment is properly configured"
@@ -31,20 +38,40 @@ def check_environment_setup() -> tuple[bool, str]:
         return False, f"Configuration error: {str(e)}"
 
 
+def build_setup_instructions(missing_keys: set[str]) -> str:
+    """Build setup instructions that reference the actual missing API keys.
+
+    Keeps the instructions in sync with what the detector reports, so users
+    don't get told to configure a provider that the app isn't actually using.
+    """
+    if missing_keys:
+        sorted_keys = sorted(missing_keys)
+        key_lines = "\n".join(f"   - `{name}=your_key_here`" for name in sorted_keys)
+        keys_section = "2. Add the missing API key(s) listed above:\n" + key_lines
+    else:
+        keys_section = "2. Add the required API key(s) for your configured providers"
+
+    return f"""
+**Setup Instructions:**
+1. Create a `.env` file in the root directory
+{keys_section}
+3. Restart the Streamlit app
+
+Optional: Add Langfuse keys for observability:
+- `LANGFUSE_PUBLIC_KEY=your_public_key`
+- `LANGFUSE_SECRET_KEY=your_secret_key`
+- `LANGFUSE_ENABLED=true`
+"""
+
+
 def render_environment_warning():
     """Render environment setup warning if needed"""
     env_ok, env_message = check_environment_setup()
     if not env_ok:
         st.error(f"⚠️ **Setup Required:** {env_message}")
-        st.info("""
-        **Setup Instructions:**
-        1. Create a `.env` file in the root directory
-        2. Add your Anthropic API key: `ANTHROPIC_API_KEY=your_key_here`
-        3. Restart the Streamlit app
-
-        Optional: Add Langfuse keys for observability:
-        - `LANGFUSE_PUBLIC_KEY=your_public_key`
-        - `LANGFUSE_SECRET_KEY=your_secret_key`
-        - `LANGFUSE_ENABLED=true`
-        """)
+        try:
+            missing_keys = get_missing_api_keys()
+        except Exception:
+            missing_keys = set()
+        st.info(build_setup_instructions(missing_keys))
     return env_ok
