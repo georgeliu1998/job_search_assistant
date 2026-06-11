@@ -105,10 +105,10 @@ model = "gemini-2.5-flash"
 provider = "google"
 model = "gemini-2.5-flash-lite"
 ```
-Each task becomes an `LLMProfileConfig` accessible via **attributes** on
+Each task becomes an `LLMConfig` accessible via **attributes** on
 `config.agent_tasks`:
 ```python
-config.agent_tasks.job_evaluation_extraction          # ✅ LLMProfileConfig
+config.agent_tasks.job_evaluation_extraction          # ✅ LLMConfig
 config.agent_tasks.job_evaluation_extraction.provider  # ✅ Attribute access
 config.agent_tasks.job_evaluation_extraction.model     # ✅ Attribute access
 ```
@@ -116,7 +116,7 @@ config.agent_tasks.job_evaluation_extraction.model     # ✅ Attribute access
 ### Why This Design?
 
 - **Intuitive**: The model a task uses is defined in one place, not via an indirection layer
-- **Type Safety**: Each task's LLM settings are validated as an `LLMProfileConfig` Pydantic model
+- **Type Safety**: Each task's LLM settings are validated as an `LLMConfig` Pydantic model
 - **Per-task flexibility**: Two tasks can share a model with different settings (e.g. temperature) without inventing distinct profile names, and overrides in `dev.toml`/`prod.toml` apply per task
 
 ## Configuration Loading Strategy
@@ -162,7 +162,7 @@ min_salary = config.evaluation_criteria.min_salary
 
 # The config proxy provides lazy loading - configuration is loaded automatically
 # on first access and cached for subsequent uses.
-# Each agent task carries its own LLM config (an LLMProfileConfig):
+# Each agent task carries its own LLM config (an LLMConfig):
 extraction_llm = config.agent_tasks.job_evaluation_extraction
 model = get_chat_model(extraction_llm)
 ```

@@ -41,7 +41,7 @@ class LoggingConfig(BaseModel):
         return v.upper()
 
 
-class LLMProfileConfig(BaseModel):
+class LLMConfig(BaseModel):
     """Configuration for a single LLM (provider, model, and sampling settings)."""
 
     provider: str = Field(..., description="LLM provider")
@@ -127,7 +127,7 @@ class LLMProfileConfig(BaseModel):
         return v
 
     def __hash__(self) -> int:
-        """Make LLMProfileConfig hashable for use in singleton pattern."""
+        """Make LLMConfig hashable for use in singleton pattern."""
         return hash(
             (
                 self.provider,
@@ -139,8 +139,8 @@ class LLMProfileConfig(BaseModel):
         )
 
     def __eq__(self, other) -> bool:
-        """Define equality for LLMProfileConfig objects."""
-        if not isinstance(other, LLMProfileConfig):
+        """Define equality for LLMConfig objects."""
+        if not isinstance(other, LLMConfig):
             return False
         return (
             self.provider == other.provider
@@ -157,24 +157,18 @@ class AgentTasksConfig(BaseModel):
     Each task directly carries its own provider, model, and sampling settings.
     """
 
-    job_evaluation_extraction: LLMProfileConfig = Field(
+    job_evaluation_extraction: LLMConfig = Field(
         ..., description="LLM config for job information extraction"
     )
-    job_evaluation_fit: LLMProfileConfig = Field(
-        ..., description="LLM config for the job fit assessment"
-    )
-    interview_research: LLMProfileConfig = Field(
-        ..., description="LLM config for interview research"
-    )
-    interview_question_generation: LLMProfileConfig = Field(
+    job_evaluation_fit: LLMConfig = Field(..., description="LLM config for the job fit assessment")
+    interview_research: LLMConfig = Field(..., description="LLM config for interview research")
+    interview_question_generation: LLMConfig = Field(
         ..., description="LLM config for question generation"
     )
-    interview_answer_generation: LLMProfileConfig = Field(
+    interview_answer_generation: LLMConfig = Field(
         ..., description="LLM config for answer generation"
     )
-    interview_compilation: LLMProfileConfig = Field(
-        ..., description="LLM config for guide compilation"
-    )
+    interview_compilation: LLMConfig = Field(..., description="LLM config for guide compilation")
 
 
 class LangfuseConfig(BaseModel):

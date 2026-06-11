@@ -9,7 +9,7 @@ import os
 
 from langchain_core.language_models import BaseChatModel
 
-from src.config.models import LLMProfileConfig
+from src.config.models import LLMConfig
 from src.exceptions.llm import LLMProviderError
 from src.utils.logging import get_logger
 
@@ -21,7 +21,7 @@ _PROVIDER_CONSTRUCTORS = {
 }
 
 
-def _ensure_api_key(config: LLMProfileConfig, env_var_name: str) -> str:
+def _ensure_api_key(config: LLMConfig, env_var_name: str) -> str:
     """Get API key from config or environment, raising if missing."""
     api_key = getattr(config, "api_key", None)
     if not api_key:
@@ -35,7 +35,7 @@ def _ensure_api_key(config: LLMProfileConfig, env_var_name: str) -> str:
     return api_key
 
 
-def _create_anthropic_model(config: LLMProfileConfig) -> BaseChatModel:
+def _create_anthropic_model(config: LLMConfig) -> BaseChatModel:
     from langchain_anthropic import ChatAnthropic
 
     api_key = _ensure_api_key(config, "ANTHROPIC_API_KEY")
@@ -47,7 +47,7 @@ def _create_anthropic_model(config: LLMProfileConfig) -> BaseChatModel:
     )
 
 
-def _create_google_model(config: LLMProfileConfig) -> BaseChatModel:
+def _create_google_model(config: LLMConfig) -> BaseChatModel:
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     api_key = _ensure_api_key(config, "GOOGLE_API_KEY")
@@ -59,7 +59,7 @@ def _create_google_model(config: LLMProfileConfig) -> BaseChatModel:
     )
 
 
-def get_chat_model(config: LLMProfileConfig) -> BaseChatModel:
+def get_chat_model(config: LLMConfig) -> BaseChatModel:
     """
     Create a configured LangChain chat model for the given profile.
 

@@ -68,10 +68,10 @@ graph TD
 
 ```python
 from src.llm import get_llm_client
-from src.config.models import LLMProfileConfig
+from src.config.models import LLMConfig
 
 # Create client via factory
-config = LLMProfileConfig(
+config = LLMConfig(
     provider="anthropic",
     model="claude-haiku-4-5",
     api_key="your-api-key"
@@ -170,7 +170,7 @@ from src.utils.singleton import singleton
 class OpenAIClient(BaseLLMClient):
     """OpenAI LLM client implementation."""
 
-    def __init__(self, config: LLMProfileConfig):
+    def __init__(self, config: LLMConfig):
         super().__init__(config)
 
         if config.provider != "openai":
@@ -279,7 +279,7 @@ def test_feature_with_mock_llm():
     factory = LLMClientFactory()
     factory.register_provider("mock", "tests.mocks.mock_client.MockLLMClient")
 
-    config = LLMProfileConfig(provider="mock", model="test", api_key="test")
+    config = LLMConfig(provider="mock", model="test", api_key="test")
     client = factory.create_client(config)
     # Test your feature...
 ```

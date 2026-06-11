@@ -9,7 +9,7 @@ import os
 
 import pytest
 
-from src.config.models import LLMProfileConfig
+from src.config.models import LLMConfig
 from src.exceptions.llm import LLMProviderError
 from src.llm import get_chat_model
 
@@ -19,7 +19,7 @@ class TestAPIKeyValidation:
 
     def test_anthropic_missing_api_key_raises_error(self):
         """Test that Anthropic model creation fails without API key."""
-        config = LLMProfileConfig(
+        config = LLMConfig(
             provider="anthropic",
             model="claude-haiku-4-5",
         )
@@ -35,7 +35,7 @@ class TestAPIKeyValidation:
 
     def test_anthropic_accepts_valid_api_key(self):
         """Test that Anthropic model is created with a valid API key."""
-        config = LLMProfileConfig(
+        config = LLMConfig(
             provider="anthropic",
             model="claude-haiku-4-5",
             api_key="sk-ant-api03-test-key-format",
@@ -47,12 +47,12 @@ class TestAPIKeyValidation:
     def test_different_providers_require_different_api_keys(self):
         """Test that different providers validate their specific API key
         environment variables."""
-        anthropic_config = LLMProfileConfig(
+        anthropic_config = LLMConfig(
             provider="anthropic",
             model="claude-haiku-4-5",
         )
 
-        google_config = LLMProfileConfig(
+        google_config = LLMConfig(
             provider="google",
             model="gemini-2.5-flash",
         )
@@ -81,7 +81,7 @@ class TestAPIKeyValidation:
         os.environ["ANTHROPIC_API_KEY"] = env_key
 
         try:
-            config = LLMProfileConfig(
+            config = LLMConfig(
                 provider="anthropic",
                 model="claude-haiku-4-5",
                 api_key=config_key,

@@ -5,28 +5,28 @@ Tests for environment check component functionality
 from typing import Optional
 from unittest.mock import MagicMock, patch
 
-from src.config.models import AgentTasksConfig, LLMProfileConfig
+from src.config.models import AgentTasksConfig, LLMConfig
 from ui.components.environment_check import (
     build_setup_instructions,
     check_environment_setup,
 )
 
 
-def _make_profile(provider: str, api_key: Optional[str]) -> LLMProfileConfig:
-    """Build a profile for tests. APP_ENV=stage in conftest.py disables
+def _make_llm_config(provider: str, api_key: Optional[str]) -> LLMConfig:
+    """Build an LLMConfig for tests. APP_ENV=stage in conftest.py disables
     model/api-key validators so api_key=None is allowed here."""
-    return LLMProfileConfig(
+    return LLMConfig(
         provider=provider,
         model="stage-test-model",
         api_key=api_key,
     )
 
 
-def _make_agent_tasks(**overrides: LLMProfileConfig) -> AgentTasksConfig:
+def _make_agent_tasks(**overrides: LLMConfig) -> AgentTasksConfig:
     """Build a real AgentTasksConfig. Defaults to anthropic+valid key for
     every task; tests override only the tasks they care about so a real
     Pydantic model is exercised in every code path."""
-    default = _make_profile("anthropic", "default-key")
+    default = _make_llm_config("anthropic", "default-key")
     fields = {
         "job_evaluation_extraction": default,
         "job_evaluation_fit": default,
@@ -57,7 +57,7 @@ class TestEnvironmentCheck:
         """One task missing its api_key → that provider's env var is reported"""
         mock_config = MagicMock()
         mock_config.agent_tasks = _make_agent_tasks(
-            job_evaluation_extraction=_make_profile("anthropic", None),
+            job_evaluation_extraction=_make_llm_config("anthropic", None),
         )
 
         with patch("ui.components.environment_check.config", mock_config):
@@ -70,8 +70,8 @@ class TestEnvironmentCheck:
         """Tasks missing keys for different providers → all are reported"""
         mock_config = MagicMock()
         mock_config.agent_tasks = _make_agent_tasks(
-            job_evaluation_extraction=_make_profile("anthropic", None),
-            interview_research=_make_profile("google", None),
+            job_evaluation_extraction=_make_llm_config("anthropic", None),
+            interview_research=_make_llm_config("google", None),
         )
 
         with patch("ui.components.environment_check.config", mock_config):
@@ -86,8 +86,8 @@ class TestEnvironmentCheck:
         """Multiple tasks sharing one provider → env var is reported once"""
         mock_config = MagicMock()
         mock_config.agent_tasks = _make_agent_tasks(
-            interview_research=_make_profile("google", None),
-            interview_compilation=_make_profile("google", None),
+            interview_research=_make_llm_config("google", None),
+            interview_compilation=_make_llm_config("google", None),
         )
 
         with patch("ui.components.environment_check.config", mock_config):
