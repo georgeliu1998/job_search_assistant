@@ -1,10 +1,9 @@
 """
 LLM call-resilience building block.
 
-This is the first, reusable instance of the call-resilience pattern: it answers
-"did we get a valid response object at all?" (timeouts, rate limits, 5xx,
-connection drops, and structured-output parse failures), separate from the
-quality layer (the workflow's critic gates).
+A reusable call-resilience helper: it answers "did we get a valid response
+object at all?" (timeouts, rate limits, 5xx, connection drops, and
+structured-output parse failures), separate from any content-quality checks.
 
 Mechanism: LangChain-native, Tenacity-backed. Each provider model is bound to
 its structured-output schema *before* being composed, then wrapped with a
@@ -29,9 +28,8 @@ from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Default same-provider attempts before falling back. T2 wires this from the
-# global ``[llm.resilience]`` config; kept as a plain argument here so this
-# building block has no dependency on the (later) config additions.
+# Default number of same-provider attempts before falling back; overridable
+# per call so this building block stays independent of any external config.
 DEFAULT_MAX_ATTEMPTS_PER_PROVIDER = 3
 
 # HTTP status codes that represent a transient, retryable condition when a
