@@ -7,6 +7,7 @@ fallback whose API key is missing, and structured-output binding with
 ``include_raw=False``.
 """
 
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -36,12 +37,15 @@ def _make_validation_error() -> ValidationError:
     raise AssertionError("expected ValidationError")
 
 
-def _anthropic_rate_limit() -> BaseException:
+def _anthropic_error(status_code: int, cls: Optional[type] = None) -> BaseException:
+    """Build a real Anthropic APIStatusError (subclass) with a given status code."""
     import anthropic
 
-    # Construct without running __init__ (its signature needs an httpx response);
-    # isinstance-based classification only cares about the type.
-    return anthropic.RateLimitError.__new__(anthropic.RateLimitError)
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    body = {"error": {"type": "x", "message": "boom"}}
+    response = httpx.Response(status_code, request=request, json=body)
+    error_cls = cls or anthropic.APIStatusError
+    return error_cls("boom", response=response, body=body)
 
 
 def _google_error(code: int) -> BaseException:
@@ -63,7 +67,6 @@ class TestIsTransientError:
             httpx.ConnectError("no route"),
             OutputParserException("bad json"),
             _make_validation_error(),
-            _anthropic_rate_limit(),
         ],
     )
     def test_transient_exceptions(self, exc):
@@ -80,6 +83,21 @@ class TestIsTransientError:
 
     def test_google_auth_error_is_fail_fast(self):
         assert is_transient_error(_google_error(401)) is False
+
+    @pytest.mark.parametrize("status_code", [429, 500, 503, 504, 529])
+    def test_anthropic_status_codes_are_transient(self, status_code):
+        assert is_transient_error(_anthropic_error(status_code)) is True
+
+    def test_anthropic_connection_error_is_transient(self):
+        import anthropic
+
+        request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        exc = anthropic.APIConnectionError(request=request)
+        assert is_transient_error(exc) is True
+
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 404, 422])
+    def test_anthropic_status_codes_are_fail_fast(self, status_code):
+        assert is_transient_error(_anthropic_error(status_code)) is False
 
     @pytest.mark.parametrize(
         "exc",

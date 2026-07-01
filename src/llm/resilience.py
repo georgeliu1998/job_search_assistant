@@ -77,12 +77,10 @@ def _build_transient_type_tuple() -> Tuple[Type[BaseException], ...]:
     try:
         import anthropic
 
-        types += [
-            anthropic.APITimeoutError,
-            anthropic.APIConnectionError,
-            anthropic.RateLimitError,
-            anthropic.InternalServerError,
-        ]
+        # APITimeoutError subclasses APIConnectionError; status-carrying errors
+        # (rate limits, 5xx/overloaded) are handled separately below via
+        # status_code inspection, since APIStatusError covers many status codes.
+        types += [anthropic.APIConnectionError]
     except ImportError:  # pragma: no cover - provider package optional
         pass
 
@@ -102,6 +100,22 @@ def is_transient_error(exc: BaseException) -> bool:
     """
     if isinstance(exc, _TRANSIENT_EXCEPTION_TYPES):
         return True
+
+    # Anthropic's SDK carries the HTTP status on every APIStatusError subclass
+    # (RateLimitError=429, ServiceUnavailableError=503, OverloadedError=529,
+    # DeadlineExceededError=504, InternalServerError=5xx, ...), so inspecting
+    # status_code covers all of them without enumerating each subclass and
+    # tells them apart from fail-fast 400/401/403/404.
+    try:
+        import anthropic
+
+        if isinstance(exc, anthropic.APIStatusError):
+            status_code = getattr(exc, "status_code", None)
+            return status_code is not None and (
+                status_code >= 500 or status_code in _TRANSIENT_STATUS_CODES
+            )
+    except ImportError:  # pragma: no cover - provider package optional
+        pass
 
     # Google's ``genai`` SDK raises a single ``ServerError`` for 5xx and a
     # single ``ClientError`` for all 4xx, so transient 429s must be told apart
