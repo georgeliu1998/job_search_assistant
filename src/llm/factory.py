@@ -20,6 +20,13 @@ _PROVIDER_CONSTRUCTORS = {
     "google": "_create_google_model",
 }
 
+# Single source of truth for provider -> API key env var name, shared with
+# src/llm/resilience.py so the two stay in sync as providers are added.
+PROVIDER_ENV_VARS = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "google": "GOOGLE_API_KEY",
+}
+
 
 def _ensure_api_key(config: LLMConfig, env_var_name: str) -> str:
     """Get API key from config or environment, raising if missing."""
@@ -38,7 +45,7 @@ def _ensure_api_key(config: LLMConfig, env_var_name: str) -> str:
 def _create_anthropic_model(config: LLMConfig) -> BaseChatModel:
     from langchain_anthropic import ChatAnthropic
 
-    api_key = _ensure_api_key(config, "ANTHROPIC_API_KEY")
+    api_key = _ensure_api_key(config, PROVIDER_ENV_VARS["anthropic"])
     return ChatAnthropic(
         model=config.model,
         temperature=config.temperature,
@@ -50,7 +57,7 @@ def _create_anthropic_model(config: LLMConfig) -> BaseChatModel:
 def _create_google_model(config: LLMConfig) -> BaseChatModel:
     from langchain_google_genai import ChatGoogleGenerativeAI
 
-    api_key = _ensure_api_key(config, "GOOGLE_API_KEY")
+    api_key = _ensure_api_key(config, PROVIDER_ENV_VARS["google"])
     return ChatGoogleGenerativeAI(
         model=config.model,
         temperature=config.temperature,

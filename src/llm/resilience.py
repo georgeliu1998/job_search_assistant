@@ -23,7 +23,7 @@ from pydantic import BaseModel, ValidationError
 
 from src.config.models import LLMConfig
 from src.exceptions.llm import LLMError
-from src.llm.factory import get_chat_model
+from src.llm.factory import PROVIDER_ENV_VARS, get_chat_model
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -36,11 +36,6 @@ DEFAULT_MAX_ATTEMPTS_PER_PROVIDER = 3
 # provider lumps several failure modes under one exception type (the Google
 # ``genai`` SDK in particular raises a single ``ClientError`` for all 4xx).
 _TRANSIENT_STATUS_CODES = frozenset({408, 409, 425, 429})
-
-_PROVIDER_ENV_VARS = {
-    "anthropic": "ANTHROPIC_API_KEY",
-    "google": "GOOGLE_API_KEY",
-}
 
 
 class TransientLLMError(LLMError):
@@ -140,7 +135,7 @@ def _has_api_key(config: LLMConfig) -> bool:
     """Return whether an API key is resolvable for the config's provider."""
     if getattr(config, "api_key", None):
         return True
-    env_var = _PROVIDER_ENV_VARS.get(config.provider.lower())
+    env_var = PROVIDER_ENV_VARS.get(config.provider.lower())
     return bool(env_var and os.getenv(env_var))
 
 
