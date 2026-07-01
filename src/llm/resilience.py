@@ -144,7 +144,7 @@ def _guard_leaf(runnable: Runnable, config: LLMConfig, role: str) -> Runnable:
             result = runnable.invoke(value, config=run_config)
         except TransientLLMError:
             raise
-        except BaseException as exc:
+        except Exception as exc:
             if is_transient_error(exc):
                 logger.warning(
                     "Transient LLM error from provider=%s model=%s (role=%s): %s",
