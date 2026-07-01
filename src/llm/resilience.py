@@ -252,12 +252,22 @@ def build_resilient_llm(
         Langfuse config so tracing propagates across the fallback boundary.
 
     Raises:
+        ValueError: If ``max_attempts_per_provider`` is not a positive integer.
+            Notably, Tenacity's ``stop_after_attempt`` treats 0 or a negative
+            value as "never stop", which would otherwise retry forever instead
+            of failing fast.
         TransientLLMError: If the primary's retries and the fallback's retries
             (when a fallback is configured) are all exhausted. The original
             provider exception is available via ``__cause__``. Non-transient
             errors (auth, malformed input, unknown) propagate with their
             original type instead.
     """
+    if max_attempts_per_provider < 1:
+        raise ValueError(
+            f"max_attempts_per_provider must be >= 1, got {max_attempts_per_provider} "
+            "(0 or negative would retry forever under Tenacity's stop_after_attempt)."
+        )
+
     primary_leaf = _build_leaf(
         primary_config,
         output_model,

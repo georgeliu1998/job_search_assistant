@@ -119,6 +119,11 @@ class TestBuildResilientLLM:
     def _config(self, provider="anthropic", model="claude-haiku-4-5", api_key="k"):
         return LLMConfig(provider=provider, model=model, api_key=api_key)
 
+    @pytest.mark.parametrize("bad_value", [0, -1])
+    def test_rejects_non_positive_max_attempts_per_provider(self, bad_value):
+        with pytest.raises(ValueError, match="max_attempts_per_provider"):
+            build_resilient_llm(self._config(), max_attempts_per_provider=bad_value)
+
     @patch("src.llm.resilience.get_chat_model")
     def test_no_fallback_returns_primary_only(self, mock_get):
         mock_get.return_value = RunnableLambda(lambda x: "ok")
