@@ -147,12 +147,16 @@ def _has_api_key(config: LLMConfig) -> bool:
 def _guard_leaf(runnable: Runnable, config: LLMConfig, role: str) -> Runnable:
     """Wrap a model/structured runnable to normalize errors and log who served.
 
+    ``config`` identifies this leaf's provider/model for logging only. The
+    separate ``run_config`` received by the wrapped invocation (the
+    ``RunnableConfig`` supplied by the caller at ``.invoke()`` time, carrying
+    the Langfuse callbacks) is forwarded unchanged to ``runnable.invoke()``, so
+    tracing propagates across the fallback boundary too.
+
     Transient failures are re-raised as ``TransientLLMError`` (the single type
     the retry/fallback filters watch); non-transient failures propagate
     unchanged (fail fast). On success it logs which provider+model actually
-    served the response, making primary-provider degradation observable. The
-    incoming ``config`` (carrying the Langfuse callbacks) is forwarded so
-    tracing propagates to the fallback runnable too.
+    served the response, making primary-provider degradation observable.
     """
     provider, model = config.provider, config.model
 
