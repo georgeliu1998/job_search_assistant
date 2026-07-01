@@ -20,6 +20,7 @@ from pydantic import BaseModel, ValidationError
 from src.config.models import LLMConfig
 from src.exceptions.llm import LLMProviderError
 from src.llm.resilience import (
+    TransientLLMError,
     build_resilient_llm,
     is_transient_error,
 )
@@ -210,6 +211,23 @@ class TestBuildResilientLLM:
             result.invoke("hi")
         assert attempts["primary"] == 1
         assert attempts["fallback"] == 0
+
+    @patch("src.llm.resilience.get_chat_model")
+    def test_exhausted_retries_and_fallback_raise_transient_llm_error(self, mock_get):
+        def always_fails(_):
+            raise httpx.ConnectError("down")
+
+        mock_get.side_effect = [RunnableLambda(always_fails), RunnableLambda(always_fails)]
+
+        result = build_resilient_llm(
+            self._config(),
+            self._config(provider="google", model="gemini-2.5-flash-lite", api_key="k2"),
+            max_attempts_per_provider=2,
+        )
+
+        with pytest.raises(TransientLLMError) as exc_info:
+            result.invoke("hi")
+        assert isinstance(exc_info.value.__cause__, httpx.ConnectError)
 
     @patch("src.llm.resilience.get_chat_model")
     def test_transient_failure_then_recovery_logs_served_provider(self, mock_get, caplog):

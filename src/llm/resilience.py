@@ -44,12 +44,15 @@ _PROVIDER_ENV_VARS = {
 
 
 class TransientLLMError(LLMError):
-    """Internal marker wrapping an underlying transient failure.
+    """Raised when a transient LLM failure exhausts all retries and fallbacks.
 
-    The classifier converts any provider/framework exception it deems transient
-    into this single type, so the native ``with_retry`` / ``with_fallbacks``
+    Internally, the classifier wraps each transient provider/framework failure
+    into this single type so the native ``with_retry`` / ``with_fallbacks``
     type filters can act on one unambiguous class while non-transient errors
-    keep their original type and fail fast.
+    keep their original type and fail fast. This is also what callers of a
+    runnable built by :func:`build_resilient_llm` will see raised if the
+    primary's retries *and* the fallback's retries are all exhausted; the
+    original provider exception is preserved via ``__cause__``.
     """
 
 
@@ -247,6 +250,13 @@ def build_resilient_llm(
     Returns:
         A LangChain ``Runnable`` to ``.invoke(messages, config=...)``. Pass the
         Langfuse config so tracing propagates across the fallback boundary.
+
+    Raises:
+        TransientLLMError: If the primary's retries and the fallback's retries
+            (when a fallback is configured) are all exhausted. The original
+            provider exception is available via ``__cause__``. Non-transient
+            errors (auth, malformed input, unknown) propagate with their
+            original type instead.
     """
     primary_leaf = _build_leaf(
         primary_config,
