@@ -193,6 +193,32 @@ class TestBuildResilientLLM:
         model.with_structured_output.assert_called_once_with(_Schema, include_raw=False)
 
     @patch("src.llm.resilience.get_chat_model")
+    def test_structured_output_parse_failure_falls_back(self, mock_get):
+        def raise_parse_error(_):
+            raise OutputParserException("bad json")
+
+        primary_model = MagicMock()
+        primary_model.with_structured_output.return_value = RunnableLambda(raise_parse_error)
+
+        fallback_model = MagicMock()
+        fallback_model.with_structured_output.return_value = RunnableLambda(
+            lambda _: _Schema(value=1)
+        )
+
+        mock_get.side_effect = [primary_model, fallback_model]
+
+        result = build_resilient_llm(
+            self._config(),
+            self._config(provider="google", model="gemini-2.5-flash-lite", api_key="k2"),
+            output_model=_Schema,
+            max_attempts_per_provider=1,
+        )
+
+        assert result.invoke("hi") == _Schema(value=1)
+        primary_model.with_structured_output.assert_called_once_with(_Schema, include_raw=False)
+        fallback_model.with_structured_output.assert_called_once_with(_Schema, include_raw=False)
+
+    @patch("src.llm.resilience.get_chat_model")
     def test_transient_primary_failure_falls_back(self, mock_get):
         attempts = {"primary": 0, "fallback": 0}
 
