@@ -21,6 +21,7 @@ from src.config.models import LLMConfig
 from src.exceptions.llm import LLMProviderError
 from src.llm.resilience import (
     TransientLLMError,
+    _has_api_key,
     build_resilient_llm,
     is_transient_error,
 )
@@ -73,8 +74,9 @@ class TestIsTransientError:
     def test_transient_exceptions(self, exc):
         assert is_transient_error(exc) is True
 
-    def test_google_rate_limit_is_transient(self):
-        assert is_transient_error(_google_error(429)) is True
+    @pytest.mark.parametrize("status_code", [408, 409, 425, 429])
+    def test_google_client_error_transient_status_codes(self, status_code):
+        assert is_transient_error(_google_error(status_code)) is True
 
     def test_google_server_error_is_transient(self):
         assert is_transient_error(_google_error(503)) is True
@@ -111,6 +113,28 @@ class TestIsTransientError:
     )
     def test_fail_fast_exceptions(self, exc):
         assert is_transient_error(exc) is False
+
+
+class TestHasApiKey:
+    """Direct unit coverage for _has_api_key's two resolution paths."""
+
+    def test_true_when_api_key_set_directly_on_config(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        config = LLMConfig(provider="google", model="gemini-2.5-flash-lite", api_key="k")
+
+        assert _has_api_key(config) is True
+
+    def test_true_when_env_var_set_and_config_key_absent(self, monkeypatch):
+        monkeypatch.setenv("GOOGLE_API_KEY", "env-key")
+        config = LLMConfig(provider="google", model="gemini-2.5-flash-lite", api_key=None)
+
+        assert _has_api_key(config) is True
+
+    def test_false_when_neither_config_key_nor_env_var_set(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        config = LLMConfig(provider="google", model="gemini-2.5-flash-lite", api_key=None)
+
+        assert _has_api_key(config) is False
 
 
 class TestBuildResilientLLM:
