@@ -179,12 +179,11 @@ def _guard_leaf(runnable: Runnable, config: LLMConfig, role: str) -> Runnable:
                     details={"provider": provider, "model": model, "role": role},
                 ) from exc
             raise
-        logger.info(
-            "LLM response served by provider=%s model=%s (role=%s)",
-            provider,
-            model,
-            role,
-        )
+        # Routine primary success is expected on every call and would be pure
+        # noise at INFO; the fallback actually serving is the degradation
+        # signal worth surfacing by default.
+        log = logger.info if role == "fallback" else logger.debug
+        log("LLM response served by provider=%s model=%s (role=%s)", provider, model, role)
         return result
 
     return RunnableLambda(_invoke, name=f"resilient_{role}_{provider}")

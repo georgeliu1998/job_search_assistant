@@ -259,7 +259,7 @@ class TestBuildResilientLLM:
         assert isinstance(exc_info.value.__cause__, httpx.ConnectError)
 
     @patch("src.llm.resilience.get_chat_model")
-    def test_transient_failure_then_recovery_logs_served_provider(self, mock_get, caplog):
+    def test_primary_success_logs_served_provider_at_debug_not_info(self, mock_get, caplog):
         state = {"n": 0}
 
         def primary(_):
@@ -272,6 +272,32 @@ class TestBuildResilientLLM:
 
         result = build_resilient_llm(self._config(), max_attempts_per_provider=3)
 
-        with caplog.at_level("INFO"):
+        with caplog.at_level("DEBUG"):
             assert result.invoke("hi") == "RECOVERED"
-        assert "served by provider=anthropic" in caplog.text
+
+        served_records = [r for r in caplog.records if "served by provider=anthropic" in r.message]
+        assert len(served_records) == 1
+        assert served_records[0].levelname == "DEBUG"
+
+    @patch("src.llm.resilience.get_chat_model")
+    def test_fallback_success_logs_served_provider_at_info(self, mock_get, caplog):
+        def primary(_):
+            raise httpx.ConnectError("down")
+
+        def fallback(_):
+            return "FALLBACK"
+
+        mock_get.side_effect = [RunnableLambda(primary), RunnableLambda(fallback)]
+
+        result = build_resilient_llm(
+            self._config(),
+            self._config(provider="google", model="gemini-2.5-flash-lite", api_key="k2"),
+            max_attempts_per_provider=1,
+        )
+
+        with caplog.at_level("DEBUG"):
+            assert result.invoke("hi") == "FALLBACK"
+
+        served_records = [r for r in caplog.records if "served by provider=google" in r.message]
+        assert len(served_records) == 1
+        assert served_records[0].levelname == "INFO"
