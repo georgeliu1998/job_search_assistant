@@ -254,6 +254,12 @@ def build_resilient_llm(
         A LangChain ``Runnable`` to ``.invoke(messages, config=...)``. Pass the
         Langfuse config so tracing propagates across the fallback boundary.
 
+        Note: there is no aggregate deadline across retries + fallback. Worst
+        case latency is roughly ``max_attempts_per_provider`` x number of
+        providers, plus exponential backoff between attempts. Fine for
+        best-effort batch jobs; revisit with an overall timeout if this is
+        ever wired into a latency-sensitive (e.g. interactive) path.
+
     Raises:
         ValueError: If ``max_attempts_per_provider`` is not a positive integer.
             Notably, Tenacity's ``stop_after_attempt`` treats 0 or a negative
