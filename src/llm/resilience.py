@@ -57,6 +57,11 @@ def _build_transient_type_tuple() -> Tuple[Type[BaseException], ...]:
     Imports are best-effort so a single-provider install (or a missing optional
     dependency) never breaks the classifier.
     """
+    # Trade-off: at temperature=0.0 a parse failure is close to deterministic,
+    # so same-provider retries here are likely to re-fail before the
+    # cross-provider fallback (which is what actually helps) kicks in. Still
+    # worth retrying since not every task runs at temperature=0.0, and a
+    # transient upstream glitch can also produce a one-off malformed response.
     types: list[Type[BaseException]] = [OutputParserException, ValidationError]
 
     try:
