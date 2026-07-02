@@ -14,7 +14,7 @@ malformed / unknown -> surface immediately so real bugs aren't masked).
 """
 
 import os
-from typing import Any, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseChatModel
@@ -62,7 +62,7 @@ def _build_transient_type_tuple() -> Tuple[Type[BaseException], ...]:
     # cross-provider fallback (which is what actually helps) kicks in. Still
     # worth retrying since not every task runs at temperature=0.0, and a
     # transient upstream glitch can also produce a one-off malformed response.
-    types: list[Type[BaseException]] = [OutputParserException, ValidationError]
+    types: List[Type[BaseException]] = [OutputParserException, ValidationError]
 
     try:
         import httpx
@@ -195,7 +195,7 @@ def _build_leaf(
     role: str,
     max_attempts_per_provider: int,
     wait_exponential_jitter: bool,
-    exponential_jitter_params: Optional[dict],
+    exponential_jitter_params: Optional[Dict[str, Any]],
 ) -> Runnable:
     """Build a single resilient provider leaf: structured-output + retry."""
     model: BaseChatModel = get_chat_model(config)
@@ -212,7 +212,7 @@ def _build_leaf(
 
     guarded = _guard_leaf(bound, config, role)
 
-    retry_kwargs: dict[str, Any] = {
+    retry_kwargs: Dict[str, Any] = {
         "retry_if_exception_type": (TransientLLMError,),
         "wait_exponential_jitter": wait_exponential_jitter,
         "stop_after_attempt": max_attempts_per_provider,
@@ -230,7 +230,7 @@ def build_resilient_llm(
     output_model: Optional[Type[BaseModel]] = None,
     max_attempts_per_provider: int = DEFAULT_MAX_ATTEMPTS_PER_PROVIDER,
     wait_exponential_jitter: bool = True,
-    exponential_jitter_params: Optional[dict] = None,
+    exponential_jitter_params: Optional[Dict[str, Any]] = None,
 ) -> Runnable:
     """Build a resilient runnable: same-provider retry under cross-provider fallback.
 
