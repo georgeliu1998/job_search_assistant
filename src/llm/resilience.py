@@ -235,7 +235,11 @@ def build_resilient_llm(
     """Build a resilient runnable: same-provider retry under cross-provider fallback.
 
     Args:
-        primary_config: LLM config for the primary provider/model.
+        primary_config: LLM config for the primary provider/model. Unlike the
+            fallback, a missing primary API key is *not* handled gracefully:
+            it raises ``LLMProviderError`` eagerly (via ``get_chat_model``)
+            since a misconfigured primary is a config bug, not a runtime
+            condition to degrade around.
         fallback_config: Optional tier-matched fallback on a different provider.
             If omitted, or if its API key is not configured, the fallback is
             skipped gracefully and only the primary (with retries) is used - so
