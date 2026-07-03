@@ -300,6 +300,7 @@ class TestBuildResilientLLM:
             self._config(),
             self._config(provider="google", model="gemini-2.5-flash-lite", api_key="k2"),
             max_attempts_per_provider=2,
+            wait_exponential_jitter=False,
         )
 
         assert result.invoke("hi") == "FALLBACK"
@@ -342,6 +343,7 @@ class TestBuildResilientLLM:
             self._config(),
             self._config(provider="google", model="gemini-2.5-flash-lite", api_key="k2"),
             max_attempts_per_provider=2,
+            wait_exponential_jitter=False,
         )
 
         with pytest.raises(TransientLLMError) as exc_info:
@@ -360,7 +362,9 @@ class TestBuildResilientLLM:
 
         mock_get.return_value = RunnableLambda(primary)
 
-        result = build_resilient_llm(self._config(), max_attempts_per_provider=3)
+        result = build_resilient_llm(
+            self._config(), max_attempts_per_provider=3, wait_exponential_jitter=False
+        )
 
         with caplog.at_level("DEBUG"):
             assert result.invoke("hi") == "RECOVERED"
