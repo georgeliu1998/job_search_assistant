@@ -62,6 +62,11 @@ def _build_transient_type_tuple() -> Tuple[Type[BaseException], ...]:
     # cross-provider fallback (which is what actually helps) kicks in. Still
     # worth retrying since not every task runs at temperature=0.0, and a
     # transient upstream glitch can also produce a one-off malformed response.
+    # Cost asymmetry to be aware of: a persistent output_model/schema bug (not
+    # a flake) burns the full budget on every request - up to
+    # 2 x max_attempts_per_provider billed calls when a fallback is configured
+    # - since every attempt on both providers repeats the same failure. Lower
+    # max_attempts_per_provider for a task if this becomes a concern.
     types: List[Type[BaseException]] = [OutputParserException, ValidationError]
 
     try:
