@@ -54,8 +54,10 @@ class TransientLLMError(LLMError):
 def _build_transient_type_tuple() -> Tuple[Type[BaseException], ...]:
     """Collect always-transient exception types from whatever SDKs are present.
 
-    Imports are best-effort so a single-provider install (or a missing optional
-    dependency) never breaks the classifier.
+    Imports are best-effort (not because these provider SDKs are optional
+    dependencies today - they're hard transitive deps via langchain-anthropic /
+    langchain-google-genai) so the classifier stays import-safe if that ever
+    changes, or in an environment missing one of them.
     """
     # Trade-off: at temperature=0.0 a parse failure is close to deterministic,
     # so same-provider retries here are likely to re-fail before the
@@ -89,7 +91,7 @@ def _build_transient_type_tuple() -> Tuple[Type[BaseException], ...]:
         # (rate limits, 5xx/overloaded) are handled separately below via
         # status_code inspection, since APIStatusError covers many status codes.
         types += [anthropic.APIConnectionError]
-    except ImportError:  # pragma: no cover - provider package optional
+    except ImportError:  # pragma: no cover - best-effort import guard, keeps this import-safe
         pass
 
     return tuple(types)
@@ -122,7 +124,7 @@ def is_transient_error(exc: BaseException) -> bool:
             return status_code is not None and (
                 status_code >= 500 or status_code in _TRANSIENT_STATUS_CODES
             )
-    except ImportError:  # pragma: no cover - provider package optional
+    except ImportError:  # pragma: no cover - best-effort import guard, keeps this import-safe
         pass
 
     # Google's ``genai`` SDK raises a single ``ServerError`` for 5xx and a
@@ -130,7 +132,7 @@ def is_transient_error(exc: BaseException) -> bool:
     # from fail-fast 400/401/403 by inspecting the HTTP status code.
     try:
         from google.genai import errors as genai_errors
-    except ImportError:  # pragma: no cover - provider package optional
+    except ImportError:  # pragma: no cover - best-effort import guard, keeps this import-safe
         return False
 
     if isinstance(exc, genai_errors.ServerError):
@@ -168,6 +170,9 @@ def _guard_leaf(runnable: Runnable, config: LLMConfig, role: str) -> Runnable:
     the retry/fallback filters watch); non-transient failures propagate
     unchanged (fail fast). On success it logs which provider+model actually
     served the response, making primary-provider degradation observable.
+
+    Sync-only today: only ``invoke`` is wrapped, no ``ainvoke``/``afunc``. Add
+    an async counterpart if a caller ever needs to ``.ainvoke()`` this chain.
     """
     provider, model = config.provider, config.model
 
