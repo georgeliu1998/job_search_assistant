@@ -7,11 +7,13 @@ fallback whose API key is missing, and structured-output binding with
 ``include_raw=False``.
 """
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import httpx
 import pytest
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.exceptions import OutputParserException
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
@@ -48,6 +50,33 @@ def _anthropic_error(status_code: int, cls: Optional[type] = None) -> BaseExcept
     response = httpx.Response(status_code, request=request, json=body)
     error_cls = cls or anthropic.APIStatusError
     return error_cls("boom", response=response, body=body)
+
+
+class _RecordingHandler(BaseCallbackHandler):
+    """Records the `name` of every chain that reports on_chain_start.
+
+    Used to lock in that callbacks registered via config={"callbacks": [...]}
+    reach the resilient_* leaf runnables, not just the outermost chain. Note:
+    this currently happens via LangChain's config contextvar and would still
+    pass even if _guard_leaf's explicit config forwarding were broken (e.g.
+    misnamed) - see _guard_leaf's docstring for that distinction.
+    """
+
+    def __init__(self) -> None:
+        self.chain_start_names: List[Optional[str]] = []
+
+    def on_chain_start(
+        self,
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.chain_start_names.append(kwargs.get("name"))
 
 
 def _google_error(code: int) -> BaseException:
@@ -217,6 +246,41 @@ class TestBuildResilientLLM:
         assert result.invoke("hi") == _Schema(value=1)
         primary_model.with_structured_output.assert_called_once_with(_Schema, include_raw=False)
         fallback_model.with_structured_output.assert_called_once_with(_Schema, include_raw=False)
+
+    @patch("src.llm.resilience.get_chat_model")
+    def test_callbacks_propagate_to_primary_leaf(self, mock_get):
+        mock_get.return_value = RunnableLambda(lambda x: "ok")
+        chain = build_resilient_llm(self._config())
+        handler = _RecordingHandler()
+
+        result = chain.invoke("hi", config={"callbacks": [handler]})
+
+        assert result == "ok"
+        assert any(
+            name is not None and name.startswith("resilient_primary_")
+            for name in handler.chain_start_names
+        )
+
+    @patch("src.llm.resilience.get_chat_model")
+    def test_callbacks_propagate_to_fallback_leaf(self, mock_get):
+        def primary(_):
+            raise httpx.ConnectError("down")
+
+        mock_get.side_effect = [RunnableLambda(primary), RunnableLambda(lambda x: "FALLBACK")]
+        chain = build_resilient_llm(
+            self._config(),
+            self._config(provider="google", model="gemini-2.5-flash-lite", api_key="k2"),
+            max_attempts_per_provider=1,
+        )
+        handler = _RecordingHandler()
+
+        result = chain.invoke("hi", config={"callbacks": [handler]})
+
+        assert result == "FALLBACK"
+        assert any(
+            name is not None and name.startswith("resilient_fallback_")
+            for name in handler.chain_start_names
+        )
 
     @patch("src.llm.resilience.get_chat_model")
     def test_transient_primary_failure_falls_back(self, mock_get):
