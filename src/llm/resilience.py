@@ -147,11 +147,17 @@ def _has_api_key(config: LLMConfig) -> bool:
 def _guard_leaf(runnable: Runnable, config: LLMConfig, role: str) -> Runnable:
     """Wrap a model/structured runnable to normalize errors and log who served.
 
-    ``config`` identifies this leaf's provider/model for logging only. The
-    separate ``run_config`` received by the wrapped invocation (the
-    ``RunnableConfig`` supplied by the caller at ``.invoke()`` time, carrying
-    the Langfuse callbacks) is forwarded unchanged to ``runnable.invoke()``, so
-    tracing propagates across the fallback boundary too.
+    The outer ``config: LLMConfig`` identifies this leaf's provider/model for
+    logging only. The inner callback's ``config: Optional[RunnableConfig]``
+    parameter must be named exactly ``config`` - LangChain's
+    ``accepts_config()`` only injects the caller's ``RunnableConfig`` (with
+    Langfuse callbacks/tags) into a wrapped callable when the parameter is
+    literally named ``config``; any other name (e.g. ``run_config``) is never
+    populated. We forward it explicitly to ``runnable.invoke()`` as
+    belt-and-braces; today, callbacks also propagate independently via
+    LangChain's config contextvar regardless of this parameter's name, but the
+    explicit forwarding is what the parameter name must match to actually
+    fire, and is what protects us if that contextvar behavior ever changes.
 
     Transient failures are re-raised as ``TransientLLMError`` (the single type
     the retry/fallback filters watch); non-transient failures propagate
@@ -160,9 +166,9 @@ def _guard_leaf(runnable: Runnable, config: LLMConfig, role: str) -> Runnable:
     """
     provider, model = config.provider, config.model
 
-    def _invoke(value: Any, run_config: Optional[RunnableConfig] = None) -> Any:
+    def _invoke(value: Any, config: Optional[RunnableConfig] = None) -> Any:
         try:
-            result = runnable.invoke(value, config=run_config)
+            result = runnable.invoke(value, config=config)
         except TransientLLMError:
             raise
         except Exception as exc:
