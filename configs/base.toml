@@ -51,6 +51,61 @@ model = "gemini-2.5-flash-lite"
 temperature = 0.7
 max_tokens = 4096
 
+[agent_tasks.interview_research_planning]
+provider = "google"
+model = "gemini-2.5-flash-lite"
+temperature = 0.3
+max_tokens = 4096
+
+[agent_tasks.interview_research_critic]
+provider = "google"
+model = "gemini-2.5-flash-lite"
+temperature = 0.0
+max_tokens = 4096
+
+[agent_tasks.interview_question_critic]
+provider = "google"
+model = "gemini-2.5-flash-lite"
+temperature = 0.0
+max_tokens = 4096
+
+[agent_tasks.interview_guide_synthesis]
+provider = "google"
+model = "gemini-2.5-flash-lite"
+temperature = 0.5
+max_tokens = 4096
+
+# Interview-prep workflow orchestration: bounds on the bounded critic gates
+# (research and questions), and per-gate enable toggles (e.g. for a future
+# free tier that skips quality gates).
+[interview_prep]
+max_research_attempts = 2
+max_question_attempts = 2
+enable_research_critic = true
+enable_question_critic = true
+
+# Global LLM call-resilience defaults (see src/llm/resilience.py): same-provider
+# retry/backoff shape, plus a cross-provider fallback map grouped by
+# cost/capability tier so a fallback never silently downgrades a task onto a
+# much weaker model (e.g. a "standard"-tier google task never falls back to a
+# "cheap"-tier anthropic model). Any agent_tasks.<task> may set its own
+# `fallback = { provider = "...", model = "..." }` to bypass this tier lookup.
+[llm.resilience.retry]
+max_attempts_per_provider = 3
+wait_exponential_jitter = true
+
+[llm.resilience.fallback_tiers.cheap]
+google = "gemini-2.5-flash-lite"
+anthropic = "claude-haiku-4-5"
+
+[llm.resilience.fallback_tiers.standard]
+google = "gemini-2.5-flash"
+anthropic = "claude-sonnet-4-6"
+
+[llm.resilience.fallback_tiers.premium]
+google = "gemini-2.5-pro"
+anthropic = "claude-opus-4-7"
+
 [observability.langfuse]
 enabled = false
 host = "https://us.cloud.langfuse.com"

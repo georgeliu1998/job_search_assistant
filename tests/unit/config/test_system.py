@@ -49,6 +49,22 @@ model = "stage-test-model"
 [agent_tasks.interview_compilation]
 provider = "anthropic"
 model = "stage-test-model"
+
+[agent_tasks.interview_research_planning]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agent_tasks.interview_research_critic]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agent_tasks.interview_question_critic]
+provider = "anthropic"
+model = "stage-test-model"
+
+[agent_tasks.interview_guide_synthesis]
+provider = "anthropic"
+model = "stage-test-model"
 """
 
 
@@ -509,6 +525,30 @@ temperature = 0.1
 max_tokens = 2048
 
 [agent_tasks.interview_compilation]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agent_tasks.interview_research_planning]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agent_tasks.interview_research_critic]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agent_tasks.interview_question_critic]
+provider = "anthropic"
+model = "claude-haiku-4-5"
+temperature = 0.1
+max_tokens = 2048
+
+[agent_tasks.interview_guide_synthesis]
 provider = "anthropic"
 model = "claude-haiku-4-5"
 temperature = 0.1

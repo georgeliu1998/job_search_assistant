@@ -34,6 +34,10 @@ def _make_agent_tasks(**overrides: LLMConfig) -> AgentTasksConfig:
         "interview_question_generation": default,
         "interview_answer_generation": default,
         "interview_compilation": default,
+        "interview_research_planning": default,
+        "interview_research_critic": default,
+        "interview_question_critic": default,
+        "interview_guide_synthesis": default,
     }
     fields.update(overrides)
     return AgentTasksConfig(**fields)
